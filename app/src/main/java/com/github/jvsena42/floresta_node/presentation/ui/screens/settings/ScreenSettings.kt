@@ -9,11 +9,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -26,8 +31,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
@@ -36,7 +43,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import com.florestad.Network
 import com.github.jvsena42.floresta_node.R
+import com.github.jvsena42.floresta_node.domain.model.Constants
 import com.github.jvsena42.floresta_node.presentation.ui.theme.FlorestaNodeTheme
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -44,10 +53,18 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun ScreenSettings(
-    viewModel: SettingsViewModel = koinViewModel()
+    viewModel: SettingsViewModel = koinViewModel(),
+    restartApplication: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     ScreenSettings(uiState = uiState, onAction = viewModel::onAction)
+    LaunchedEffect(viewModel.eventFlow) {
+        viewModel.eventFlow.collect { event ->
+            when (event) {
+                is SettingsEvents.OnNetworkChanged -> restartApplication()
+            }
+        }
+    }
 }
 
 
@@ -81,6 +98,7 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(contentPadding)
+                .verticalScroll(rememberScrollState())
         ) {
             AnimatedVisibility(visible = uiState.isLoading) {
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
@@ -138,6 +156,45 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            var expanded by remember { mutableStateOf(false) }
+
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded }
+            ) {
+                TextField(
+                    value = uiState.selectedNetwork,
+                    readOnly = true,
+                    onValueChange = { newText -> onAction(SettingsAction.OnNetworkSelected(newText)) },
+                    label = { Text(stringResource(R.string.select_a_network)) },
+                    supportingText = { Text(stringResource(R.string.the_application_will_be_restarted_to_update_the_network)) },
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                        .menuAnchor()
+                )
+
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    uiState.network.forEach { network ->
+                        DropdownMenuItem(
+                            text = { Text(network.name) },
+                            onClick = {
+                                onAction(SettingsAction.OnNetworkSelected(network.name))
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
             TextField(
                 value = uiState.nodeAddress,
                 enabled = !uiState.isLoading,
@@ -165,6 +222,8 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                 Text(stringResource(R.string.connect))
             }
 
+            Spacer(modifier = Modifier.height(32.dp))
+
             Spacer(modifier = Modifier.weight(1f))
 
             OutlinedButton(
@@ -187,7 +246,10 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
 private fun Preview() {
     FlorestaNodeTheme {
         ScreenSettings(
-            uiState = SettingsUiState(signetAddress = SettingsViewModel.ELECTRUM_ADDRESS),
+            uiState = SettingsUiState(
+                signetAddress = Constants.ELECTRUM_ADDRESS,
+                selectedNetwork = Network.SIGNET.name
+            ),
             onAction = {}
         )
     }

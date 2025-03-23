@@ -30,6 +30,7 @@ import com.github.jvsena42.floresta_node.presentation.ui.screens.node.ScreenNode
 import com.github.jvsena42.floresta_node.presentation.ui.screens.search.ScreenSearch
 import com.github.jvsena42.floresta_node.presentation.ui.screens.settings.ScreenSettings
 import com.github.jvsena42.floresta_node.presentation.ui.theme.FlorestaNodeTheme
+import com.github.jvsena42.floresta_node.presentation.utils.restartApplication
 import org.koin.androidx.compose.KoinAndroidContext
 
 class MainActivity : ComponentActivity() {
@@ -42,7 +43,8 @@ class MainActivity : ComponentActivity() {
                     MainScreen(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.background)
+                            .background(MaterialTheme.colorScheme.background),
+                        restartApplication = { restartApplication() }
                     )
                 }
             }
@@ -51,7 +53,10 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun MainScreen(modifier: Modifier = Modifier) {
+private fun MainScreen(
+    modifier: Modifier = Modifier,
+    restartApplication: () -> Unit
+) {
     var navigationSelectedItem by remember { mutableStateOf(Destinations.NODE) }
     val navController = rememberNavController()
 
@@ -106,7 +111,9 @@ private fun MainScreen(modifier: Modifier = Modifier) {
                 ScreenNode()
             }
             composable(Destinations.SETTINGS.route) {
-                ScreenSettings()
+                ScreenSettings(
+                    restartApplication = restartApplication
+                )
             }
         }
     }
@@ -119,7 +126,8 @@ private fun Preview() {
         MainScreen(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
+                .background(MaterialTheme.colorScheme.background),
+            restartApplication = {}
         )
     }
 }

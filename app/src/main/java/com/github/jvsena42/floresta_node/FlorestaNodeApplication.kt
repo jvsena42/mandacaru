@@ -1,9 +1,12 @@
 package com.github.jvsena42.floresta_node
 
 import android.app.Application
+import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.util.Log
 import com.github.jvsena42.floresta_node.data.FlorestaRpc
+import com.github.jvsena42.floresta_node.data.PreferencesDataSource
+import com.github.jvsena42.floresta_node.domain.PreferencesDataSourceImpl
 import com.github.jvsena42.floresta_node.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.floresta_node.domain.floresta.FlorestaDaemonImpl
 import com.github.jvsena42.floresta_node.domain.floresta.FlorestaRpcImpl
@@ -39,7 +42,7 @@ class FlorestaNodeApplication: Application() {
 
 val presentationModule = module {
     viewModel { NodeViewModel(florestaRpc = get()) }
-    viewModel { SettingsViewModel(florestaRpc = get()) }
+    viewModel { SettingsViewModel(florestaRpc = get(), preferencesDataSource = get()) }
     viewModel { SearchViewModel(florestaRpc = get()) }
 }
 
@@ -47,7 +50,11 @@ val domainModule = module {
     single<FlorestaDaemon> {
         FlorestaDaemonImpl(
             datadir = androidContext().filesDir.toString(),
+            preferencesDataSource = get()
         )
     }
-    single<FlorestaRpc> { FlorestaRpcImpl(gson = Gson()) }
+    single<FlorestaRpc> { FlorestaRpcImpl(gson = Gson(), preferencesDataSource = get()) }
+    single<PreferencesDataSource> { PreferencesDataSourceImpl(
+        sharedPreferences = androidContext().getSharedPreferences("floresta", MODE_PRIVATE)
+    ) }
 }

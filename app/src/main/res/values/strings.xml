@@ -37,4 +37,6 @@
     <string name="node_address_placeholder">ip[:port]</string>
     <string name="connect_directly_with_a_node">Connect directly with a node</string>
     <string name="connect">Connect</string>
+    <string name="select_a_network">Select a network</string>
+    <string name="the_application_will_be_restarted_to_update_the_network">The application will be restarted to update the network</string>
 </resources>
