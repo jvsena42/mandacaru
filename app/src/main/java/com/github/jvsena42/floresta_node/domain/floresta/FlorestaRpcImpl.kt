@@ -2,6 +2,7 @@ package com.github.jvsena42.floresta_node.domain.floresta
 
 import android.util.Log
 import com.github.jvsena42.floresta_node.data.FlorestaRpc
+import com.github.jvsena42.floresta_node.domain.model.Constants.ELECTRUM_ADDRESS
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetBlockchainInfoResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetPeerInfoResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.RpcMethods
@@ -206,7 +207,6 @@ class FlorestaRpcImpl(
 
     private companion object {
         private const val TAG = "FlorestaRpcImpl"
-        private const val ELECTRUM_ADDRESS = "127.0.0.1:38332"
     }
 
 }
