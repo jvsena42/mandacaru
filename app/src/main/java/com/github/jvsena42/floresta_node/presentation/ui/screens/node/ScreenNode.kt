@@ -232,6 +232,26 @@ fun ScreenNode(uiState: NodeUiState) {
                     Spacer(modifier = Modifier.weight(1f))
                 }
             }
+
+            item {
+                Column(
+                    modifier = cardsModifier,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        stringResource(R.string.validated_blocks),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Text(uiState.validatedBLocks.toString())
+
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
         }
     }
 }

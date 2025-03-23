@@ -44,7 +44,8 @@ class NodeViewModel(
                             difficulty = data.result.difficulty.toScientificNotationString(),
                             network = data.result.chain.uppercase(),
                             blockHash = data.result.bestBlock,
-                            syncPercentage = (data.result.progress * 1000).roundToInt()
+                            syncPercentage = (data.result.progress * 1000).roundToInt(),
+                            validatedBLocks = data.result.validated
                         )
                     }
                 }

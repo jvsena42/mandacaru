@@ -10,4 +10,5 @@ data class NodeUiState(
     val network: String = "",
     val difficulty: String = "",
     val syncPercentage: Int = 0,
+    val validatedBLocks: Int = 0,
 )
