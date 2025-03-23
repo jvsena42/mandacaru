@@ -205,12 +205,9 @@ fun ScreenNode(uiState: NodeUiState) {
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
-
                     Spacer(modifier = Modifier.weight(1f))
 
-                    Text("""~ ${uiState.difficulty} ${stringResource(R.string.minutes)}""")
-
-                    Text(stringResource(R.string.average_block_time))
+                    Text(uiState.difficulty)
 
                     Spacer(modifier = Modifier.weight(1f))
                 }

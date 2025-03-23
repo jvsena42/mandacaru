@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.jvsena42.floresta_node.data.FlorestaRpc
+import com.github.jvsena42.floresta_node.presentation.utils.toScientificNotationString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,10 +41,10 @@ class NodeViewModel(
                     _uiState.update {
                         it.copy(
                             blockHeight = data.result.height.toString(),
-                            difficulty = data.result.difficulty.toString(),
+                            difficulty = data.result.difficulty.toScientificNotationString(),
                             network = data.result.chain.uppercase(),
                             blockHash = data.result.bestBlock,
-                            syncPercentage = (data.result.progress * 100).roundToInt()
+                            syncPercentage = (data.result.progress * 1000).roundToInt()
                         )
                     }
                 }

@@ -17,3 +17,64 @@ fun Network.getRpcPort() : String {
         Network.REGTEST -> Constants.RPC_PORT_REGTEST
     }
 }
+
+fun Float.toScientificNotationString(): String {
+    val stringValue = this.toString()
+    if (!stringValue.contains('E', ignoreCase = true)) {
+        return stringValue
+    }
+
+    val parts = stringValue.split('E', ignoreCase = true)
+    if (parts.size != 2) {
+        return stringValue // Invalid format
+    }
+
+    val coefficient = parts[0]
+    val exponent = parts[1].toIntOrNull()
+
+    if (exponent == null) {
+        return stringValue // Invalid exponent
+    }
+
+    return "${coefficient}x10${'\u00B3'.takeIf { exponent == 3 } ?: exponent.toSuperscript()}"
+}
+
+private fun Int.toSuperscript(): String {
+    val superscripts = mapOf(
+        '0' to '\u2070',
+        '1' to '\u00B9',
+        '2' to '\u00B2',
+        '3' to '\u00B3',
+        '4' to '\u2074',
+        '5' to '\u2075',
+        '6' to '\u2076',
+        '7' to '\u2077',
+        '8' to '\u2078',
+        '9' to '\u2079',
+        '+' to '\u207A',
+        '-' to '\u207B'
+    )
+
+    return this.toString().map { superscripts[it] ?: it }.joinToString("")
+}
+
+fun Double.toScientificNotationString(): String {
+    val stringValue = this.toString()
+    if (!stringValue.contains('E', ignoreCase = true)) {
+        return stringValue
+    }
+
+    val parts = stringValue.split('E', ignoreCase = true)
+    if (parts.size != 2) {
+        return stringValue // Invalid format
+    }
+
+    val coefficient = parts[0]
+    val exponent = parts[1].toIntOrNull()
+
+    if (exponent == null) {
+        return stringValue // Invalid exponent
+    }
+
+    return "${coefficient}x10${'\u00B3'.takeIf { exponent == 3 } ?: exponent.toSuperscript()}"
+}
