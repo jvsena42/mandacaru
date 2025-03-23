@@ -7,7 +7,7 @@ import com.florestad.Network
 @Stable
 data class SettingsUiState(
     val descriptorText: String = "",
-    val signetAddress: String = "",
+    val electrumAddress: String = "",
     val nodeAddress: String = "",
     val errorMessage: String = "",
     val selectedNetwork: String = "",

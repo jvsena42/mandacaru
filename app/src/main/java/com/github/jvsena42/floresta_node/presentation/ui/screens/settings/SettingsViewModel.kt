@@ -28,7 +28,7 @@ class SettingsViewModel(
     private val preferencesDataSource: PreferencesDataSource
 ) : ViewModel(), EventFlow<SettingsEvents> by EventFlowImpl() {
 
-    private val _uiState = MutableStateFlow(SettingsUiState(signetAddress = Constants.ELECTRUM_ADDRESS))
+    private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState = _uiState.asStateFlow()
 
     init {
@@ -40,6 +40,7 @@ class SettingsViewModel(
                 ),
             )
         }
+        updateElectrumAddress()
     }
 
     fun onAction(action: SettingsAction) {
@@ -55,7 +56,7 @@ class SettingsViewModel(
             SettingsAction.OnClickRescan -> rescan()
             SettingsAction.ClearSnackBarMessage -> _uiState.update { it.copy(errorMessage = "") }
             SettingsAction.OnClickConnectNode -> connectNode()
-            is SettingsAction.OnNodeAddressChanged ->  _uiState.update {
+            is SettingsAction.OnNodeAddressChanged -> _uiState.update {
                 it.copy(nodeAddress = action.address.removeSpaces())
             }
 
@@ -67,16 +68,28 @@ class SettingsViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             //TODO MOVE TO A REPOSITORY
             preferencesDataSource.setString(PreferenceKeys.CURRENT_NETWORK, action.network)
-            preferencesDataSource.setString(PreferenceKeys.CURRENT_RPC_PORT, action.network.getNetwork().getRpcPort())
+            preferencesDataSource.setString(
+                PreferenceKeys.CURRENT_RPC_PORT,
+                action.network.getNetwork().getRpcPort()
+            )
             _uiState.update { it.copy(selectedNetwork = action.network, isLoading = true) }
+            updateElectrumAddress()
             delay(5.seconds)
             viewModelScope.sendEvent(SettingsEvents.OnNetworkChanged)
         }
     }
 
+    private fun updateElectrumAddress() {
+        val port = preferencesDataSource.getString(
+            PreferenceKeys.CURRENT_RPC_PORT,
+            defaultValue = if (BuildConfig.DEBUG) Constants.RPC_PORT_SIGNET else Constants.RPC_PORT_MAINNET
+        )
+        _uiState.update { it.copy(electrumAddress = "127.0.0.1:$port") }
+    }
+
     private fun connectNode() {
         if (_uiState.value.nodeAddress.isEmpty()) return
-        _uiState.update { it.copy(isLoading = true)}
+        _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch(Dispatchers.IO) {
             florestaRpc.addNode(_uiState.value.nodeAddress)
                 .collect { result ->
@@ -89,13 +102,13 @@ class SettingsViewModel(
                     }
 
                     delay(2.seconds)
-                    _uiState.update { it.copy(isLoading = false)}
+                    _uiState.update { it.copy(isLoading = false) }
                 }
         }
     }
 
     private fun updateDescriptor() {
-        _uiState.update { it.copy(isLoading = true)}
+        _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch(Dispatchers.IO) {
             florestaRpc.loadDescriptor(_uiState.value.descriptorText)
                 .collect { result ->
@@ -108,14 +121,14 @@ class SettingsViewModel(
                     }
 
                     delay(2.seconds)
-                    _uiState.update { it.copy(isLoading = false)}
+                    _uiState.update { it.copy(isLoading = false) }
                 }
         }
     }
 
     private fun rescan() {
         if (_uiState.value.descriptorText.removeSpaces().isEmpty()) return
-        _uiState.update { it.copy(isLoading = true)}
+        _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch(Dispatchers.IO) {
             florestaRpc.rescan().collect { result ->
                 result.onSuccess { data ->
@@ -126,7 +139,7 @@ class SettingsViewModel(
                 }
 
                 delay(2.seconds)
-                _uiState.update { it.copy(isLoading = false)}
+                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }
