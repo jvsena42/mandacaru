@@ -2,11 +2,13 @@ package com.github.jvsena42.floresta_node.domain.floresta
 
 import android.util.Log
 import com.github.jvsena42.floresta_node.data.FlorestaRpc
-import com.github.jvsena42.floresta_node.domain.model.Constants.ELECTRUM_ADDRESS
-import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetBlockchainInfoResponse
-import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetPeerInfoResponse
+import com.github.jvsena42.floresta_node.data.PreferenceKeys
+import com.github.jvsena42.floresta_node.data.PreferencesDataSource
+import com.github.jvsena42.floresta_node.domain.model.Constants
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.RpcMethods
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.AddNodeResponse
+import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetBlockchainInfoResponse
+import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetPeerInfoResponse
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -22,11 +24,17 @@ import kotlin.text.orEmpty
 
 class FlorestaRpcImpl(
     private val gson: Gson,
+    private val preferencesDataSource: PreferencesDataSource
 ) : FlorestaRpc {
-    var host: String = "http://$ELECTRUM_ADDRESS"
 
     override suspend fun rescan(): Flow<Result<JSONObject>> = flow {
-        Log.d(TAG, "rescan: ")
+        val port = preferencesDataSource.getString(
+            key = PreferenceKeys.CURRENT_RPC_PORT,
+            defaultValue = Constants.RPC_PORT_SIGNET
+        )
+        var host: String = "http://127.0.0.1:$port"
+
+        Log.d(TAG, "rescan: host:$host")
         val arguments = JSONArray()
         arguments.put(0)
 
@@ -41,6 +49,11 @@ class FlorestaRpcImpl(
 
     override suspend fun loadDescriptor(descriptor: String): Flow<Result<JSONObject>> = flow {
         Log.d(TAG, "loadDescriptor: $descriptor")
+        val port = preferencesDataSource.getString(
+            key = PreferenceKeys.CURRENT_RPC_PORT,
+            defaultValue = Constants.RPC_PORT_SIGNET
+        )
+        var host: String = "http://127.0.0.1:$port"
         val arguments = JSONArray()
         arguments.put(descriptor)
 
@@ -56,6 +69,11 @@ class FlorestaRpcImpl(
     override suspend fun getPeerInfo(): Flow<Result<GetPeerInfoResponse>> =
         flow {
             Log.d(TAG, "getPeerInfo: ")
+            val port = preferencesDataSource.getString(
+                key = PreferenceKeys.CURRENT_RPC_PORT,
+                defaultValue = Constants.RPC_PORT_SIGNET
+            )
+            var host: String = "http://127.0.0.1:$port"
             val arguments = JSONArray()
 
             sendJsonRpcRequest(
@@ -83,6 +101,11 @@ class FlorestaRpcImpl(
 
     override suspend fun stop(): Flow<Result<JSONObject>> = flow {
         Log.d(TAG, "stop: ")
+        val port = preferencesDataSource.getString(
+            key = PreferenceKeys.CURRENT_RPC_PORT,
+            defaultValue = Constants.RPC_PORT_SIGNET
+        )
+        var host: String = "http://127.0.0.1:$port"
         val arguments = JSONArray()
 
         emit(
@@ -96,6 +119,11 @@ class FlorestaRpcImpl(
 
     override suspend fun getTransaction(txId: String): Flow<Result<JSONObject>> = flow {
         Log.d(TAG, "getTransaction: $txId")
+        val port = preferencesDataSource.getString(
+            key = PreferenceKeys.CURRENT_RPC_PORT,
+            defaultValue = Constants.RPC_PORT_SIGNET
+        )
+        var host: String = "http://127.0.0.1:$port"
         val arguments = JSONArray()
         arguments.put(txId)
         emit(
@@ -109,6 +137,11 @@ class FlorestaRpcImpl(
 
     override suspend fun addNode(node: String): Flow<Result<AddNodeResponse>> {
         Log.d(TAG, "addNode: $node")
+        val port = preferencesDataSource.getString(
+            key = PreferenceKeys.CURRENT_RPC_PORT,
+            defaultValue = Constants.RPC_PORT_SIGNET
+        )
+        var host: String = "http://127.0.0.1:$port"
         val arguments = JSONArray()
         arguments.put(node)
 
@@ -143,6 +176,11 @@ class FlorestaRpcImpl(
     override suspend fun getBlockchainInfo(): Flow<Result<GetBlockchainInfoResponse>> =
         flow {
             Log.d(TAG, "getBlockchainInfo: ")
+            val port = preferencesDataSource.getString(
+                key = PreferenceKeys.CURRENT_RPC_PORT,
+                defaultValue = Constants.RPC_PORT_SIGNET
+            )
+            var host: String = "http://127.0.0.1:$port"
             val arguments = JSONArray()
 
             sendJsonRpcRequest(
@@ -181,6 +219,8 @@ class FlorestaRpcImpl(
                 put("params", params)
                 put("id", 1)
             }.toString()
+
+            Log.d(TAG, "sendJsonRpcRequest: $jsonRpcRequest")
 
             val requestBody = jsonRpcRequest.toRequestBody("application/json".toMediaTypeOrNull())
 

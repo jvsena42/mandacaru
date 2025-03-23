@@ -53,7 +53,7 @@ val domainModule = module {
             preferencesDataSource = get()
         )
     }
-    single<FlorestaRpc> { FlorestaRpcImpl(gson = Gson()) }
+    single<FlorestaRpc> { FlorestaRpcImpl(gson = Gson(), preferencesDataSource = get()) }
     single<PreferencesDataSource> { PreferencesDataSourceImpl(
         sharedPreferences = androidContext().getSharedPreferences("floresta", MODE_PRIVATE)
     ) }

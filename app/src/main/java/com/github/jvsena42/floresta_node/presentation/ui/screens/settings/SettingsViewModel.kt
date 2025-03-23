@@ -10,6 +10,8 @@ import com.github.jvsena42.floresta_node.data.PreferencesDataSource
 import com.github.jvsena42.floresta_node.domain.model.Constants
 import com.github.jvsena42.floresta_node.presentation.utils.EventFlow
 import com.github.jvsena42.floresta_node.presentation.utils.EventFlowImpl
+import com.github.jvsena42.floresta_node.presentation.utils.getNetwork
+import com.github.jvsena42.floresta_node.presentation.utils.getRpcPort
 import com.github.jvsena42.floresta_node.presentation.utils.removeSpaces
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -63,7 +65,9 @@ class SettingsViewModel(
 
     fun handleNetworkSelected(action: SettingsAction.OnNetworkSelected) {
         viewModelScope.launch(Dispatchers.IO) {
+            //TODO MOVE TO A REPOSITORY
             preferencesDataSource.setString(PreferenceKeys.CURRENT_NETWORK, action.network)
+            preferencesDataSource.setString(PreferenceKeys.CURRENT_RPC_PORT, action.network.getNetwork().getRpcPort())
             _uiState.update { it.copy(selectedNetwork = action.network, isLoading = true) }
             delay(5.seconds)
             viewModelScope.sendEvent(SettingsEvents.OnNetworkChanged)
