@@ -227,7 +227,7 @@ fun ScreenNode(uiState: NodeUiState) {
 
                     Spacer(modifier = Modifier.weight(1f))
 
-                    Text(if (uiState.syncPercentage < 100) "Syncing... ${uiState.syncPercentage}%" else "${uiState.syncPercentage}%")
+                    Text("${uiState.syncPercentage}%")
 
                     Spacer(modifier = Modifier.weight(1f))
                 }
