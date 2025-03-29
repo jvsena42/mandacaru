@@ -145,7 +145,14 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
             items(uiState.descriptors) { descriptor ->
                 ListItem(
                     headlineContent = { Text(descriptor) },
-                    trailingContent = { IconButton(onClick = { }) { Icon(painterResource(R.drawable.ic_settings), contentDescription = "Delete") } }
+                    trailingContent = {
+                        IconButton(onClick = { }) {
+                            Icon(
+                                painterResource(R.drawable.ic_delete),
+                                contentDescription = stringResource(R.string.delete_descriptor)
+                            )
+                        }
+                    }
                 )
             }
 
@@ -296,7 +303,12 @@ private fun Preview() {
             uiState = SettingsUiState(
                 electrumAddress = Constants.ELECTRUM_ADDRESS,
                 selectedNetwork = Network.SIGNET.name,
-                descriptors = listOf("DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1", "DESCRIPTOR2", "DESCRIPTOR3", "DESCRIPTOR4")
+                descriptors = listOf(
+                    "DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1",
+                    "DESCRIPTOR2",
+                    "DESCRIPTOR3",
+                    "DESCRIPTOR4"
+                )
             ),
             onAction = {}
         )

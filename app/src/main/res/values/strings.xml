@@ -41,4 +41,6 @@
     <string name="the_application_will_be_restarted_to_update_the_network">The application will be restarted to update the network</string>
     <string name="validated_blocks">Validated Blocks</string>
     <string name="descriptors">Descriptors</string>
+    <string name="delete">Delete</string>
+    <string name="delete_descriptor">Delete descriptor</string>
 </resources>
