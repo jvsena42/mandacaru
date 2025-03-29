@@ -79,6 +79,7 @@ suspend fun getPeerInfo(): Flow<Result<GetPeerInfoResponse>>
  * - weight: The weight of this transaction
  */
 suspend fun getTransaction(txId: String): Flow<Result<JSONObject>>
+suspend fun listDescriptors(): Flow<Result<JSONObject>>
 
 /**
  * Adds a new node to our list of peers. This will make our node try to connect to this peer.

@@ -8,4 +8,5 @@ enum class RpcMethods(val method: String) {
     LOAD_DESCRIPTOR("loaddescriptor"),
     GET_TRANSACTION("gettransaction"),
     ADD_NODE("addnode"),
+    LIST_DESCRIPTORS("listdescriptors"),
 }
