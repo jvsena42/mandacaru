@@ -7,11 +7,14 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
@@ -77,27 +80,23 @@ fun ScreenNode(uiState: NodeUiState) {
             }
         )
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
+        LazyColumn (
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                Column(
-                    modifier = cardsModifier,
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
                         stringResource(R.string.number_of_peers),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
                     )
 
-                    Spacer(modifier = Modifier.weight(1f))
 
                     AnimatedVisibility(visible = uiState.numberOfPeers.isNotEmpty()) {
                         Text(uiState.numberOfPeers)
@@ -106,26 +105,20 @@ fun ScreenNode(uiState: NodeUiState) {
                     AnimatedVisibility(visible = uiState.numberOfPeers.isEmpty()) {
                         LinearProgressIndicator(modifier = Modifier.padding(horizontal = 32.dp))
                     }
-
-                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
 
             item {
-                Column(
-                    modifier = cardsModifier,
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-
                     Text(
                         stringResource(R.string.block_height),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
                     )
-
-                    Spacer(modifier = Modifier.weight(1f))
 
                     AnimatedContent(
                         targetState = uiState.blockHeight,
@@ -136,26 +129,22 @@ fun ScreenNode(uiState: NodeUiState) {
                             overflow = TextOverflow.Ellipsis
                         )
                     }
-
-                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
 
             item {
-                Column(
-                    modifier = cardsModifier,
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-
                     Text(
                         stringResource(R.string.best_block),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
                     )
 
-                    Spacer(modifier = Modifier.weight(1f))
+                    Spacer(modifier = Modifier.width(16.dp))
 
                     AnimatedContent(
                         targetState = uiState.blockHash,
@@ -166,15 +155,13 @@ fun ScreenNode(uiState: NodeUiState) {
                             overflow = TextOverflow.Ellipsis
                         )
                     }
-
-                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
 
             item {
-                Column(
-                    modifier = cardsModifier,
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
 
                     Text(
@@ -182,74 +169,57 @@ fun ScreenNode(uiState: NodeUiState) {
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
                     )
 
-                    Spacer(modifier = Modifier.weight(1f))
-
                     Text(uiState.network)
-
-                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
 
             item {
-                Column(
-                    modifier = cardsModifier,
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
                         stringResource(R.string.difficulty),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.weight(1f))
+
 
                     Text(uiState.difficulty)
-
-                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
             item {
-                Column(
-                    modifier = cardsModifier,
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
                         stringResource(R.string.sync),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
                     )
 
-                    Spacer(modifier = Modifier.weight(1f))
-
                     Text("${uiState.syncPercentage}%")
-
-                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
 
             item {
-                Column(
-                    modifier = cardsModifier,
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
                         stringResource(R.string.validated_blocks),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.weight(1f))
 
                     Text(uiState.validatedBLocks.toString())
-
-                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
         }
