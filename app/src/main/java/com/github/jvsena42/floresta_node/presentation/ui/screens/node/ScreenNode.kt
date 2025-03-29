@@ -68,28 +68,21 @@ fun ScreenNode(uiState: NodeUiState) {
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+
                     Text(
-                        stringResource(R.string.number_of_peers),
+                        stringResource(R.string.network),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onBackground
                     )
 
-
-                    AnimatedVisibility(visible = uiState.numberOfPeers.isNotEmpty()) {
-                        Text(
-                            uiState.numberOfPeers,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-
-                    AnimatedVisibility(visible = uiState.numberOfPeers.isEmpty()) {
-                        LinearProgressIndicator(modifier = Modifier.width(100.dp))
-                    }
+                    Text(
+                        uiState.network,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
                 }
             }
 
@@ -122,6 +115,54 @@ fun ScreenNode(uiState: NodeUiState) {
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        stringResource(R.string.number_of_peers),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+
+
+                    AnimatedVisibility(visible = uiState.numberOfPeers.isNotEmpty()) {
+                        Text(
+                            uiState.numberOfPeers,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+
+                    AnimatedVisibility(visible = uiState.numberOfPeers.isEmpty()) {
+                        LinearProgressIndicator(modifier = Modifier.width(100.dp))
+                    }
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        stringResource(R.string.validated_blocks),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+
+                    Text(
+                        uiState.validatedBLocks.toString(),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
@@ -144,27 +185,6 @@ fun ScreenNode(uiState: NodeUiState) {
                             color = MaterialTheme.colorScheme.onBackground
                         )
                     }
-                }
-            }
-
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-
-                    Text(
-                        stringResource(R.string.network),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-
-                    Text(
-                        uiState.network,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
                 }
             }
 
@@ -208,25 +228,6 @@ fun ScreenNode(uiState: NodeUiState) {
                 }
             }
 
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        stringResource(R.string.validated_blocks),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-
-                    Text(
-                        uiState.validatedBLocks.toString(),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-            }
         }
     }
 }
