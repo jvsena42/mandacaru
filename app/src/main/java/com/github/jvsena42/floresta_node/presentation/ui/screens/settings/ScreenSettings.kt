@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -95,161 +96,160 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
             SnackbarHost(hostState = snackBarHostState)
         }
     ) { contentPadding ->
-        Column(
+        LazyColumn(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(contentPadding)
-                .verticalScroll(rememberScrollState())
         ) {
-            AnimatedVisibility(visible = uiState.isLoading) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            }
+            item {
+                AnimatedVisibility(visible = uiState.isLoading) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
 
-            val clipboardManager = LocalClipboardManager.current
-            val message = stringResource(R.string.node_address_copied_to_clipboard)
+                val clipboardManager = LocalClipboardManager.current
+                val message = stringResource(R.string.node_address_copied_to_clipboard)
 
-            Text(
-                text = stringResource(R.string.node_address, uiState.electrumAddress),
-                style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 16.dp)
-                    .clickable {
-                        clipboardManager.setText(AnnotatedString(uiState.electrumAddress))
-                        scope.launch {
-                            snackBarHostState.showSnackbar(message = message)
-                            onAction(SettingsAction.ClearSnackBarMessage)
+                Text(
+                    text = stringResource(R.string.node_address, uiState.electrumAddress),
+                    style = MaterialTheme.typography.titleMedium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 16.dp)
+                        .clickable {
+                            clipboardManager.setText(AnnotatedString(uiState.electrumAddress))
+                            scope.launch {
+                                snackBarHostState.showSnackbar(message = message)
+                                onAction(SettingsAction.ClearSnackBarMessage)
+                            }
                         }
-                    }
-            )
+                )
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
 
-            Text(stringResource(R.string.descriptors), style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.descriptors), style = MaterialTheme.typography.titleMedium)
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            TextField(
-                value = uiState.descriptorText,
-                enabled = !uiState.isLoading,
-                onValueChange = { newText -> onAction(SettingsAction.OnDescriptorChanged(newText)) },
-                label = { Text(stringResource(R.string.set_your_wallet_descriptor)) },
-                placeholder = { Text(stringResource(R.string.descriptor_placeholder)) },
-                maxLines = 1,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { onAction(SettingsAction.OnClickUpdateDescriptor) }),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = { onAction(SettingsAction.OnClickUpdateDescriptor) },
-                enabled = !uiState.isLoading && uiState.descriptorText.isNotBlank(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-            ) {
-                Text(stringResource(R.string.update_descriptor))
-            }
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
-
-            Text(stringResource(R.string.network), style = MaterialTheme.typography.titleMedium)
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            var expanded by remember { mutableStateOf(false) }
-
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
-            ) {
                 TextField(
-                    value = uiState.selectedNetwork,
-                    readOnly = true,
-                    onValueChange = { newText -> onAction(SettingsAction.OnNetworkSelected(newText)) },
-                    label = { Text(stringResource(R.string.select_a_network)) },
-                    supportingText = { Text(stringResource(R.string.the_application_will_be_restarted_to_update_the_network)) },
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                    },
+                    value = uiState.descriptorText,
+                    enabled = !uiState.isLoading,
+                    onValueChange = { newText -> onAction(SettingsAction.OnDescriptorChanged(newText)) },
+                    label = { Text(stringResource(R.string.set_your_wallet_descriptor)) },
+                    placeholder = { Text(stringResource(R.string.descriptor_placeholder)) },
+                    maxLines = 1,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { onAction(SettingsAction.OnClickUpdateDescriptor) }),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp)
-                        .menuAnchor()
                 )
 
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = { onAction(SettingsAction.OnClickUpdateDescriptor) },
+                    enabled = !uiState.isLoading && uiState.descriptorText.isNotBlank(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
                 ) {
-                    uiState.network.forEach { network ->
-                        DropdownMenuItem(
-                            text = { Text(network.name) },
-                            onClick = {
-                                onAction(SettingsAction.OnNetworkSelected(network.name))
-                                expanded = false
-                            }
-                        )
+                    Text(stringResource(R.string.update_descriptor))
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
+
+                Text(stringResource(R.string.network), style = MaterialTheme.typography.titleMedium)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                var expanded by remember { mutableStateOf(false) }
+
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded }
+                ) {
+                    TextField(
+                        value = uiState.selectedNetwork,
+                        readOnly = true,
+                        onValueChange = { newText -> onAction(SettingsAction.OnNetworkSelected(newText)) },
+                        label = { Text(stringResource(R.string.select_a_network)) },
+                        supportingText = { Text(stringResource(R.string.the_application_will_be_restarted_to_update_the_network)) },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
+                            .menuAnchor()
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        uiState.network.forEach { network ->
+                            DropdownMenuItem(
+                                text = { Text(network.name) },
+                                onClick = {
+                                    onAction(SettingsAction.OnNetworkSelected(network.name))
+                                    expanded = false
+                                }
+                            )
+                        }
                     }
                 }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
+
+                Text(stringResource(R.string.node), style = MaterialTheme.typography.titleMedium)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                TextField(
+                    value = uiState.nodeAddress,
+                    enabled = !uiState.isLoading,
+                    onValueChange = { newText -> onAction(SettingsAction.OnNodeAddressChanged(newText)) },
+                    label = { Text(stringResource(R.string.connect_directly_with_a_node)) },
+                    placeholder = { Text(stringResource(R.string.node_address_placeholder)) },
+                    maxLines = 1,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { onAction(SettingsAction.OnClickConnectNode) }),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = { onAction(SettingsAction.OnClickConnectNode) },
+                    enabled = !uiState.isLoading && uiState.nodeAddress.isNotBlank(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                ) {
+                    Text(stringResource(R.string.connect))
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                OutlinedButton(
+                    onClick = { onAction(SettingsAction.OnClickRescan) },
+                    enabled = !uiState.isLoading && uiState.descriptorText.isNotBlank(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                ) {
+                    Text(stringResource(R.string.rescan))
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
-
-            Text(stringResource(R.string.node), style = MaterialTheme.typography.titleMedium)
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TextField(
-                value = uiState.nodeAddress,
-                enabled = !uiState.isLoading,
-                onValueChange = { newText -> onAction(SettingsAction.OnNodeAddressChanged(newText)) },
-                label = { Text(stringResource(R.string.connect_directly_with_a_node)) },
-                placeholder = { Text(stringResource(R.string.node_address_placeholder)) },
-                maxLines = 1,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { onAction(SettingsAction.OnClickConnectNode) }),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = { onAction(SettingsAction.OnClickConnectNode) },
-                enabled = !uiState.isLoading && uiState.nodeAddress.isNotBlank(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-            ) {
-                Text(stringResource(R.string.connect))
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            OutlinedButton(
-                onClick = { onAction(SettingsAction.OnClickRescan) },
-                enabled = !uiState.isLoading && uiState.descriptorText.isNotBlank(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-            ) {
-                Text(stringResource(R.string.rescan))
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
