@@ -135,6 +135,24 @@ class FlorestaRpcImpl(
         )
     }
 
+    override suspend fun listDescriptors(): Flow<Result<JSONObject>> = flow {
+        Log.d(TAG, "listDescriptors: ")
+
+        val port = preferencesDataSource.getString(
+            key = PreferenceKeys.CURRENT_RPC_PORT,
+            defaultValue = Constants.RPC_PORT_SIGNET
+        )
+        var host: String = "http://127.0.0.1:$port"
+        val arguments = JSONArray()
+        emit(
+            sendJsonRpcRequest(
+                host,
+                RpcMethods.LIST_DESCRIPTORS.method,
+                arguments
+            )
+        )
+    }
+
     override suspend fun addNode(node: String): Flow<Result<AddNodeResponse>> {
         Log.d(TAG, "addNode: $node")
         val port = preferencesDataSource.getString(
