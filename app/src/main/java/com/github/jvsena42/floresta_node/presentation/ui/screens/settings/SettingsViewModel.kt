@@ -93,6 +93,7 @@ class SettingsViewModel(
             florestaRpc.listDescriptors().collect { result ->
                 result.onSuccess { data ->
                     Log.d(TAG, "getDescriptors: $data}")
+                    _uiState.update { it.copy(descriptors = listOf(data.toString())) }
                 }
             }
         }
