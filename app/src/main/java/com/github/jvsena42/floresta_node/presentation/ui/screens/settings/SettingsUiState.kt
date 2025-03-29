@@ -12,5 +12,6 @@ data class SettingsUiState(
     val errorMessage: String = "",
     val selectedNetwork: String = "",
     val isLoading: Boolean = false,
+    val descriptors: List<String> = emptyList(),
     val network: List<Network> = Network.entries,
 )

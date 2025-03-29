@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -21,7 +22,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -40,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
@@ -129,9 +134,26 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
 
-                Text(stringResource(R.string.descriptors), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.descriptors),
+                    style = MaterialTheme.typography.titleMedium
+                )
 
                 Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            items(uiState.descriptors) { descriptor ->
+                ListItem(
+                    headlineContent = { Text(descriptor) },
+                    trailingContent = { IconButton(onClick = { }) { Icon(painterResource(R.drawable.ic_settings), contentDescription = "Delete") } }
+                )
+            }
+
+            item {
+
+                if (uiState.descriptors.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
                 TextField(
                     value = uiState.descriptorText,
@@ -175,7 +197,13 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                     TextField(
                         value = uiState.selectedNetwork,
                         readOnly = true,
-                        onValueChange = { newText -> onAction(SettingsAction.OnNetworkSelected(newText)) },
+                        onValueChange = { newText ->
+                            onAction(
+                                SettingsAction.OnNetworkSelected(
+                                    newText
+                                )
+                            )
+                        },
                         label = { Text(stringResource(R.string.select_a_network)) },
                         supportingText = { Text(stringResource(R.string.the_application_will_be_restarted_to_update_the_network)) },
                         trailingIcon = {
@@ -212,7 +240,13 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                 TextField(
                     value = uiState.nodeAddress,
                     enabled = !uiState.isLoading,
-                    onValueChange = { newText -> onAction(SettingsAction.OnNodeAddressChanged(newText)) },
+                    onValueChange = { newText ->
+                        onAction(
+                            SettingsAction.OnNodeAddressChanged(
+                                newText
+                            )
+                        )
+                    },
                     label = { Text(stringResource(R.string.connect_directly_with_a_node)) },
                     placeholder = { Text(stringResource(R.string.node_address_placeholder)) },
                     maxLines = 1,
@@ -261,7 +295,8 @@ private fun Preview() {
         ScreenSettings(
             uiState = SettingsUiState(
                 electrumAddress = Constants.ELECTRUM_ADDRESS,
-                selectedNetwork = Network.SIGNET.name
+                selectedNetwork = Network.SIGNET.name,
+                descriptors = listOf("DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1", "DESCRIPTOR2", "DESCRIPTOR3", "DESCRIPTOR4")
             ),
             onAction = {}
         )
