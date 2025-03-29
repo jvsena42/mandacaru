@@ -41,6 +41,7 @@ class SettingsViewModel(
             )
         }
         updateElectrumAddress()
+        getDescriptors()
     }
 
     fun onAction(action: SettingsAction) {
@@ -85,6 +86,16 @@ class SettingsViewModel(
             defaultValue = if (BuildConfig.DEBUG) Constants.RPC_PORT_SIGNET else Constants.RPC_PORT_MAINNET
         )
         _uiState.update { it.copy(electrumAddress = "127.0.0.1:$port") }
+    }
+
+    private fun getDescriptors() {
+        viewModelScope.launch(Dispatchers.IO) {
+            florestaRpc.listDescriptors().collect { result ->
+                result.onSuccess { data ->
+                    Log.d(TAG, "getDescriptors: $data}")
+                }
+            }
+        }
     }
 
     private fun connectNode() {
