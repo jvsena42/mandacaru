@@ -19,6 +19,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -35,6 +36,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
@@ -94,6 +96,7 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
         }
     ) { contentPadding ->
         Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
@@ -104,8 +107,6 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
-
             val clipboardManager = LocalClipboardManager.current
             val message = stringResource(R.string.node_address_copied_to_clipboard)
 
@@ -115,7 +116,7 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
+                    .padding(horizontal = 8.dp, vertical = 16.dp)
                     .clickable {
                         clipboardManager.setText(AnnotatedString(uiState.electrumAddress))
                         scope.launch {
@@ -124,6 +125,10 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                         }
                     }
             )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
+
+            Text(stringResource(R.string.descriptors), style = MaterialTheme.typography.titleMedium)
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -154,7 +159,11 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                 Text(stringResource(R.string.update_descriptor))
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
+
+            Text(stringResource(R.string.network), style = MaterialTheme.typography.titleMedium)
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             var expanded by remember { mutableStateOf(false) }
 
@@ -193,7 +202,11 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
+
+            Text(stringResource(R.string.node), style = MaterialTheme.typography.titleMedium)
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             TextField(
                 value = uiState.nodeAddress,
