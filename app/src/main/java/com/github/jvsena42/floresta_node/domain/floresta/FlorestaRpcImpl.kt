@@ -93,7 +93,7 @@ class FlorestaRpcImpl(
                     )
                 },
                 onFailure = { e ->
-                    Log.d(TAG, "getPeerInfo: failure")
+                    Log.d(TAG, "getPeerInfo: failure: ${e.message}")
                     emit(Result.Companion.failure(e))
                 }
             )
