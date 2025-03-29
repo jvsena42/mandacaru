@@ -111,7 +111,7 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
 
             Text(
                 text = stringResource(R.string.node_address, uiState.electrumAddress),
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
