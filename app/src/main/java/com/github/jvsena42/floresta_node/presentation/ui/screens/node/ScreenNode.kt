@@ -68,7 +68,8 @@ fun ScreenNode(uiState: NodeUiState) {
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         stringResource(R.string.number_of_peers),
@@ -87,7 +88,7 @@ fun ScreenNode(uiState: NodeUiState) {
                     }
 
                     AnimatedVisibility(visible = uiState.numberOfPeers.isEmpty()) {
-                        LinearProgressIndicator(modifier = Modifier.padding(horizontal = 32.dp))
+                        LinearProgressIndicator(modifier = Modifier.width(100.dp))
                     }
                 }
             }
