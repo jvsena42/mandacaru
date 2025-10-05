@@ -2,6 +2,8 @@ package com.github.jvsena42.floresta_node.presentation.ui.screens.settings
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -178,64 +180,68 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                 )
             }
 
-            if (uiState.isDescriptorsExpanded) {
-                if (uiState.descriptors.isNotEmpty()) {
-                    item {
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
+            item {
+                AnimatedVisibility(
+                    visible = uiState.isDescriptorsExpanded,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        if (uiState.descriptors.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
 
-                    items(uiState.descriptors.size) { index ->
-                        ListItem(
-                            headlineContent = { Text(uiState.descriptors[index]) },
-                            trailingContent = {
-                                IconButton(onClick = { }) {
-                                    Icon(
-                                        painterResource(R.drawable.ic_delete),
-                                        contentDescription = stringResource(R.string.delete_descriptor)
-                                    )
-                                }
+                            uiState.descriptors.forEach { descriptor ->
+                                ListItem(
+                                    headlineContent = { Text(descriptor) },
+                                    trailingContent = {
+                                        IconButton(onClick = { }) {
+                                            Icon(
+                                                painterResource(R.drawable.ic_delete),
+                                                contentDescription = stringResource(R.string.delete_descriptor)
+                                            )
+                                        }
+                                    }
+                                )
                             }
-                        )
-                    }
-                }
+                        }
 
-                item {
-                    if (uiState.descriptors.isNotEmpty()) {
+                        if (uiState.descriptors.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+
+                        TextField(
+                            value = uiState.descriptorText,
+                            enabled = !uiState.isLoading,
+                            onValueChange = { newText ->
+                                onAction(SettingsAction.OnDescriptorChanged(newText))
+                            },
+                            label = { Text(stringResource(R.string.set_your_wallet_descriptor)) },
+                            placeholder = { Text(stringResource(R.string.descriptor_placeholder)) },
+                            maxLines = 1,
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(
+                                onDone = { onAction(SettingsAction.OnClickUpdateDescriptor) }
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Button(
+                            onClick = { onAction(SettingsAction.OnClickUpdateDescriptor) },
+                            enabled = !uiState.isLoading && uiState.descriptorText.isNotBlank(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp)
+                        ) {
+                            Text(stringResource(R.string.update_descriptor))
+                        }
+
                         Spacer(modifier = Modifier.height(16.dp))
                     }
-
-                    TextField(
-                        value = uiState.descriptorText,
-                        enabled = !uiState.isLoading,
-                        onValueChange = { newText ->
-                            onAction(SettingsAction.OnDescriptorChanged(newText))
-                        },
-                        label = { Text(stringResource(R.string.set_your_wallet_descriptor)) },
-                        placeholder = { Text(stringResource(R.string.descriptor_placeholder)) },
-                        maxLines = 1,
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(
-                            onDone = { onAction(SettingsAction.OnClickUpdateDescriptor) }
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = { onAction(SettingsAction.OnClickUpdateDescriptor) },
-                        enabled = !uiState.isLoading && uiState.descriptorText.isNotBlank(),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp)
-                    ) {
-                        Text(stringResource(R.string.update_descriptor))
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
 
@@ -252,50 +258,56 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                 )
             }
 
-            if (uiState.isNetworkExpanded) {
-                item {
-                    Spacer(modifier = Modifier.height(8.dp))
+            item {
+                AnimatedVisibility(
+                    visible = uiState.isNetworkExpanded,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    var expanded by remember { mutableStateOf(false) }
+                        var expanded by remember { mutableStateOf(false) }
 
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = !expanded }
-                    ) {
-                        TextField(
-                            value = uiState.selectedNetwork,
-                            readOnly = true,
-                            onValueChange = { },
-                            label = { Text(stringResource(R.string.select_a_network)) },
-                            supportingText = {
-                                Text(stringResource(R.string.the_application_will_be_restarted_to_update_the_network))
-                            },
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp)
-                                .menuAnchor()
-                        )
-
-                        ExposedDropdownMenu(
+                        ExposedDropdownMenuBox(
                             expanded = expanded,
-                            onDismissRequest = { expanded = false }
+                            onExpandedChange = { expanded = !expanded }
                         ) {
-                            uiState.network.forEach { network ->
-                                DropdownMenuItem(
-                                    text = { Text(network.name) },
-                                    onClick = {
-                                        onAction(SettingsAction.OnNetworkSelected(network.name))
-                                        expanded = false
-                                    }
-                                )
+                            TextField(
+                                value = uiState.selectedNetwork,
+                                readOnly = true,
+                                onValueChange = { },
+                                label = { Text(stringResource(R.string.select_a_network)) },
+                                supportingText = {
+                                    Text(stringResource(R.string.the_application_will_be_restarted_to_update_the_network))
+                                },
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp)
+                                    .menuAnchor()
+                            )
+
+                            ExposedDropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }
+                            ) {
+                                uiState.network.forEach { network ->
+                                    DropdownMenuItem(
+                                        text = { Text(network.name) },
+                                        onClick = {
+                                            onAction(SettingsAction.OnNetworkSelected(network.name))
+                                            expanded = false
+                                        }
+                                    )
+                                }
                             }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
             }
 
@@ -312,54 +324,60 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                 )
             }
 
-            if (uiState.isNodeExpanded) {
-                item {
-                    Spacer(modifier = Modifier.height(8.dp))
+            item {
+                AnimatedVisibility(
+                    visible = uiState.isNodeExpanded,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    TextField(
-                        value = uiState.nodeAddress,
-                        enabled = !uiState.isLoading,
-                        onValueChange = { newText ->
-                            onAction(SettingsAction.OnNodeAddressChanged(newText))
-                        },
-                        label = { Text(stringResource(R.string.connect_directly_with_a_node)) },
-                        placeholder = { Text(stringResource(R.string.node_address_placeholder)) },
-                        maxLines = 1,
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(
-                            onDone = { onAction(SettingsAction.OnClickConnectNode) }
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp)
-                    )
+                        TextField(
+                            value = uiState.nodeAddress,
+                            enabled = !uiState.isLoading,
+                            onValueChange = { newText ->
+                                onAction(SettingsAction.OnNodeAddressChanged(newText))
+                            },
+                            label = { Text(stringResource(R.string.connect_directly_with_a_node)) },
+                            placeholder = { Text(stringResource(R.string.node_address_placeholder)) },
+                            maxLines = 1,
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(
+                                onDone = { onAction(SettingsAction.OnClickConnectNode) }
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp)
+                        )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                    Button(
-                        onClick = { onAction(SettingsAction.OnClickConnectNode) },
-                        enabled = !uiState.isLoading && uiState.nodeAddress.isNotBlank(),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp)
-                    ) {
-                        Text(stringResource(R.string.connect))
+                        Button(
+                            onClick = { onAction(SettingsAction.OnClickConnectNode) },
+                            enabled = !uiState.isLoading && uiState.nodeAddress.isNotBlank(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp)
+                        ) {
+                            Text(stringResource(R.string.connect))
+                        }
+
+                        Spacer(modifier = Modifier.height(32.dp))
+
+                        OutlinedButton(
+                            onClick = { onAction(SettingsAction.OnClickRescan) },
+                            enabled = !uiState.isLoading && uiState.descriptorText.isNotBlank(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp)
+                        ) {
+                            Text(stringResource(R.string.rescan))
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    OutlinedButton(
-                        onClick = { onAction(SettingsAction.OnClickRescan) },
-                        enabled = !uiState.isLoading && uiState.descriptorText.isNotBlank(),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp)
-                    ) {
-                        Text(stringResource(R.string.rescan))
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
@@ -380,6 +398,29 @@ private fun Preview() {
                     "DESCRIPTOR3",
                     "DESCRIPTOR4"
                 )
+            ),
+            onAction = {}
+        )
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun Preview2() {
+    FlorestaNodeTheme {
+        ScreenSettings(
+            uiState = SettingsUiState(
+                electrumAddress = Constants.ELECTRUM_ADDRESS,
+                selectedNetwork = Network.SIGNET.name,
+                descriptors = listOf(
+                    "DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1",
+                    "DESCRIPTOR2",
+                    "DESCRIPTOR3",
+                    "DESCRIPTOR4"
+                ),
+                isNodeExpanded = true,
+                isNetworkExpanded = true,
+                isDescriptorsExpanded = true
             ),
             onAction = {}
         )
