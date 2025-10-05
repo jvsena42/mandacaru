@@ -4,24 +4,33 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -60,41 +69,61 @@ private fun MainScreen(
     var navigationSelectedItem by remember { mutableStateOf(Destinations.NODE) }
     val navController = rememberNavController()
 
-    Scaffold(modifier = modifier,
+    Scaffold(
+        modifier = modifier,
         bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                contentColor = MaterialTheme.colorScheme.contentColorFor(
-                    MaterialTheme.colorScheme.onTertiaryContainer
-                ),
+            AnimatedVisibility(
+                visible = true,
+                enter = slideInVertically(initialOffsetY = { it }),
+                exit = slideOutVertically(targetOffsetY = { it })
             ) {
-                Destinations.entries.forEach { destination ->
-                    NavigationBarItem(
-                        selected = destination == navigationSelectedItem,
-                        onClick = {
-                            navigationSelectedItem = destination
-                            navController.navigate(destination.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    tonalElevation = 0.dp,
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .shadow(
+                            elevation = 8.dp,
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                ) {
+                    Destinations.entries.forEach { destination ->
+                        NavigationBarItem(
+                            selected = destination == navigationSelectedItem,
+                            onClick = {
+                                navigationSelectedItem = destination
+                                navController.navigate(destination.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        label = {
-                            Text(
-                                destination.label,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            },
+                            label = {
+                                Text(
+                                    destination.label,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = if (destination == navigationSelectedItem)
+                                        FontWeight.Bold else FontWeight.Normal
+                                )
+                            },
+                            icon = {
+                                Icon(
+                                    painter = painterResource(destination.icon),
+                                    contentDescription = destination.label
+                                )
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                        },
-                        icon = {
-                            Icon(
-                                painter = painterResource(destination.icon),
-                                contentDescription = destination.label,
-                                tint = MaterialTheme.colorScheme.onTertiaryContainer
-                            )
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
@@ -123,11 +152,13 @@ private fun MainScreen(
 @Composable
 private fun Preview() {
     FlorestaNodeTheme {
-        MainScreen(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-            restartApplication = {}
-        )
+        Surface {
+            MainScreen(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+                restartApplication = {}
+            )
+        }
     }
 }

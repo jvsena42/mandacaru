@@ -65,6 +65,7 @@ dependencies {
     implementation(libs.koin.compose)
     implementation(libs.koin.android)
     implementation(libs.koin.test)
+    implementation("androidx.compose.material:material-icons-extended:1.7.6")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
