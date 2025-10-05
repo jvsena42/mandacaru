@@ -22,7 +22,8 @@
         <activity
             android:name=".presentation.ui.screens.main.MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.Floresta_node">
+            android:theme="@style/Theme.Floresta_node"
+            android:windowSoftInputMode="adjustResize|stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

@@ -24,7 +24,6 @@ class FlorestaService : Service() {
     override fun onCreate() {
         super.onCreate()
         startForeground(FLORESTA_NOTIFICATION_ID, createNotification())
-        // Your service logic here...
     }
 
     private fun createNotification(): Notification {
@@ -42,7 +41,7 @@ class FlorestaService : Service() {
 
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
             .setContentTitle("Floresta Node")
-            .setContentText("Floresta node is running in the background")
+            .setContentText("Floresta node is running in background")
             .setSmallIcon(R.drawable.ic_app_icon)
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .setAutoCancel(false)
