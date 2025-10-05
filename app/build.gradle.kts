@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.github.jvsena42.floresta_node"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.github.jvsena42.floresta_node"
         minSdk = 29
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
