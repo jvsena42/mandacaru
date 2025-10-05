@@ -5,33 +5,47 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.NetworkCheck
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -42,10 +56,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -93,7 +110,13 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(stringResource(R.string.settings)) },
+                title = {
+                    Text(
+                        stringResource(R.string.settings),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
             )
         },
         snackbarHost = {
@@ -109,70 +132,108 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
         ) {
             item {
                 AnimatedVisibility(visible = uiState.isLoading) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(3.dp)
+                    )
                 }
+            }
 
+            // Electrum Address Card
+            item {
                 val clipboardManager = LocalClipboardManager.current
                 val message = stringResource(R.string.node_address_copied_to_clipboard)
 
-                Text(
-                    text = stringResource(R.string.node_address, uiState.electrumAddress),
-                    style = MaterialTheme.typography.titleMedium,
-                    textAlign = TextAlign.Center,
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 16.dp)
+                        .padding(16.dp)
                         .clickable {
                             clipboardManager.setText(AnnotatedString(uiState.electrumAddress))
                             scope.launch {
                                 snackBarHostState.showSnackbar(message = message)
-                                onAction(SettingsAction.ClearSnackBarMessage)
                             }
+                        },
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Node Address",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                uiState.electrumAddress,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
                         }
-                )
+                        Icon(
+                            Icons.Outlined.ContentCopy,
+                            contentDescription = "Copy",
+                            modifier = Modifier.size(24.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
             // Descriptors Section
             item {
-                ExpandableHeader(
+                SectionCard(
                     title = stringResource(R.string.descriptors),
+                    icon = Icons.Outlined.Wallet,
                     isExpanded = uiState.isDescriptorsExpanded,
                     onToggle = { onAction(SettingsAction.ToggleDescriptorsExpanded) }
-                )
-            }
-
-            item {
-                AnimatedVisibility(
-                    visible = uiState.isDescriptorsExpanded,
-                    enter = expandVertically(),
-                    exit = shrinkVertically()
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         if (uiState.descriptors.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-
                             uiState.descriptors.forEach { descriptor ->
                                 ListItem(
-                                    headlineContent = { Text(descriptor) },
+                                    headlineContent = {
+                                        Text(
+                                            descriptor,
+                                            fontFamily = FontFamily.Monospace,
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    },
                                     trailingContent = {
                                         IconButton(onClick = { }) {
                                             Icon(
                                                 painterResource(R.drawable.ic_delete),
-                                                contentDescription = stringResource(R.string.delete_descriptor)
+                                                contentDescription = stringResource(R.string.delete_descriptor),
+                                                tint = MaterialTheme.colorScheme.error
                                             )
                                         }
-                                    }
+                                    },
+                                    colors = ListItemDefaults.colors(
+                                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                                    ),
+                                    modifier = Modifier
+                                        .padding(vertical = 4.dp)
+                                        .clip(RoundedCornerShape(8.dp))
                                 )
                             }
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
 
-                        if (uiState.descriptors.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                        }
-
-                        TextField(
+                        OutlinedTextField(
                             value = uiState.descriptorText,
                             enabled = !uiState.isLoading,
                             onValueChange = { newText ->
@@ -182,74 +243,54 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                             placeholder = { Text(stringResource(R.string.descriptor_placeholder)) },
                             maxLines = 1,
                             singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
                             keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(
                                 onDone = { onAction(SettingsAction.OnClickUpdateDescriptor) }
                             ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp)
+                            modifier = Modifier.fillMaxWidth()
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         Button(
                             onClick = { onAction(SettingsAction.OnClickUpdateDescriptor) },
                             enabled = !uiState.isLoading && uiState.descriptorText.isNotBlank(),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(stringResource(R.string.update_descriptor))
                         }
-
-                        Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
             }
 
-            item {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-            }
-
             // Network Section
             item {
-                ExpandableHeader(
+                SectionCard(
                     title = stringResource(R.string.network),
+                    icon = Icons.Outlined.NetworkCheck,
                     isExpanded = uiState.isNetworkExpanded,
                     onToggle = { onAction(SettingsAction.ToggleNetworkExpanded) }
-                )
-            }
-
-            item {
-                AnimatedVisibility(
-                    visible = uiState.isNetworkExpanded,
-                    enter = expandVertically(),
-                    exit = shrinkVertically()
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-
                         var expanded by remember { mutableStateOf(false) }
 
                         ExposedDropdownMenuBox(
                             expanded = expanded,
                             onExpandedChange = { expanded = !expanded }
                         ) {
-                            TextField(
+                            OutlinedTextField(
                                 value = uiState.selectedNetwork,
                                 readOnly = true,
                                 onValueChange = { },
                                 label = { Text(stringResource(R.string.select_a_network)) },
-                                supportingText = {
-                                    Text(stringResource(R.string.the_application_will_be_restarted_to_update_the_network))
-                                },
                                 trailingIcon = {
                                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                                 },
+                                shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 8.dp)
                                     .menuAnchor()
                             )
 
@@ -269,34 +310,34 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                            )
+                        ) {
+                            Text(
+                                stringResource(R.string.the_application_will_be_restarted_to_update_the_network),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
                     }
                 }
             }
 
-            item {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-            }
-
             // Node Section
             item {
-                ExpandableHeader(
+                SectionCard(
                     title = stringResource(R.string.node),
+                    icon = Icons.Outlined.Refresh,
                     isExpanded = uiState.isNodeExpanded,
                     onToggle = { onAction(SettingsAction.ToggleNodeExpanded) }
-                )
-            }
-
-            item {
-                AnimatedVisibility(
-                    visible = uiState.isNodeExpanded,
-                    enter = expandVertically(),
-                    exit = shrinkVertically()
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        TextField(
+                        OutlinedTextField(
                             value = uiState.nodeAddress,
                             enabled = !uiState.isLoading,
                             onValueChange = { newText ->
@@ -306,41 +347,92 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                             placeholder = { Text(stringResource(R.string.node_address_placeholder)) },
                             maxLines = 1,
                             singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
                             keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(
                                 onDone = { onAction(SettingsAction.OnClickConnectNode) }
                             ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp)
+                            modifier = Modifier.fillMaxWidth()
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         Button(
                             onClick = { onAction(SettingsAction.OnClickConnectNode) },
                             enabled = !uiState.isLoading && uiState.nodeAddress.isNotBlank(),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(stringResource(R.string.connect))
                         }
 
-                        Spacer(modifier = Modifier.height(32.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                        OutlinedButton(
-                            onClick = { onAction(SettingsAction.OnClickRescan) },
-                            enabled = !uiState.isLoading && uiState.descriptorText.isNotBlank(),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp)
-                        ) {
-                            Text(stringResource(R.string.rescan))
-                        }
+                        HorizontalDivider()
 
                         Spacer(modifier = Modifier.height(16.dp))
+
+                        FilledTonalButton(
+                            onClick = { onAction(SettingsAction.OnClickRescan) },
+                            enabled = !uiState.isLoading && uiState.descriptorText.isNotBlank(),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(
+                                Icons.Outlined.Refresh,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.size(8.dp))
+                            Text(stringResource(R.string.rescan))
+                        }
                     }
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionCard(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            ExpandableHeader(
+                title = title,
+                icon = icon,
+                isExpanded = isExpanded,
+                onToggle = onToggle
+            )
+
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp)
+                ) {
+                    content()
                 }
             }
         }
@@ -351,41 +443,18 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
 @Composable
 private fun Preview() {
     FlorestaNodeTheme {
-        ScreenSettings(
-            uiState = SettingsUiState(
-                electrumAddress = Constants.ELECTRUM_ADDRESS,
-                selectedNetwork = Network.SIGNET.name,
-                descriptors = listOf(
-                    "DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1",
-                    "DESCRIPTOR2",
-                    "DESCRIPTOR3",
-                    "DESCRIPTOR4"
-                )
-            ),
-            onAction = {}
-        )
-    }
-}
-
-@PreviewLightDark
-@Composable
-private fun Preview2() {
-    FlorestaNodeTheme {
-        ScreenSettings(
-            uiState = SettingsUiState(
-                electrumAddress = Constants.ELECTRUM_ADDRESS,
-                selectedNetwork = Network.SIGNET.name,
-                descriptors = listOf(
-                    "DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1DESCRIPTOR1",
-                    "DESCRIPTOR2",
-                    "DESCRIPTOR3",
-                    "DESCRIPTOR4"
+        Surface {
+            ScreenSettings(
+                uiState = SettingsUiState(
+                    electrumAddress = Constants.ELECTRUM_ADDRESS,
+                    selectedNetwork = Network.SIGNET.name,
+                    descriptors = listOf(
+                        "wpkh([d34db33f/84'/0'/0']xpub6CUGRUo...)",
+                        "wpkh([d34db33f/84'/0'/1']xpub6CUGRUo...)"
+                    )
                 ),
-                isNodeExpanded = true,
-                isNetworkExpanded = true,
-                isDescriptorsExpanded = true
-            ),
-            onAction = {}
-        )
+                onAction = {}
+            )
+        }
     }
 }

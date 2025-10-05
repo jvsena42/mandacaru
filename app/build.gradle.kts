@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.github.jvsena42.floresta_node"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.github.jvsena42.floresta_node"
         minSdk = 29
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -65,6 +65,7 @@ dependencies {
     implementation(libs.koin.compose)
     implementation(libs.koin.android)
     implementation(libs.koin.test)
+    implementation("androidx.compose.material:material-icons-extended:1.7.6")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
