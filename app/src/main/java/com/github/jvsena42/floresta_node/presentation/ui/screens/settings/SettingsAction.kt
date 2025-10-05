@@ -10,4 +10,7 @@ sealed interface SettingsAction {
     object OnClickConnectNode: SettingsAction
     object OnClickRescan: SettingsAction
     object ClearSnackBarMessage: SettingsAction
+    object ToggleDescriptorsExpanded: SettingsAction
+    object ToggleNetworkExpanded: SettingsAction
+    object ToggleNodeExpanded: SettingsAction
 }

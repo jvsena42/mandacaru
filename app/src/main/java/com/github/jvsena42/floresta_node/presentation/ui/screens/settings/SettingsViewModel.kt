@@ -62,6 +62,19 @@ class SettingsViewModel(
             }
 
             is SettingsAction.OnNetworkSelected -> handleNetworkSelected(action)
+            SettingsAction.ToggleDescriptorsExpanded -> _uiState.update {
+                it.copy(
+                    isDescriptorsExpanded = !it.isDescriptorsExpanded
+                )
+            }
+
+            SettingsAction.ToggleNetworkExpanded -> _uiState.update {
+                it.copy(isNetworkExpanded = !it.isNetworkExpanded)
+            }
+
+            SettingsAction.ToggleNodeExpanded -> _uiState.update {
+                it.copy(isNodeExpanded = !it.isNodeExpanded)
+            }
         }
     }
 
