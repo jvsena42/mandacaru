@@ -3,7 +3,7 @@
 
 @file:Suppress("NAME_SHADOWING")
 
-package com.florestad
+package com.florestad;
 
 // Common helper code.
 //
