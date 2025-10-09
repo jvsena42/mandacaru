@@ -1,7 +1,6 @@
 package com.github.jvsena42.floresta_node.presentation.ui.screens.node
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -44,12 +43,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.jvsena42.floresta_node.R
 import com.github.jvsena42.floresta_node.presentation.ui.theme.FlorestaNodeTheme
+import com.github.jvsena42.floresta_node.presentation.utils.RequestNotificationPermissions
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun ScreenNode(
     viewModel: NodeViewModel = koinViewModel()
 ) {
+    RequestNotificationPermissions(onPermissionChange = {})
+
     val uiState by viewModel.uiState.collectAsState()
     ScreenNode(uiState)
 }

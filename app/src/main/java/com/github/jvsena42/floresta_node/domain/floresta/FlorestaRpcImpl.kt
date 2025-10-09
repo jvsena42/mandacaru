@@ -198,7 +198,7 @@ class FlorestaRpcImpl(
                 key = PreferenceKeys.CURRENT_RPC_PORT,
                 defaultValue = Constants.RPC_PORT_SIGNET
             )
-            var host: String = "http://127.0.0.1:$port"
+            val host: String = "http://127.0.0.1:$port"
             val arguments = JSONArray()
 
             sendJsonRpcRequest(

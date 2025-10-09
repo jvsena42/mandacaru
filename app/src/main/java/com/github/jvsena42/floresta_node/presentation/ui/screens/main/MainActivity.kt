@@ -1,6 +1,9 @@
 package com.github.jvsena42.floresta_node.presentation.ui.screens.main
 
+import android.app.NotificationManager
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -22,7 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -36,16 +38,33 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.github.jvsena42.floresta_node.domain.floresta.FlorestaService
+import com.github.jvsena42.floresta_node.domain.floresta.FlorestaService.Companion.CHANNEL_ID
 import com.github.jvsena42.floresta_node.presentation.ui.screens.node.ScreenNode
 import com.github.jvsena42.floresta_node.presentation.ui.screens.search.ScreenSearch
 import com.github.jvsena42.floresta_node.presentation.ui.screens.settings.ScreenSettings
 import com.github.jvsena42.floresta_node.presentation.ui.theme.FlorestaNodeTheme
+import com.github.jvsena42.floresta_node.presentation.utils.RequestNotificationPermissions
+import com.github.jvsena42.floresta_node.presentation.utils.initNotificationChannel
 import com.github.jvsena42.floresta_node.presentation.utils.restartApplication
 import org.koin.androidx.compose.KoinAndroidContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        runCatching {
+            initNotificationChannel(
+                id = CHANNEL_ID,
+                name = "Floresta node notification",
+                desc = "Channel for Floresta node service",
+                importance = NotificationManager.IMPORTANCE_LOW
+            )
+
+            startForegroundService(Intent(this, FlorestaService::class.java))
+        }.onFailure { exception ->
+            Log.e("MainActivity", "Failure stating service", exception)
+        }
+
         enableEdgeToEdge()
         setContent {
             FlorestaNodeTheme {
