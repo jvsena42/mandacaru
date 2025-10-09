@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.github.jvsena42.floresta_node.FlorestaNodeApplication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -71,6 +72,15 @@ class FlorestaService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "onStartCommand: ")
         try {
+            when (intent?.action) {
+                ACTION_STOP_SERVICE_AND_APP -> {
+                    // Close all activities
+                    FlorestaNodeApplication.currentActivity?.value?.finishAndRemoveTask()
+                    // Stop the service
+                    stopSelf()
+                    return START_NOT_STICKY
+                }
+            }
             ioScope.launch {
                 Log.d(TAG, "onStartCommand: ")
                 florestaDaemon.start()
