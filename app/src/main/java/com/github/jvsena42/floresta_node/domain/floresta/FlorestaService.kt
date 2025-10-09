@@ -79,5 +79,6 @@ class FlorestaService : Service() {
     companion object {
         private const val TAG = "FlorestaService"
         private const val FLORESTA_NOTIFICATION_ID = 1000
+        const val CHANNEL_ID = "floresta_notification_channel_id"
     }
 }
