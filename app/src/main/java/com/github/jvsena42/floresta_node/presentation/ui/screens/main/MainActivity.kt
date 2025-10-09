@@ -22,7 +22,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -40,6 +39,7 @@ import com.github.jvsena42.floresta_node.presentation.ui.screens.node.ScreenNode
 import com.github.jvsena42.floresta_node.presentation.ui.screens.search.ScreenSearch
 import com.github.jvsena42.floresta_node.presentation.ui.screens.settings.ScreenSettings
 import com.github.jvsena42.floresta_node.presentation.ui.theme.FlorestaNodeTheme
+import com.github.jvsena42.floresta_node.presentation.utils.RequestNotificationPermissions
 import com.github.jvsena42.floresta_node.presentation.utils.restartApplication
 import org.koin.androidx.compose.KoinAndroidContext
 
@@ -69,6 +69,8 @@ private fun MainScreen(
 ) {
     var navigationSelectedItem by rememberSaveable { mutableStateOf(Destinations.NODE) }
     val navController = rememberNavController()
+
+    RequestNotificationPermissions(onPermissionChange = {})
 
     Scaffold(
         modifier = modifier,

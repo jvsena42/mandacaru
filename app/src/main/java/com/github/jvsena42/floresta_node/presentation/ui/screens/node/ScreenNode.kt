@@ -1,7 +1,6 @@
 package com.github.jvsena42.floresta_node.presentation.ui.screens.node
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
