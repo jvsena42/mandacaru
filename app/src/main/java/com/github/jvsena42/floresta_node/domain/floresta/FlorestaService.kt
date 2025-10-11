@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.os.Build
 import android.os.IBinder
 import android.os.Process
 import android.util.Log
@@ -104,7 +105,6 @@ class FlorestaService : Service() {
                 stopServiceAndExitApp()
                 return START_NOT_STICKY
             }
-
             else -> {
                 try {
                     ioScope.launch {
@@ -123,7 +123,11 @@ class FlorestaService : Service() {
     private fun stopServiceAndExitApp() {
         Log.d(TAG, "stopServiceAndExitApp called")
 
-        // Stop daemon in background
+        // Immediately remove notification for instant feedback
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        Log.d(TAG, "Notification removed")
+
+        // Stop daemon and exit asynchronously
         ioScope.launch {
             try {
                 Log.d(TAG, "Stopping Floresta daemon")
@@ -140,7 +144,6 @@ class FlorestaService : Service() {
             sendBroadcast(Intent(ACTION_EXIT_APP))
 
             // Stop service
-            stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
 
             // Small delay before killing process
