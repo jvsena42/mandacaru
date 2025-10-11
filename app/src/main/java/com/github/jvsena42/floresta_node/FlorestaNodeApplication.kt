@@ -1,12 +1,8 @@
 package com.github.jvsena42.floresta_node
 
-import android.annotation.SuppressLint
-import android.app.Activity
 import android.app.Application
-import android.app.Application.ActivityLifecycleCallbacks
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
-import android.os.Bundle
 import android.util.Log
 import com.github.jvsena42.floresta_node.data.FlorestaRpc
 import com.github.jvsena42.floresta_node.data.PreferencesDataSource
@@ -28,7 +24,6 @@ import org.koin.dsl.module
 class FlorestaNodeApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        currentActivity = CurrentActivity().also { registerActivityLifecycleCallbacks(it) }
         startKoin {
             androidLogger()
             androidContext(this@FlorestaNodeApplication)
@@ -37,16 +32,6 @@ class FlorestaNodeApplication : Application() {
                 domainModule
             )
         }
-        try {
-            startForegroundService(Intent(this, FlorestaService::class.java))
-        } catch (e: Exception) {
-            Log.e("FlorestaApplication", "onCreate: ", e)
-        }
-    }
-
-    companion object {
-        @SuppressLint("StaticFieldLeak")
-        internal var currentActivity: CurrentActivity? = null
     }
 }
 
@@ -69,26 +54,4 @@ val domainModule = module {
             sharedPreferences = androidContext().getSharedPreferences("floresta", MODE_PRIVATE)
         )
     }
-}
-
-class CurrentActivity : ActivityLifecycleCallbacks {
-    var value: Activity? = null
-        private set
-
-    override fun onActivityCreated(activity: Activity, bundle: Bundle?) {
-        this.value = activity
-    }
-
-    override fun onActivityStarted(activity: Activity) {
-        this.value = activity
-    }
-
-    override fun onActivityResumed(activity: Activity) {
-        this.value = activity
-    }
-
-    override fun onActivityPaused(activity: Activity) = Unit
-    override fun onActivityStopped(activity: Activity) = Unit
-    override fun onActivitySaveInstanceState(activity: Activity, bundle: Bundle) = Unit
-    override fun onActivityDestroyed(activity: Activity) = Unit
 }

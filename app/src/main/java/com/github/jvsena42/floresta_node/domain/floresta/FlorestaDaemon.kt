@@ -13,6 +13,7 @@ import com.florestad.Network as FlorestaNetwork
 interface FlorestaDaemon {
     suspend fun start()
     suspend fun stop()
+    fun isRunning(): Boolean
 }
 
 class FlorestaDaemonImpl(
@@ -20,8 +21,9 @@ class FlorestaDaemonImpl(
     private val preferencesDataSource: PreferencesDataSource
 ) : FlorestaDaemon {
 
-    var isRunning = false
-    private lateinit var daemon: Florestad
+    private var isRunning = false
+    private var daemon: Florestad? = null
+
     override suspend fun start() {
         Log.d(TAG, "start: ")
         if (isRunning) {
@@ -39,20 +41,35 @@ class FlorestaDaemonImpl(
                 ).toFlorestaNetwork(),
             )
             daemon = Florestad.fromConfig(config)
-            daemon.start().also {
+            daemon?.start()?.also {
                 Log.i(TAG, "start: Floresta running with config $config")
                 isRunning = true
             }
         } catch (e: Exception) {
             Log.e(TAG, "start error: ", e)
+            isRunning = false
         }
     }
 
     override suspend fun stop() {
-        if (!isRunning) return
-        daemon.stop()
-        isRunning = false
+        Log.d(TAG, "stop: isRunning=$isRunning")
+        if (!isRunning) {
+            Log.d(TAG, "stop: Daemon not running, nothing to stop")
+            return
+        }
+
+        try {
+            daemon?.stop()
+            Log.i(TAG, "stop: Floresta daemon stopped successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "stop error: ", e)
+        } finally {
+            isRunning = false
+            daemon = null
+        }
     }
+
+    override fun isRunning(): Boolean = isRunning
 
     companion object {
         private const val TAG = "FlorestaDaemonImpl"
