@@ -9,6 +9,7 @@ import com.github.jvsena42.floresta_node.domain.model.florestaRPC.RpcMethods
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.AddNodeResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetBlockchainInfoResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetPeerInfoResponse
+import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetTransactionResponse
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -17,10 +18,6 @@ import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
-import kotlin.apply
-import kotlin.fold
-import kotlin.jvm.java
-import kotlin.text.orEmpty
 
 class FlorestaRpcImpl(
     private val gson: Gson,
@@ -32,7 +29,7 @@ class FlorestaRpcImpl(
             key = PreferenceKeys.CURRENT_RPC_PORT,
             defaultValue = Constants.RPC_PORT_SIGNET
         )
-        var host: String = "http://127.0.0.1:$port"
+        val host = "http://127.0.0.1:$port"
 
         Log.d(TAG, "rescan: host:$host")
         val arguments = JSONArray()
@@ -53,7 +50,7 @@ class FlorestaRpcImpl(
             key = PreferenceKeys.CURRENT_RPC_PORT,
             defaultValue = Constants.RPC_PORT_SIGNET
         )
-        var host: String = "http://127.0.0.1:$port"
+        val host = "http://127.0.0.1:$port"
         val arguments = JSONArray()
         arguments.put(descriptor)
 
@@ -73,7 +70,7 @@ class FlorestaRpcImpl(
                 key = PreferenceKeys.CURRENT_RPC_PORT,
                 defaultValue = Constants.RPC_PORT_SIGNET
             )
-            var host: String = "http://127.0.0.1:$port"
+            val host = "http://127.0.0.1:$port"
             val arguments = JSONArray()
 
             sendJsonRpcRequest(
@@ -94,7 +91,7 @@ class FlorestaRpcImpl(
                 },
                 onFailure = { e ->
                     Log.d(TAG, "getPeerInfo: failure: ${e.message}")
-                    emit(Result.Companion.failure(e))
+                    emit(Result.failure(e))
                 }
             )
         }
@@ -105,7 +102,7 @@ class FlorestaRpcImpl(
             key = PreferenceKeys.CURRENT_RPC_PORT,
             defaultValue = Constants.RPC_PORT_SIGNET
         )
-        var host: String = "http://127.0.0.1:$port"
+        val host = "http://127.0.0.1:$port"
         val arguments = JSONArray()
 
         emit(
@@ -117,21 +114,41 @@ class FlorestaRpcImpl(
         )
     }
 
-    override suspend fun getTransaction(txId: String): Flow<Result<JSONObject>> = flow {
+    override suspend fun getTransaction(txId: String): Flow<Result<GetTransactionResponse>> = flow {
         Log.d(TAG, "getTransaction: $txId")
         val port = preferencesDataSource.getString(
             key = PreferenceKeys.CURRENT_RPC_PORT,
             defaultValue = Constants.RPC_PORT_SIGNET
         )
-        var host: String = "http://127.0.0.1:$port"
+        val host = "http://127.0.0.1:$port"
         val arguments = JSONArray()
         arguments.put(txId)
-        emit(
-            sendJsonRpcRequest(
-                host,
-                RpcMethods.GET_TRANSACTION.method,
-                arguments
-            )
+
+        sendJsonRpcRequest(
+            host,
+            RpcMethods.GET_TRANSACTION.method,
+            arguments
+        ).fold(
+            onSuccess = { json ->
+                Log.d(TAG, "getTransaction success: $json")
+                try {
+                    emit(
+                        Result.success(
+                            gson.fromJson(
+                                json.toString(),
+                                GetTransactionResponse::class.java
+                            )
+                        )
+                    )
+                } catch (e: Exception) {
+                    Log.e(TAG, "getTransaction parse error: ${e.message}")
+                    emit(Result.failure(Exception("Failed to parse transaction data: ${e.message}")))
+                }
+            },
+            onFailure = { e ->
+                Log.e(TAG, "getTransaction failure: ${e.message}")
+                emit(Result.failure(e))
+            }
         )
     }
 
@@ -142,7 +159,7 @@ class FlorestaRpcImpl(
             key = PreferenceKeys.CURRENT_RPC_PORT,
             defaultValue = Constants.RPC_PORT_SIGNET
         )
-        var host: String = "http://127.0.0.1:$port"
+        val host = "http://127.0.0.1:$port"
         val arguments = JSONArray()
         emit(
             sendJsonRpcRequest(
@@ -159,7 +176,7 @@ class FlorestaRpcImpl(
             key = PreferenceKeys.CURRENT_RPC_PORT,
             defaultValue = Constants.RPC_PORT_SIGNET
         )
-        var host: String = "http://127.0.0.1:$port"
+        val host = "http://127.0.0.1:$port"
         val arguments = JSONArray()
         arguments.put(node)
 
@@ -185,7 +202,7 @@ class FlorestaRpcImpl(
 
                 },
                 onFailure = { e ->
-                    emit(Result.Companion.failure(e))
+                    emit(Result.failure(e))
                 }
             )
         }
@@ -198,7 +215,7 @@ class FlorestaRpcImpl(
                 key = PreferenceKeys.CURRENT_RPC_PORT,
                 defaultValue = Constants.RPC_PORT_SIGNET
             )
-            val host: String = "http://127.0.0.1:$port"
+            val host = "http://127.0.0.1:$port"
             val arguments = JSONArray()
 
             sendJsonRpcRequest(
@@ -217,12 +234,12 @@ class FlorestaRpcImpl(
                     )
                 },
                 onFailure = { e ->
-                    emit(Result.Companion.failure(e))
+                    emit(Result.failure(e))
                 }
             )
         }
 
-    suspend fun sendJsonRpcRequest(
+    private suspend fun sendJsonRpcRequest(
         endpoint: String,
         method: String,
         params: JSONArray,
@@ -259,7 +276,7 @@ class FlorestaRpcImpl(
             }
         } catch (e: Exception) {
             Log.e(TAG, "sendJsonRpcRequest error:", e)
-            Result.Companion.failure(e)
+            Result.failure(e)
         }
     }
 
