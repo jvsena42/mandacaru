@@ -1055,7 +1055,8 @@ enum class Network {
     BITCOIN,
     SIGNET,
     TESTNET,
-    REGTEST;
+    REGTEST,
+    TESTNET4;
     companion object
 }
 
