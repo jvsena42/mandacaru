@@ -28,7 +28,7 @@ class NodeViewModel(
     private fun getInLoop() {
         viewModelScope.launch(Dispatchers.IO) {
             getInfo()
-            delay(3.seconds)
+            delay(10.seconds)
             getInLoop()
         }
     }
@@ -49,18 +49,25 @@ class NodeViewModel(
                             validatedBLocks = data.result.validated
                         )
                     }
+
+                    if (!data.result.ibd) {
+                        updatePeerInfo()
+                    }
                 }
             }
-            florestaRpc.getPeerInfo().collect { result ->
-                Log.d(TAG, "getPeerInfo: ${result.getOrNull()}")
-                result.onSuccess { data ->
-                    val peers = data.result.orEmpty()
-                    if (peers.isNotEmpty()) {
-                        _uiState.update {
-                            it.copy(
-                                numberOfPeers = peers.size.toString(),
-                            )
-                        }
+        }
+    }
+
+    private suspend fun updatePeerInfo() {
+        florestaRpc.getPeerInfo().collect { result ->
+            Log.d(TAG, "getPeerInfo: ${result.getOrNull()}")
+            result.onSuccess { data ->
+                val peers = data.result.orEmpty()
+                if (peers.isNotEmpty()) {
+                    _uiState.update {
+                        it.copy(
+                            numberOfPeers = peers.size.toString(),
+                        )
                     }
                 }
             }
