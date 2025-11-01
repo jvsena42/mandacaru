@@ -15,6 +15,7 @@ fun Network.getRpcPort() : String {
         Network.SIGNET -> Constants.RPC_PORT_SIGNET
         Network.TESTNET -> Constants.RPC_PORT_TESTNET
         Network.REGTEST -> Constants.RPC_PORT_REGTEST
+        Network.TESTNET4 -> Constants.RPC_PORT_TESTNET_4
     }
 }
 
