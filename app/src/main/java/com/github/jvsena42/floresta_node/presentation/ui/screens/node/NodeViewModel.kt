@@ -45,6 +45,7 @@ class NodeViewModel(
                             network = data.result.chain.uppercase(),
                             blockHash = data.result.bestBlock,
                             syncPercentage = (data.result.progress * 100).roundToInt(),
+                            syncDecimal = data.result.progress,
                             validatedBLocks = data.result.validated
                         )
                     }

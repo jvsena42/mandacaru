@@ -114,7 +114,7 @@ fun ScreenNode(uiState: NodeUiState) {
                         Spacer(modifier = Modifier.height(12.dp))
 
                         LinearProgressIndicator(
-                            progress = { uiState.syncPercentage.toFloat() },
+                            progress = { uiState.syncDecimal },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(8.dp)
@@ -328,7 +328,8 @@ private fun Preview() {
                     blockHash = "00000cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
                     network = "Signet",
                     difficulty = "9.7",
-                    syncPercentage = 78
+                    syncPercentage = 78,
+                    syncDecimal = 0.78f,
                 )
             )
         }
