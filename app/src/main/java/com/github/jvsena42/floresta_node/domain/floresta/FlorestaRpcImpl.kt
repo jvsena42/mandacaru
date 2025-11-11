@@ -48,7 +48,7 @@ class FlorestaRpcImpl(
         Log.d(TAG, "loadDescriptor: $descriptor")
         val port = preferencesDataSource.getString(
             key = PreferenceKeys.CURRENT_RPC_PORT,
-            defaultValue = Constants.RPC_PORT_SIGNET
+            defaultValue = Constants.RPC_PORT_MAINNET
         )
         val host = "http://127.0.0.1:$port"
         val arguments = JSONArray()
@@ -68,7 +68,7 @@ class FlorestaRpcImpl(
             Log.d(TAG, "getPeerInfo: ")
             val port = preferencesDataSource.getString(
                 key = PreferenceKeys.CURRENT_RPC_PORT,
-                defaultValue = Constants.RPC_PORT_SIGNET
+                defaultValue = Constants.RPC_PORT_MAINNET
             )
             val host = "http://127.0.0.1:$port"
             val arguments = JSONArray()
@@ -100,7 +100,7 @@ class FlorestaRpcImpl(
         Log.d(TAG, "stop: ")
         val port = preferencesDataSource.getString(
             key = PreferenceKeys.CURRENT_RPC_PORT,
-            defaultValue = Constants.RPC_PORT_SIGNET
+            defaultValue = Constants.RPC_PORT_MAINNET
         )
         val host = "http://127.0.0.1:$port"
         val arguments = JSONArray()
@@ -118,7 +118,7 @@ class FlorestaRpcImpl(
         Log.d(TAG, "getTransaction: $txId")
         val port = preferencesDataSource.getString(
             key = PreferenceKeys.CURRENT_RPC_PORT,
-            defaultValue = Constants.RPC_PORT_SIGNET
+            defaultValue = Constants.RPC_PORT_MAINNET
         )
         val host = "http://127.0.0.1:$port"
         val arguments = JSONArray()
@@ -157,7 +157,7 @@ class FlorestaRpcImpl(
 
         val port = preferencesDataSource.getString(
             key = PreferenceKeys.CURRENT_RPC_PORT,
-            defaultValue = Constants.RPC_PORT_SIGNET
+            defaultValue = Constants.RPC_PORT_MAINNET
         )
         val host = "http://127.0.0.1:$port"
         val arguments = JSONArray()
@@ -174,7 +174,7 @@ class FlorestaRpcImpl(
         Log.d(TAG, "addNode: $node")
         val port = preferencesDataSource.getString(
             key = PreferenceKeys.CURRENT_RPC_PORT,
-            defaultValue = Constants.RPC_PORT_SIGNET
+            defaultValue = Constants.RPC_PORT_MAINNET
         )
         val host = "http://127.0.0.1:$port"
         val arguments = JSONArray()
@@ -213,7 +213,7 @@ class FlorestaRpcImpl(
             Log.d(TAG, "getBlockchainInfo: ")
             val port = preferencesDataSource.getString(
                 key = PreferenceKeys.CURRENT_RPC_PORT,
-                defaultValue = Constants.RPC_PORT_SIGNET
+                defaultValue = Constants.RPC_PORT_MAINNET
             )
             val host = "http://127.0.0.1:$port"
             val arguments = JSONArray()
