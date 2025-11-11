@@ -37,7 +37,7 @@ class FlorestaDaemonImpl(
                 electrumAddress = Constants.ELECTRUM_ADDRESS,
                 network = preferencesDataSource.getString(
                     PreferenceKeys.CURRENT_NETWORK,
-                    if (BuildConfig.DEBUG) FlorestaNetwork.SIGNET.name else FlorestaNetwork.BITCOIN.name
+                    FlorestaNetwork.BITCOIN.name
                 ).toFlorestaNetwork(),
             )
             daemon = Florestad.fromConfig(config)

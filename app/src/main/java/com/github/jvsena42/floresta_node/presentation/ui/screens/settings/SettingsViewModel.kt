@@ -36,7 +36,7 @@ class SettingsViewModel(
             it.copy(
                 selectedNetwork = preferencesDataSource.getString(
                     PreferenceKeys.CURRENT_NETWORK,
-                    if (BuildConfig.DEBUG) FlorestaNetwork.SIGNET.name else FlorestaNetwork.BITCOIN.name
+                    FlorestaNetwork.BITCOIN.name
                 ),
             )
         }
@@ -96,7 +96,7 @@ class SettingsViewModel(
     private fun updateElectrumAddress() {
         val port = preferencesDataSource.getString(
             PreferenceKeys.CURRENT_RPC_PORT,
-            defaultValue = if (BuildConfig.DEBUG) Constants.RPC_PORT_SIGNET else Constants.RPC_PORT_MAINNET
+            defaultValue = Constants.RPC_PORT_MAINNET
         )
         _uiState.update { it.copy(electrumAddress = "127.0.0.1:$port") }
     }
