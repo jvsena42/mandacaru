@@ -27,7 +27,7 @@ class FlorestaRpcImpl(
     override suspend fun rescan(): Flow<Result<JSONObject>> = flow {
         val port = preferencesDataSource.getString(
             key = PreferenceKeys.CURRENT_RPC_PORT,
-            defaultValue = Constants.RPC_PORT_SIGNET
+            defaultValue = Constants.RPC_PORT_MAINNET
         )
         val host = "http://127.0.0.1:$port"
 
