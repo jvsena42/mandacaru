@@ -1,6 +1,6 @@
 # Floresta Node 🌳
 
-A lightweight Bitcoin validator node for Android, powered by [Utreexo](https://dci.mit.edu/utreexo) and [Floresta](https://github.com/Davidson-Souza/Floresta).
+A lightweight Bitcoin validator node for Android, powered by [Utreexo](https://dci.mit.edu/utreexo) and [Floresta](https://github.com/vinteumorg/Floresta).
 
 Run a full Bitcoin node directly on your phone with minimal storage requirements thanks to Utreexo's compact accumulator design.
 
