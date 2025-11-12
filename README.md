@@ -139,7 +139,7 @@ The node exposes a JSON-RPC interface on `localhost`:
 ## Related Projects
 
 - [Floresta Wallet](https://github.com/jvsena42/floresta_app) - A wallet client running Floresta
-- [Floresta Core](https://github.com/Davidson-Souza/Floresta) - The underlying Floresta implementation
+- [Floresta Core](https://github.com/vinteumorg/Floresta) - The underlying Floresta implementation
 
 ## Support the Project
 
@@ -153,7 +153,7 @@ This project is open source. Please check the repository for license details.
 
 ## Acknowledgments
 
-- Built on top of [Floresta](https://github.com/Davidson-Souza/Floresta) by Davidson Souza
+- Built on top of [Floresta](https://github.com/vinteumorg/Floresta) by Davidson Souza
 - Implements [Utreexo](https://dci.mit.edu/utreexo) accumulator design
 - Inspired by the Bitcoin community's commitment to decentralization
 
