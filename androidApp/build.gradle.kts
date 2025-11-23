@@ -44,29 +44,22 @@ android {
     }
 }
 dependencies {
+    // Shared module with multiplatform code
+    implementation(project(":shared"))
 
+    // Android-specific dependencies
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
     implementation(libs.compose.navigation)
-    implementation("com.google.code.gson:gson:2.11.0")
     implementation("net.java.dev.jna:jna:5.14.0@aar")
-
-    implementation(libs.okhttp)
-
-    implementation(project.dependencies.platform(libs.koin.bom))
-    implementation(libs.koin.core)
-    implementation(libs.koin.viewmodel)
-    implementation(libs.koin.compose)
-    implementation(libs.koin.android)
-    implementation(libs.koin.test)
     implementation("androidx.compose.material:material-icons-extended:1.7.6")
 
+    // Koin Android
+    implementation(project.dependencies.platform(libs.koin.bom))
+    implementation(libs.koin.android)
+
+    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
