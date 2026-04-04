@@ -49,11 +49,8 @@ class NodeViewModel(
                             validatedBLocks = data.result.validated
                         )
                     }
-
-                    if (!data.result.ibd) {
-                        updatePeerInfo()
-                    }
                 }
+                updatePeerInfo()
             }
         }
     }
