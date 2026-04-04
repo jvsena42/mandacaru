@@ -55,17 +55,20 @@ class NodeViewModel(
         }
     }
 
+    fun togglePeersExpanded() {
+        _uiState.update { it.copy(isPeersExpanded = !it.isPeersExpanded) }
+    }
+
     private suspend fun updatePeerInfo() {
         florestaRpc.getPeerInfo().collect { result ->
             Log.d(TAG, "getPeerInfo: ${result.getOrNull()}")
             result.onSuccess { data ->
                 val peers = data.result.orEmpty()
-                if (peers.isNotEmpty()) {
-                    _uiState.update {
-                        it.copy(
-                            numberOfPeers = peers.size.toString(),
-                        )
-                    }
+                _uiState.update {
+                    it.copy(
+                        numberOfPeers = peers.size.toString(),
+                        peers = peers,
+                    )
                 }
             }
         }

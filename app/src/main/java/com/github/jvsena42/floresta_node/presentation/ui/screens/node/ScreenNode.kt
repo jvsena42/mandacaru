@@ -1,6 +1,9 @@
 package com.github.jvsena42.floresta_node.presentation.ui.screens.node
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,12 +20,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +47,8 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.jvsena42.floresta_node.R
+import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.PeerInfoResult
+import com.github.jvsena42.floresta_node.presentation.ui.components.ExpandableHeader
 import com.github.jvsena42.floresta_node.presentation.ui.theme.FlorestaNodeTheme
 import com.github.jvsena42.floresta_node.presentation.utils.RequestNotificationPermissions
 import org.koin.androidx.compose.koinViewModel
@@ -53,12 +60,18 @@ fun ScreenNode(
     RequestNotificationPermissions(onPermissionChange = {})
 
     val uiState by viewModel.uiState.collectAsState()
-    ScreenNode(uiState)
+    ScreenNode(
+        uiState = uiState,
+        onTogglePeers = viewModel::togglePeersExpanded
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ScreenNode(uiState: NodeUiState) {
+fun ScreenNode(
+    uiState: NodeUiState,
+    onTogglePeers: () -> Unit = {}
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -231,7 +244,101 @@ fun ScreenNode(uiState: NodeUiState) {
                     }
                 }
             }
+
+            // Peers Info Card
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        ExpandableHeader(
+                            title = "Peers (${uiState.numberOfPeers.ifEmpty { "0" }})",
+                            icon = Icons.Outlined.Hub,
+                            isExpanded = uiState.isPeersExpanded,
+                            onToggle = onTogglePeers
+                        )
+
+                        AnimatedVisibility(
+                            visible = uiState.isPeersExpanded,
+                            enter = expandVertically(),
+                            exit = shrinkVertically()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 20.dp)
+                                    .padding(bottom = 20.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                if (uiState.peers.isEmpty()) {
+                                    Text(
+                                        "No peers connected",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                } else {
+                                    uiState.peers.forEachIndexed { index, peer ->
+                                        PeerItem(peer)
+                                        if (index < uiState.peers.lastIndex) {
+                                            HorizontalDivider(
+                                                color = MaterialTheme.colorScheme.outlineVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun PeerItem(peer: PeerInfoResult) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            peer.address,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+            fontFamily = FontFamily.Monospace,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Text(
+            peer.userAgent,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            PeerChip(peer.state)
+            PeerChip(peer.kind)
+        }
+    }
+}
+
+@Composable
+private fun PeerChip(text: String) {
+    Surface(
+        shape = RoundedCornerShape(4.dp),
+        color = MaterialTheme.colorScheme.tertiaryContainer
+    ) {
+        Text(
+            text,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSecondaryContainer
+        )
     }
 }
 
@@ -330,6 +437,25 @@ private fun Preview() {
                     difficulty = "138.97 T",
                     syncPercentage = "78.00",
                     syncDecimal = 0.78f,
+                    isPeersExpanded = true,
+                    peers = listOf(
+                        PeerInfoResult(
+                            address = "194.145.199.26:8333",
+                            initialHeight = 943609,
+                            kind = "regular",
+                            services = "ServiceFlags(NETWORK|WITNESS|COMPACT_FILTERS|NETWORK_LIMITED|P2P_V2)",
+                            state = "Ready",
+                            userAgent = "/Satoshi:30.0.0/"
+                        ),
+                        PeerInfoResult(
+                            address = "59.3.9.212:8333",
+                            initialHeight = 943609,
+                            kind = "regular",
+                            services = "ServiceFlags(NETWORK|WITNESS|COMPACT_FILTERS|NETWORK_LIMITED|P2P_V2)",
+                            state = "Ready",
+                            userAgent = "/Satoshi:28.1.0/"
+                        )
+                    )
                 )
             )
         }
