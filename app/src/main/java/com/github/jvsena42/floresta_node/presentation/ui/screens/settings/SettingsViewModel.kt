@@ -105,8 +105,14 @@ class SettingsViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             florestaRpc.listDescriptors().collect { result ->
                 result.onSuccess { data ->
-                    Log.d(TAG, "getDescriptors: $data}")
-                    _uiState.update { it.copy(descriptors = listOf(data.toString())) }
+                    Log.d(TAG, "getDescriptors: $data")
+                    val resultArray = data.optJSONArray("result")
+                    val descriptorList = if (resultArray != null) {
+                        (0 until resultArray.length()).map { i -> resultArray.getString(i) }
+                    } else {
+                        emptyList()
+                    }
+                    _uiState.update { it.copy(descriptors = descriptorList) }
                 }
             }
         }
@@ -139,6 +145,7 @@ class SettingsViewModel(
                 .collect { result ->
                     result.onSuccess { data ->
                         _uiState.update { it.copy(descriptorText = "") }
+                        getDescriptors()
                         Log.d(TAG, "updateDescriptor: Success: $data")
                     }.onFailure { error ->
                         Log.d(TAG, "updateDescriptor: Fail: ${error.message}")
@@ -152,7 +159,7 @@ class SettingsViewModel(
     }
 
     private fun rescan() {
-        if (_uiState.value.descriptorText.removeSpaces().isEmpty()) return
+        if (_uiState.value.descriptors.isEmpty()) return
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch(Dispatchers.IO) {
             florestaRpc.rescan().collect { result ->
