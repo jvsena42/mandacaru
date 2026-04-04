@@ -105,6 +105,29 @@ class NodeViewModel(
         }
     }
 
+    fun disconnectPeer(address: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            florestaRpc.disconnectNode(address).collect { result ->
+                result.onSuccess {
+                    Log.d(TAG, "disconnectPeer success: $address")
+                    updatePeerInfo()
+                }
+                result.onFailure { e ->
+                    Log.e(TAG, "disconnectPeer failure: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun pingPeers() {
+        viewModelScope.launch(Dispatchers.IO) {
+            florestaRpc.ping().collect { result ->
+                result.onSuccess { Log.d(TAG, "ping success") }
+                result.onFailure { e -> Log.e(TAG, "ping failure: ${e.message}") }
+            }
+        }
+    }
+
     private suspend fun updatePeerInfo() {
         florestaRpc.getPeerInfo().collect { result ->
             Log.d(TAG, "getPeerInfo: ${result.getOrNull()}")

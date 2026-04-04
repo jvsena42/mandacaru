@@ -124,4 +124,17 @@ interface FlorestaRpc {
      * @return A `Result` containing `SendRawTransactionResponse` with the transaction ID
      */
     suspend fun sendRawTransaction(txHex: String): Flow<Result<SendRawTransactionResponse>>
+
+    /**
+     * Immediately disconnects from a specified peer.
+     * @param address The network address of the peer to disconnect (ip:port)
+     * @return A `Result` containing a `JSONObject` (null on success, error on failure)
+     */
+    suspend fun disconnectNode(address: String): Flow<Result<JSONObject>>
+
+    /**
+     * Sends a ping to all connected peers.
+     * @return A `Result` containing a `JSONObject` (null on success)
+     */
+    suspend fun ping(): Flow<Result<JSONObject>>
 }

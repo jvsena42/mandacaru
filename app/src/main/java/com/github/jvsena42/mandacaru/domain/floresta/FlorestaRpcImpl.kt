@@ -99,6 +99,12 @@ class FlorestaRpcImpl(
     override suspend fun sendRawTransaction(txHex: String): Flow<Result<SendRawTransactionResponse>> =
         executeRpcCall(RpcMethods.SEND_RAW_TRANSACTION, txHex)
 
+    override suspend fun disconnectNode(address: String): Flow<Result<JSONObject>> =
+        executeRpcCall(RpcMethods.DISCONNECT_NODE, address)
+
+    override suspend fun ping(): Flow<Result<JSONObject>> =
+        executeRpcCall(RpcMethods.PING)
+
     private inline fun <reified T> executeRpcCall(
         method: RpcMethods,
         vararg params: Any

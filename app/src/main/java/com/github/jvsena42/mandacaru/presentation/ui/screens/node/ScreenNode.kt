@@ -23,17 +23,25 @@ import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Speed
+import androidx.compose.material.icons.outlined.LinkOff
+import androidx.compose.material.icons.outlined.NetworkPing
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,7 +69,9 @@ fun ScreenNode(
     ScreenNode(
         uiState = uiState,
         onTogglePeers = viewModel::togglePeersExpanded,
-        onToggleDiagnostics = viewModel::toggleDiagnosticsExpanded
+        onToggleDiagnostics = viewModel::toggleDiagnosticsExpanded,
+        onDisconnectPeer = viewModel::disconnectPeer,
+        onPingPeers = viewModel::pingPeers
     )
 }
 
@@ -69,8 +79,33 @@ fun ScreenNode(
 fun ScreenNode(
     uiState: NodeUiState,
     onTogglePeers: () -> Unit = {},
-    onToggleDiagnostics: () -> Unit = {}
+    onToggleDiagnostics: () -> Unit = {},
+    onDisconnectPeer: (String) -> Unit = {},
+    onPingPeers: () -> Unit = {}
 ) {
+    var peerToDisconnect by remember { mutableStateOf<String?>(null) }
+
+    peerToDisconnect?.let { address ->
+        AlertDialog(
+            onDismissRequest = { peerToDisconnect = null },
+            title = { Text("Disconnect Peer") },
+            text = { Text("Disconnect from $address?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDisconnectPeer(address)
+                    peerToDisconnect = null
+                }) {
+                    Text("Disconnect")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { peerToDisconnect = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -230,6 +265,18 @@ fun ScreenNode(
                                     .padding(bottom = 20.dp),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
+                                if (uiState.peers.isNotEmpty()) {
+                                    TextButton(onClick = onPingPeers) {
+                                        Icon(
+                                            Icons.Outlined.NetworkPing,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Ping All")
+                                    }
+                                }
+
                                 if (uiState.peers.isEmpty()) {
                                     Text(
                                         "No peers connected",
@@ -238,7 +285,10 @@ fun ScreenNode(
                                     )
                                 } else {
                                     uiState.peers.forEachIndexed { index, peer ->
-                                        PeerItem(peer)
+                                        PeerItem(
+                                            peer = peer,
+                                            onDisconnect = { peerToDisconnect = peer.address }
+                                        )
                                         if (index < uiState.peers.lastIndex) {
                                             HorizontalDivider(
                                                 color = MaterialTheme.colorScheme.outlineVariant
@@ -313,17 +363,39 @@ fun ScreenNode(
     }
 
 @Composable
-private fun PeerItem(peer: PeerInfoResult) {
+private fun PeerItem(
+    peer: PeerInfoResult,
+    onDisconnect: () -> Unit = {}
+) {
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Text(
-            peer.address,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Medium,
-            fontFamily = FontFamily.Monospace,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                peer.address,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+
+            IconButton(
+                onClick = onDisconnect,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    Icons.Outlined.LinkOff,
+                    contentDescription = "Disconnect peer",
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+        }
 
         Text(
             peer.userAgent,
