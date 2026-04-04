@@ -73,10 +73,10 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation("androidx.compose.foundation:foundation")
+    implementation(libs.androidx.compose.foundation)
     implementation(libs.compose.navigation)
-    implementation("com.google.code.gson:gson:2.13.2")
-    implementation("net.java.dev.jna:jna:5.14.0@aar")
+    implementation(libs.gson)
+    implementation(libs.jna)
 
     implementation(libs.okhttp)
     implementation(libs.androidx.datastore.preferences)
@@ -87,7 +87,7 @@ dependencies {
     implementation(libs.koin.compose)
     implementation(libs.koin.android)
     implementation(libs.koin.test)
-    implementation("androidx.compose.material:material-icons-extended:1.7.6")
+    implementation(libs.androidx.compose.material.icons.extended)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
