@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.graphics.toColorInt
 import com.github.jvsena42.floresta_node.R
 import com.github.jvsena42.floresta_node.data.FlorestaRpc
 import com.github.jvsena42.floresta_node.presentation.ui.screens.main.MainActivity
@@ -42,6 +43,8 @@ class FlorestaService : Service() {
         const val ACTION_EXIT_APP = "com.github.jvsena42.floresta_node.ACTION_EXIT_APP"
         private const val STOP_TIMEOUT_MS = 10_000L
         private const val NOTIFICATION_POLL_INTERVAL_MS = 10_000L
+        private const val COLOR_PRIMARY = "#FF815600"
+        private const val COLOR_SYNCED = "#006D37"
     }
 
     override fun onCreate() {
@@ -89,12 +92,16 @@ class FlorestaService : Service() {
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Floresta Node")
-            .setContentText("Node is running in background")
+            .setContentText("Starting node...")
+            .setSubText("Initializing")
             .setSmallIcon(R.drawable.ic_app_icon)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setAutoCancel(false)
             .setOngoing(true)
+            .setProgress(0, 0, true)
+            .setColor(COLOR_PRIMARY.toColorInt())
+            .setColorized(true)
             .setContentIntent(openAppPendingIntent)
             .addAction(
                 R.drawable.ic_x,
@@ -179,10 +186,16 @@ class FlorestaService : Service() {
         if (progress < 1.0f) {
             val percentage = progress * 100
             builder.setContentText("Syncing: ${"%.2f".format(percentage)}%")
+                .setSubText("${"%.2f".format(percentage)}% complete")
                 .setProgress(100, percentage.toInt(), false)
+                .setColor(COLOR_PRIMARY.toColorInt())
+                .setColorized(true)
         } else {
             val formattedHeight = NumberFormat.getNumberInstance().format(height)
             builder.setContentText("Synced - Block #$formattedHeight")
+                .setSubText("Fully synced")
+                .setColor(COLOR_SYNCED.toColorInt())
+                .setColorized(true)
         }
 
         notificationManager.notify(FLORESTA_NOTIFICATION_ID, builder.build())
@@ -233,11 +246,15 @@ class FlorestaService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Floresta Node")
             .setContentText("Stopping node...")
+            .setSubText("Shutting down")
             .setSmallIcon(R.drawable.ic_app_icon)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setAutoCancel(false)
             .setOngoing(true)
+            .setProgress(0, 0, true)
+            .setColor(COLOR_PRIMARY.toColorInt())
+            .setColorized(true)
             .build()
     }
 
