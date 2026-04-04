@@ -34,12 +34,8 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -56,9 +52,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -205,32 +199,34 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                     Column(modifier = Modifier.fillMaxWidth()) {
                         if (uiState.descriptors.isNotEmpty()) {
                             uiState.descriptors.forEach { descriptor ->
-                                ListItem(
-                                    headlineContent = {
-                                        Text(
-                                            descriptor,
-                                            fontFamily = FontFamily.Monospace,
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                    },
-                                    trailingContent = {
-                                        IconButton(onClick = { }) {
-                                            Icon(
-                                                painterResource(R.drawable.ic_delete),
-                                                contentDescription = stringResource(R.string.delete_descriptor),
-                                                tint = MaterialTheme.colorScheme.error
-                                            )
-                                        }
-                                    },
-                                    colors = ListItemDefaults.colors(
-                                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
-                                    ),
+                                Surface(
                                     modifier = Modifier
-                                        .padding(vertical = 4.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                )
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                                ) {
+                                    Text(
+                                        text = descriptor,
+                                        fontFamily = FontFamily.Monospace,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        maxLines = 2,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(12.dp)
+                                    )
+                                }
                             }
                             Spacer(modifier = Modifier.height(8.dp))
+                        } else {
+                            Text(
+                                text = stringResource(R.string.no_descriptors_loaded),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 16.dp)
+                            )
                         }
 
                         OutlinedTextField(
@@ -374,7 +370,7 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
 
                         FilledTonalButton(
                             onClick = { onAction(SettingsAction.OnClickRescan) },
-                            enabled = !uiState.isLoading && uiState.descriptorText.isNotBlank(),
+                            enabled = !uiState.isLoading && uiState.descriptors.isNotEmpty(),
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp)
                         ) {
