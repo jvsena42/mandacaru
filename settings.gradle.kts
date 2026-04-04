@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "floresta_node"
+rootProject.name = "mandacaru"
 include(":app")
 include(":florestaDaemon")

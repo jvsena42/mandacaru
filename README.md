@@ -1,4 +1,4 @@
-# Floresta Node 🌳
+# Mandacaru 🌵
 
 A lightweight Bitcoin validator node for Android, powered by [Utreexo](https://dci.mit.edu/utreexo) and [Floresta](https://github.com/vinteumorg/Floresta).
 
@@ -71,8 +71,8 @@ Utreexo is a dynamic hash-based accumulator that allows Bitcoin nodes to validat
 ### From Source
 1. Clone the repository:
 ```bash
-git clone https://github.com/jvsena42/floresta_node.git
-cd floresta_node
+git clone https://github.com/jvsena42/mandacaru.git
+cd mandacaru
 ```
 
 2. Build the project:
@@ -88,7 +88,7 @@ cd floresta_node
 ## Usage
 
 ### Getting Started
-1. Launch the app - the Floresta node will start automatically in the background
+1. Launch the app - Mandacaru will start automatically in the background
 2. Select your preferred network (Bitcoin, Testnet, Signet, or Regtest) in Settings
 3. Wait for initial sync to complete
 4. Optionally add wallet descriptors to track your addresses

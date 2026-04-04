@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Floresta Node is an Android application that runs a lightweight Bitcoin validation node powered by Utreexo and Floresta. It bridges Rust-based Bitcoin node implementation with a modern Kotlin/Compose Android UI.
+Mandacaru is an Android application that runs a lightweight Bitcoin validation node powered by Utreexo and Floresta. It bridges Rust-based Bitcoin node implementation with a modern Kotlin/Compose Android UI.
 
 ## Build & Development Commands
 
@@ -29,7 +29,7 @@ Floresta Node is an Android application that runs a lightweight Bitcoin validati
 ./gradlew connectedAndroidTest
 
 # Run specific test class
-./gradlew test --tests "com.github.jvsena42.floresta_node.SpecificTestClass"
+./gradlew test --tests "com.github.jvsena42.mandacaru.SpecificTestClass"
 ```
 
 ### Code Quality
@@ -78,7 +78,7 @@ data/                 # Data layer
 
 - **MVVM**: ViewModels expose `StateFlow<UiState>` consumed by Compose UI
 - **Repository Pattern**: `FlorestaRpc` interface abstracts RPC communication
-- **Dependency Injection**: Koin manages singleton instances (configured in `FlorestaNodeApplication.kt`)
+- **Dependency Injection**: Koin manages singleton instances (configured in `MandacaruApplication.kt`)
 - **Coroutines + Flow**: All async operations use `suspend` functions and `Flow<Result<T>>`
 - **Foreground Service**: `FlorestaService` keeps the Bitcoin node alive in background
 
