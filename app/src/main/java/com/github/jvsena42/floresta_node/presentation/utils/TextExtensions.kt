@@ -59,6 +59,16 @@ private fun Int.toSuperscript(): String {
     return this.toString().map { superscripts[it] ?: it }.joinToString("")
 }
 
+fun Float.toHumanReadableDifficulty(): String {
+    return when {
+        this >= 1e12f -> "%.2f T".format(this / 1e12f)
+        this >= 1e9f -> "%.2f B".format(this / 1e9f)
+        this >= 1e6f -> "%.2f M".format(this / 1e6f)
+        this >= 1e3f -> "%.2f K".format(this / 1e3f)
+        else -> "%.2f".format(this)
+    }
+}
+
 fun Double.toScientificNotationString(): String {
     val stringValue = this.toString()
     if (!stringValue.contains('E', ignoreCase = true)) {

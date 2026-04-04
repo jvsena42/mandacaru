@@ -324,11 +324,11 @@ private fun Preview() {
             ScreenNode(
                 NodeUiState(
                     numberOfPeers = "5",
-                    blockHeight = "1235334",
+                    blockHeight = "1,235,334",
                     blockHash = "00000cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
                     network = "Signet",
-                    difficulty = "9.7",
-                    syncPercentage = 78,
+                    difficulty = "138.97 T",
+                    syncPercentage = "78.00",
                     syncDecimal = 0.78f,
                 )
             )
