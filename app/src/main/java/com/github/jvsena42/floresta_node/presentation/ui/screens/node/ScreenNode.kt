@@ -1,6 +1,5 @@
 package com.github.jvsena42.floresta_node.presentation.ui.screens.node
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -43,7 +42,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -202,47 +200,6 @@ fun ScreenNode(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
-                        )
-                    }
-                }
-            }
-
-            // Block Info Card
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Text(
-                            "Block Information",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        InfoRowAnimated(
-                            label = stringResource(R.string.block_height),
-                            value = uiState.blockHeight
-                        )
-
-                        InfoRowAnimated(
-                            label = stringResource(R.string.best_block),
-                            value = uiState.blockHash,
-                            isMonospace = true
-                        )
-
-                        InfoRow(
-                            label = stringResource(R.string.validated_blocks),
-                            value = uiState.validatedBLocks.toString()
                         )
                     }
                 }
@@ -457,46 +414,6 @@ private fun InfoRow(
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-    }
-}
-
-@Composable
-private fun InfoRowAnimated(
-    label: String,
-    value: String,
-    isMonospace: Boolean = false,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Top
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            modifier = Modifier.weight(1f)
-        )
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        AnimatedContent(
-            targetState = value,
-            label = label,
-            modifier = Modifier.weight(1f)
-        ) { animated ->
-            Text(
-                animated,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                fontFamily = if (isMonospace) FontFamily.Monospace else FontFamily.Default,
-                fontSize = if (isMonospace) 12.sp else 16.sp,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }

@@ -13,4 +13,5 @@ data class BlockchainUiState(
     val blockHeader: BlockHeaderResult? = null,
     val blockHash: String = "",
     val blockHeight: String = "",
+    val validatedBlocks: Int = 0,
 )

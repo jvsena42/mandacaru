@@ -53,6 +53,7 @@
     <string name="search_block_helper">Enter a block height or hash to view its header</string>
     <string name="explore_blocks">Explore Blocks</string>
     <string name="explore_blocks_description">Search for any block by height or hash to view its header details using your local node</string>
+    <string name="block_info">Block Information</string>
     <string name="block_header">Block Header</string>
     <string name="block_time">Block Time</string>
     <string name="block_version">Version</string>

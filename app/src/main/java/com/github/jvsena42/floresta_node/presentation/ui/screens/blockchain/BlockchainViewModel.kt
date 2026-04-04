@@ -40,16 +40,15 @@ class BlockchainViewModel(
     }
 
     private suspend fun updateChainStatus() {
-        florestaRpc.getBlockCount().collect { result ->
+        florestaRpc.getBlockchainInfo().collect { result ->
             result.onSuccess { data ->
                 _uiState.update {
-                    it.copy(blockCount = NumberFormat.getNumberInstance().format(data.result))
+                    it.copy(
+                        blockCount = NumberFormat.getNumberInstance().format(data.result.height),
+                        bestBlockHash = data.result.bestBlock,
+                        validatedBlocks = data.result.validated
+                    )
                 }
-            }
-        }
-        florestaRpc.getBestBlockHash().collect { result ->
-            result.onSuccess { data ->
-                _uiState.update { it.copy(bestBlockHash = data.result) }
             }
         }
     }

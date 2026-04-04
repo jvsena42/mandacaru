@@ -27,8 +27,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -169,6 +167,24 @@ fun ScreenBlockchainContent(
                         )
                     }
 
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            stringResource(R.string.validated_blocks),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                        )
+                        Text(
+                            uiState.validatedBlocks.toString(),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+
                     if (uiState.bestBlockHash.isNotEmpty()) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(
@@ -188,7 +204,7 @@ fun ScreenBlockchainContent(
                         }
                     }
 
-                    Button (
+                    Button(
                         onClick = { onAction(BlockchainAction.SearchLatestBlock) },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = uiState.bestBlockHash.isNotEmpty(),
@@ -449,6 +465,7 @@ private fun Preview() {
                 BlockchainUiState(
                     blockCount = "943,609",
                     bestBlockHash = "00000000000000000001234567890abcdef1234567890abcdef1234567890ab",
+                    validatedBlocks = 943609,
                     blockHeader = BlockHeaderResult(
                         version = 536870912,
                         prevBlockhash = "00000000000000000002abc123def456abc123def456abc123def456abc123de",
