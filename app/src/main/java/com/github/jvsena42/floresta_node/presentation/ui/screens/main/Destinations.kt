@@ -10,7 +10,7 @@ enum class Destinations(
     val label: String,
     @DrawableRes val icon: Int
 ) {
-    SEARCH(route = "Search", label = "Search", R.drawable.ic_search),
+    TRANSACTION(route = "Transaction", label = "Transactions", R.drawable.ic_transaction),
     NODE(route = "Node", label = "Node Info", R.drawable.ic_node),
     BLOCKCHAIN(route = "Blockchain", label = "Blockchain", R.drawable.ic_blockchain),
     SETTINGS(route = "Settings", label = "Settings", R.drawable.ic_settings),

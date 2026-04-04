@@ -15,4 +15,5 @@ enum class RpcMethods(val method: String) {
     GET_BLOCK_HEADER("getblockheader"),
     GET_BEST_BLOCK_HASH("getbestblockhash"),
     GET_BLOCK_COUNT("getblockcount"),
+    SEND_RAW_TRANSACTION("sendrawtransaction"),
 }

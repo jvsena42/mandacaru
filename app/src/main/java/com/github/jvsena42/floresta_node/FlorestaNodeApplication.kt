@@ -10,7 +10,7 @@ import com.github.jvsena42.floresta_node.domain.floresta.FlorestaDaemonImpl
 import com.github.jvsena42.floresta_node.domain.floresta.FlorestaRpcImpl
 import com.github.jvsena42.floresta_node.presentation.ui.screens.blockchain.BlockchainViewModel
 import com.github.jvsena42.floresta_node.presentation.ui.screens.node.NodeViewModel
-import com.github.jvsena42.floresta_node.presentation.ui.screens.search.SearchViewModel
+import com.github.jvsena42.floresta_node.presentation.ui.screens.transaction.TransactionViewModel
 import com.github.jvsena42.floresta_node.presentation.ui.screens.settings.SettingsViewModel
 import com.google.gson.Gson
 import org.koin.android.ext.koin.androidContext
@@ -36,7 +36,7 @@ class FlorestaNodeApplication : Application() {
 val presentationModule = module {
     viewModel { NodeViewModel(florestaRpc = get()) }
     viewModel { SettingsViewModel(florestaRpc = get(), preferencesDataSource = get()) }
-    viewModel { SearchViewModel(florestaRpc = get()) }
+    viewModel { TransactionViewModel(florestaRpc = get()) }
     viewModel { BlockchainViewModel(florestaRpc = get()) }
 }
 

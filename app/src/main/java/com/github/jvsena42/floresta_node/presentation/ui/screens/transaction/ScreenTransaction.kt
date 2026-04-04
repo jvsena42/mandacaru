@@ -1,4 +1,4 @@
-package com.github.jvsena42.floresta_node.presentation.ui.screens.search
+package com.github.jvsena42.floresta_node.presentation.ui.screens.transaction
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -18,6 +18,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Send
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -35,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -46,7 +49,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.getValue
 import com.github.jvsena42.floresta_node.R
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetTransactionResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.TransactionResult
@@ -58,18 +60,18 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun ScreenSearch(
-    viewModel: SearchViewModel = koinViewModel()
+fun ScreenTransaction(
+    viewModel: TransactionViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    ScreenSearchContent(uiState = uiState, onAction = viewModel::onAction)
+    ScreenTransactionContent(uiState = uiState, onAction = viewModel::onAction)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ScreenSearchContent(
-    uiState: SearchUiState,
-    onAction: (SearchAction) -> Unit
+fun ScreenTransactionContent(
+    uiState: TransactionUiState,
+    onAction: (TransactionAction) -> Unit
 ) {
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -78,7 +80,7 @@ fun ScreenSearchContent(
         if (uiState.errorMessage.isNotEmpty()) {
             scope.launch {
                 snackBarHostState.showSnackbar(message = uiState.errorMessage)
-                onAction(SearchAction.ClearSnackBarMessage)
+                onAction(TransactionAction.ClearSnackBarMessage)
             }
         }
     }
@@ -88,16 +90,14 @@ fun ScreenSearchContent(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        stringResource(R.string.search),
+                        stringResource(R.string.transactions),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold
                     )
-                },
+                }
             )
         },
-        snackbarHost = {
-            SnackbarHost(hostState = snackBarHostState)
-        }
+        snackbarHost = { SnackbarHost(hostState = snackBarHostState) }
     ) { contentPadding ->
         Column(
             modifier = Modifier
@@ -106,7 +106,7 @@ fun ScreenSearchContent(
                 .padding(contentPadding)
                 .verticalScroll(rememberScrollState())
         ) {
-            AnimatedVisibility(visible = uiState.isLoading) {
+            AnimatedVisibility(visible = uiState.isSearchLoading || uiState.isBroadcasting) {
                 LinearProgressIndicator(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -114,9 +114,9 @@ fun ScreenSearchContent(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Search Input Card
+            // Transaction Lookup Card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -132,7 +132,7 @@ fun ScreenSearchContent(
                         .padding(20.dp)
                 ) {
                     Text(
-                        "Transaction Lookup",
+                        stringResource(R.string.transaction_lookup),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -142,9 +142,9 @@ fun ScreenSearchContent(
 
                     OutlinedTextField(
                         value = uiState.transactionId,
-                        enabled = !uiState.isLoading,
+                        enabled = !uiState.isSearchLoading,
                         onValueChange = { newText ->
-                            onAction(SearchAction.OnSearchChanged(newText.trim()))
+                            onAction(TransactionAction.OnSearchChanged(newText.trim()))
                         },
                         label = { Text(stringResource(R.string.enter_the_transaction_id)) },
                         placeholder = { Text("Enter 64-character transaction ID") },
@@ -165,14 +165,6 @@ fun ScreenSearchContent(
                             )
                         }
                     )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        "Results will appear automatically as you type",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
 
@@ -186,41 +178,107 @@ fun ScreenSearchContent(
                 }
             }
 
-            // Empty State
-            AnimatedVisibility(
-                visible = uiState.searchResult == null
-                        && !uiState.isLoading
-                        && uiState.transactionId.isEmpty()
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Broadcast Transaction Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .padding(20.dp)
                 ) {
-                    Icon(
-                        Icons.Outlined.Search,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Outlined.Send,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            stringResource(R.string.broadcast_transaction),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        "Search for Bitcoin Transactions",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "Enter a transaction ID to view its details on the blockchain using your local node",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        textAlign = TextAlign.Center,
+
+                    OutlinedTextField(
+                        value = uiState.rawTxHex,
+                        enabled = !uiState.isBroadcasting,
+                        onValueChange = { newText ->
+                            onAction(TransactionAction.OnRawTxChanged(newText.trim()))
+                        },
+                        label = { Text(stringResource(R.string.raw_tx_hint)) },
+                        placeholder = { Text(stringResource(R.string.raw_tx_placeholder)) },
+                        maxLines = 4,
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = { onAction(TransactionAction.OnClickBroadcast) },
+                        enabled = !uiState.isBroadcasting && uiState.rawTxHex.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(stringResource(R.string.broadcast))
+                    }
+
+                    // Broadcast success result
+                    AnimatedVisibility(visible = uiState.broadcastResult.isNotEmpty()) {
+                        Column(modifier = Modifier.padding(top = 12.dp)) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f))
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Check,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.tertiary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Column {
+                                    Text(
+                                        stringResource(R.string.broadcast_success),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        uiState.broadcastResult,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -261,19 +319,15 @@ private fun TransactionDetailsCard(tx: TransactionResult) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Transaction ID
-            TransactionDetailRow(
-                label = "Transaction ID",
-                value = tx.txid ?: "N/A",
-                isMonospace = true
-            )
+            TxDetailRow(label = "Transaction ID", value = tx.txid ?: "N/A", isMonospace = true)
 
             tx.confirmations?.let {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                TransactionDetailRow(
+                TxDetailRow(
                     label = "Confirmations",
                     value = it.toString(),
-                    valueColor = if (it >= 6) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurface
+                    valueColor = if (it >= 6) MaterialTheme.colorScheme.tertiary
+                    else MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -281,70 +335,44 @@ private fun TransactionDetailsCard(tx: TransactionResult) {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
                 val date = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
                     .format(Date(it * 1000))
-                TransactionDetailRow(
-                    label = "Block Time",
-                    value = date
-                )
+                TxDetailRow(label = "Block Time", value = date)
             }
 
             tx.blockhash?.let {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                TransactionDetailRow(
-                    label = "Block Hash",
-                    value = it,
-                    isMonospace = true
-                )
+                TxDetailRow(label = "Block Hash", value = it, isMonospace = true)
             }
 
             tx.size?.let {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                TransactionDetailRow(
-                    label = "Size",
-                    value = "$it bytes"
-                )
+                TxDetailRow(label = "Size", value = "$it bytes")
             }
 
             tx.vsize?.let {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                TransactionDetailRow(
-                    label = "Virtual Size",
-                    value = "$it vBytes"
-                )
+                TxDetailRow(label = "Virtual Size", value = "$it vBytes")
             }
 
             tx.weight?.let {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                TransactionDetailRow(
-                    label = "Weight",
-                    value = "$it WU"
-                )
+                TxDetailRow(label = "Weight", value = "$it WU")
             }
 
             tx.version?.let {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                TransactionDetailRow(
-                    label = "Version",
-                    value = it.toString()
-                )
+                TxDetailRow(label = "Version", value = it.toString())
             }
 
             tx.vin?.let { inputs ->
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                TransactionDetailRow(
-                    label = "Inputs",
-                    value = inputs.size.toString()
-                )
+                TxDetailRow(label = "Inputs", value = inputs.size.toString())
             }
 
             tx.vout?.let { outputs ->
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                TransactionDetailRow(
-                    label = "Outputs",
-                    value = outputs.size.toString()
-                )
+                TxDetailRow(label = "Outputs", value = outputs.size.toString())
             }
 
-            // In Active Chain indicator
             tx.inActiveChain?.let {
                 if (it) {
                     Spacer(modifier = Modifier.height(16.dp))
@@ -376,7 +404,7 @@ private fun TransactionDetailsCard(tx: TransactionResult) {
 }
 
 @Composable
-private fun TransactionDetailRow(
+private fun TxDetailRow(
     label: String,
     value: String,
     isMonospace: Boolean = false,
@@ -411,8 +439,8 @@ private fun TransactionDetailRow(
 private fun Preview() {
     FlorestaNodeTheme {
         Surface {
-            ScreenSearchContent(
-                SearchUiState(
+            ScreenTransactionContent(
+                TransactionUiState(
                     searchResult = GetTransactionResponse(
                         id = 1,
                         jsonrpc = "2.0",
@@ -442,10 +470,24 @@ private fun Preview() {
 
 @PreviewLightDark
 @Composable
+private fun PreviewBroadcast() {
+    FlorestaNodeTheme {
+        Surface {
+            ScreenTransactionContent(
+                TransactionUiState(
+                    broadcastResult = "abc123def456abc123def456abc123def456abc123def456abc123def456abc1"
+                )
+            ) {}
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
 private fun PreviewEmpty() {
     FlorestaNodeTheme {
         Surface {
-            ScreenSearchContent(SearchUiState()) {}
+            ScreenTransactionContent(TransactionUiState()) {}
         }
     }
 }

@@ -13,6 +13,7 @@ import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetBl
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetBlockchainInfoResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetMemoryInfoResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetPeerInfoResponse
+import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.SendRawTransactionResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetTransactionResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.UptimeResponse
 import com.google.gson.Gson
@@ -95,6 +96,9 @@ class FlorestaRpcImpl(
 
     override suspend fun getBlockCount(): Flow<Result<GetBlockCountResponse>> =
         executeRpcCall(RpcMethods.GET_BLOCK_COUNT)
+
+    override suspend fun sendRawTransaction(txHex: String): Flow<Result<SendRawTransactionResponse>> =
+        executeRpcCall(RpcMethods.SEND_RAW_TRANSACTION, txHex)
 
     private inline fun <reified T> executeRpcCall(
         method: RpcMethods,

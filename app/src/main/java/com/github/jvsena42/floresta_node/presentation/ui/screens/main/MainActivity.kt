@@ -49,7 +49,7 @@ import androidx.navigation.compose.rememberNavController
 import com.github.jvsena42.floresta_node.domain.floresta.FlorestaService
 import com.github.jvsena42.floresta_node.presentation.ui.screens.blockchain.ScreenBlockchain
 import com.github.jvsena42.floresta_node.presentation.ui.screens.node.ScreenNode
-import com.github.jvsena42.floresta_node.presentation.ui.screens.search.ScreenSearch
+import com.github.jvsena42.floresta_node.presentation.ui.screens.transaction.ScreenTransaction
 import com.github.jvsena42.floresta_node.presentation.ui.screens.settings.ScreenSettings
 import com.github.jvsena42.floresta_node.presentation.ui.theme.FlorestaNodeTheme
 import com.github.jvsena42.floresta_node.presentation.utils.NotificationPermissionHelper
@@ -247,8 +247,8 @@ private fun MainScreen(
             startDestination = Destinations.NODE.route,
             modifier = Modifier.padding(paddingValues = innerPadding)
         ) {
-            composable(Destinations.SEARCH.route) {
-                ScreenSearch()
+            composable(Destinations.TRANSACTION.route) {
+                ScreenTransaction()
             }
             composable(Destinations.NODE.route) {
                 ScreenNode()

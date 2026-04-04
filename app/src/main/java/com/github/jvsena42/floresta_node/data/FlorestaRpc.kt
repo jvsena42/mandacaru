@@ -7,6 +7,7 @@ import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetBl
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetBlockchainInfoResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetMemoryInfoResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetPeerInfoResponse
+import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.SendRawTransactionResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetTransactionResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.UptimeResponse
 import kotlinx.coroutines.flow.Flow
@@ -116,4 +117,11 @@ interface FlorestaRpc {
      * @return A `Result` containing `GetBlockCountResponse` with the block count
      */
     suspend fun getBlockCount(): Flow<Result<GetBlockCountResponse>>
+
+    /**
+     * Broadcasts a raw transaction to the network.
+     * @param txHex The raw transaction as a hex string
+     * @return A `Result` containing `SendRawTransactionResponse` with the transaction ID
+     */
+    suspend fun sendRawTransaction(txHex: String): Flow<Result<SendRawTransactionResponse>>
 }
