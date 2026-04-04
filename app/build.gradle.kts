@@ -59,6 +59,7 @@ dependencies {
     implementation("net.java.dev.jna:jna:5.14.0@aar")
 
     implementation(libs.okhttp)
+    implementation(libs.androidx.datastore.preferences)
 
     implementation(project.dependencies.platform(libs.koin.bom))
     implementation(libs.koin.core)

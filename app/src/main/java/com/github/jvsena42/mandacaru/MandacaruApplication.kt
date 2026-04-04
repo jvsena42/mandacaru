@@ -1,7 +1,11 @@
 package com.github.jvsena42.mandacaru
 
 import android.app.Application
-import android.content.Context.MODE_PRIVATE
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.SharedPreferencesMigration
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.domain.PreferencesDataSourceImpl
@@ -18,6 +22,13 @@ import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
+
+val Context.florestaDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "floresta",
+    produceMigrations = { context ->
+        listOf(SharedPreferencesMigration(context, "floresta"))
+    }
+)
 
 class MandacaruApplication : Application() {
     override fun onCreate() {
@@ -50,7 +61,7 @@ val domainModule = module {
     single<FlorestaRpc> { FlorestaRpcImpl(gson = Gson(), preferencesDataSource = get()) }
     single<PreferencesDataSource> {
         PreferencesDataSourceImpl(
-            sharedPreferences = androidContext().getSharedPreferences("floresta", MODE_PRIVATE)
+            dataStore = androidContext().florestaDataStore
         )
     }
 }

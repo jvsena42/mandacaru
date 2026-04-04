@@ -12,6 +12,7 @@ koin-bom = "4.1.1"
 nav-version = "2.9.5"
 okhttp = "5.1.0"
 jetbrainsKotlinJvm = "2.2.20"
+datastorePreferences = "1.1.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -38,6 +39,7 @@ koin-compose = { module = "io.insert-koin:koin-androidx-compose" }
 koin-test = { module = "io.insert-koin:koin-test-junit4" }
 
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

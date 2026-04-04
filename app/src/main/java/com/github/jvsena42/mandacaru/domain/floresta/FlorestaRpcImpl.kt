@@ -32,14 +32,13 @@ class FlorestaRpcImpl(
 
     private val client by lazy { OkHttpClient() }
 
-    private val rpcHost: String
-        get() {
-            val port = preferencesDataSource.getString(
-                key = PreferenceKeys.CURRENT_RPC_PORT,
-                defaultValue = Constants.RPC_PORT_MAINNET
-            )
-            return "http://127.0.0.1:$port"
-        }
+    private suspend fun getRpcHost(): String {
+        val port = preferencesDataSource.getString(
+            key = PreferenceKeys.CURRENT_RPC_PORT,
+            defaultValue = Constants.RPC_PORT_MAINNET
+        )
+        return "http://127.0.0.1:$port"
+    }
 
     override suspend fun rescan(): Flow<Result<JSONObject>> =
         executeRpcCall(RpcMethods.RESCAN, params = arrayOf(0))
@@ -106,7 +105,7 @@ class FlorestaRpcImpl(
     ): Flow<Result<T>> = flow {
         Log.d(TAG, "${method.method}: ${params.joinToString()}")
 
-        val result = sendJsonRpcRequest(rpcHost, method.method, params.toJsonArray())
+        val result = sendJsonRpcRequest(getRpcHost(), method.method, params.toJsonArray())
 
         result.fold(
             onSuccess = { json ->

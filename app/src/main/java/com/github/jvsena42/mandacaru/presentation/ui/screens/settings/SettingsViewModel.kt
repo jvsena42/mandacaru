@@ -32,15 +32,17 @@ class SettingsViewModel(
     val uiState = _uiState.asStateFlow()
 
     init {
-        _uiState.update {
-            it.copy(
-                selectedNetwork = preferencesDataSource.getString(
-                    PreferenceKeys.CURRENT_NETWORK,
-                    FlorestaNetwork.BITCOIN.name
-                ),
-            )
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    selectedNetwork = preferencesDataSource.getString(
+                        PreferenceKeys.CURRENT_NETWORK,
+                        FlorestaNetwork.BITCOIN.name
+                    ),
+                )
+            }
+            updateElectrumAddress()
         }
-        updateElectrumAddress()
         getDescriptors()
     }
 
@@ -101,7 +103,7 @@ class SettingsViewModel(
         }
     }
 
-    private fun updateElectrumAddress() {
+    private suspend fun updateElectrumAddress() {
         val port = preferencesDataSource.getString(
             PreferenceKeys.CURRENT_RPC_PORT,
             defaultValue = Constants.RPC_PORT_MAINNET
