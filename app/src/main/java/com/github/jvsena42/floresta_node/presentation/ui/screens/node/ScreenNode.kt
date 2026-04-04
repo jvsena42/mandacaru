@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.Hub
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material3.Card
@@ -62,7 +63,8 @@ fun ScreenNode(
     val uiState by viewModel.uiState.collectAsState()
     ScreenNode(
         uiState = uiState,
-        onTogglePeers = viewModel::togglePeersExpanded
+        onTogglePeers = viewModel::togglePeersExpanded,
+        onToggleDiagnostics = viewModel::toggleDiagnosticsExpanded
     )
 }
 
@@ -70,7 +72,8 @@ fun ScreenNode(
 @Composable
 fun ScreenNode(
     uiState: NodeUiState,
-    onTogglePeers: () -> Unit = {}
+    onTogglePeers: () -> Unit = {},
+    onToggleDiagnostics: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -295,6 +298,64 @@ fun ScreenNode(
                     }
                 }
             }
+
+            // Diagnostics Card
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        ExpandableHeader(
+                            title = stringResource(R.string.diagnostics),
+                            icon = Icons.Outlined.Info,
+                            isExpanded = uiState.isDiagnosticsExpanded,
+                            onToggle = onToggleDiagnostics
+                        )
+
+                        AnimatedVisibility(
+                            visible = uiState.isDiagnosticsExpanded,
+                            enter = expandVertically(),
+                            exit = shrinkVertically()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 20.dp)
+                                    .padding(bottom = 20.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                InfoRow(
+                                    label = stringResource(R.string.uptime),
+                                    value = uiState.uptime,
+                                    isLoading = uiState.uptime.isEmpty()
+                                )
+
+                                InfoRow(
+                                    label = stringResource(R.string.memory_used),
+                                    value = uiState.memoryUsed,
+                                    isLoading = uiState.memoryUsed.isEmpty()
+                                )
+
+                                InfoRow(
+                                    label = stringResource(R.string.memory_free),
+                                    value = uiState.memoryFree,
+                                    isLoading = uiState.memoryFree.isEmpty()
+                                )
+
+                                InfoRow(
+                                    label = stringResource(R.string.memory_total),
+                                    value = uiState.memoryTotal,
+                                    isLoading = uiState.memoryTotal.isEmpty()
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -456,6 +517,11 @@ private fun Preview() {
                     syncPercentage = "78.00",
                     syncDecimal = 0.78f,
                     isPeersExpanded = true,
+                    uptime = "2d 5h 32m 10s",
+                    memoryUsed = "12.4 MB",
+                    memoryFree = "3.2 MB",
+                    memoryTotal = "15.6 MB",
+                    isDiagnosticsExpanded = true,
                     peers = listOf(
                         PeerInfoResult(
                             address = "194.145.199.26:8333",

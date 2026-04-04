@@ -15,4 +15,9 @@ data class NodeUiState(
     val validatedBLocks: Int = 0,
     val peers: List<PeerInfoResult> = emptyList(),
     val isPeersExpanded: Boolean = false,
+    val uptime: String = "",
+    val memoryUsed: String = "",
+    val memoryFree: String = "",
+    val memoryTotal: String = "",
+    val isDiagnosticsExpanded: Boolean = false,
 )

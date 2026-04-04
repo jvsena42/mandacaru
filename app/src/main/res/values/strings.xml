@@ -43,4 +43,9 @@
     <string name="descriptors">Descriptors</string>
     <string name="delete">Delete</string>
     <string name="delete_descriptor">Delete descriptor</string>
+    <string name="diagnostics">Diagnostics</string>
+    <string name="uptime">Uptime</string>
+    <string name="memory_used">Memory Used</string>
+    <string name="memory_free">Memory Free</string>
+    <string name="memory_total">Memory Total</string>
 </resources>

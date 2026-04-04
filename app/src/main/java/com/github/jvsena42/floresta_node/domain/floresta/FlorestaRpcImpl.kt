@@ -8,8 +8,10 @@ import com.github.jvsena42.floresta_node.domain.model.Constants
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.RpcMethods
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.AddNodeResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetBlockchainInfoResponse
+import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetMemoryInfoResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetPeerInfoResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetTransactionResponse
+import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.UptimeResponse
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -72,6 +74,12 @@ class FlorestaRpcImpl(
 
     override suspend fun getBlockchainInfo(): Flow<Result<GetBlockchainInfoResponse>> =
         executeRpcCall(RpcMethods.GET_BLOCKCHAIN_INFO)
+
+    override suspend fun getUptime(): Flow<Result<UptimeResponse>> =
+        executeRpcCall(RpcMethods.UPTIME)
+
+    override suspend fun getMemoryInfo(): Flow<Result<GetMemoryInfoResponse>> =
+        executeRpcCall(RpcMethods.GET_MEMORY_INFO, "stats")
 
     private inline fun <reified T> executeRpcCall(
         method: RpcMethods,

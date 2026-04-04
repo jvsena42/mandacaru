@@ -9,4 +9,6 @@ enum class RpcMethods(val method: String) {
     GET_TRANSACTION("gettransaction"),
     ADD_NODE("addnode"),
     LIST_DESCRIPTORS("listdescriptors"),
+    UPTIME("uptime"),
+    GET_MEMORY_INFO("getmemoryinfo"),
 }

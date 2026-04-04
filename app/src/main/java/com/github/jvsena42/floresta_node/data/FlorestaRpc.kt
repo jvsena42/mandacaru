@@ -2,8 +2,10 @@ package com.github.jvsena42.floresta_node.data
 
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.AddNodeResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetBlockchainInfoResponse
+import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetMemoryInfoResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetPeerInfoResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetTransactionResponse
+import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.UptimeResponse
 import kotlinx.coroutines.flow.Flow
 import org.json.JSONObject
 
@@ -73,4 +75,16 @@ interface FlorestaRpc {
      * @param node A network address with the format ip[:port]
      */
     suspend fun addNode(node: String): Flow<Result<AddNodeResponse>>
+
+    /**
+     * Returns the number of seconds the daemon has been running.
+     * @return A `Result` containing `UptimeResponse` with the uptime in seconds
+     */
+    suspend fun getUptime(): Flow<Result<UptimeResponse>>
+
+    /**
+     * Returns memory usage information from the daemon.
+     * @return A `Result` containing `GetMemoryInfoResponse` with memory stats
+     */
+    suspend fun getMemoryInfo(): Flow<Result<GetMemoryInfoResponse>>
 }
