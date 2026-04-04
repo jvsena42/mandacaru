@@ -13,4 +13,6 @@ sealed interface SettingsAction {
     object ToggleDescriptorsExpanded: SettingsAction
     object ToggleNetworkExpanded: SettingsAction
     object ToggleNodeExpanded: SettingsAction
+    object ToggleAboutExpanded: SettingsAction
+    object ToggleDonateExpanded: SettingsAction
 }

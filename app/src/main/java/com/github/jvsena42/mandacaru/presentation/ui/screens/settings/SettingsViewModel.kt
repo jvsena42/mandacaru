@@ -75,6 +75,14 @@ class SettingsViewModel(
             SettingsAction.ToggleNodeExpanded -> _uiState.update {
                 it.copy(isNodeExpanded = !it.isNodeExpanded)
             }
+
+            SettingsAction.ToggleAboutExpanded -> _uiState.update {
+                it.copy(isAboutExpanded = !it.isAboutExpanded)
+            }
+
+            SettingsAction.ToggleDonateExpanded -> _uiState.update {
+                it.copy(isDonateExpanded = !it.isDonateExpanded)
+            }
         }
     }
 

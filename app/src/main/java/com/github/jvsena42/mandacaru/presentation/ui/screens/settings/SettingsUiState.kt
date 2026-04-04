@@ -17,4 +17,6 @@ data class SettingsUiState(
     val isDescriptorsExpanded: Boolean = false,
     val isNetworkExpanded: Boolean = false,
     val isNodeExpanded: Boolean = false,
+    val isAboutExpanded: Boolean = false,
+    val isDonateExpanded: Boolean = false,
 )

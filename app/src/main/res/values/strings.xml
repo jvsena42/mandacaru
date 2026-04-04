@@ -72,4 +72,11 @@
     <string name="raw_tx_placeholder">Paste signed transaction hex…</string>
     <string name="broadcast">Broadcast</string>
     <string name="broadcast_success">Transaction broadcast successfully</string>
+    <string name="about">About</string>
+    <string name="version">Version %1$s</string>
+    <string name="suggestions_and_bugs">Suggestions and bugs</string>
+    <string name="license">License</string>
+    <string name="donate">Donate</string>
+    <string name="lightning_address">Lightning Address</string>
+    <string name="lightning_address_copied">Lightning address copied to clipboard</string>
 </resources>

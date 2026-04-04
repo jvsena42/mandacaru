@@ -20,6 +20,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.NetworkCheck
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Wallet
@@ -52,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -61,6 +64,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import com.florestad.Network
+import com.github.jvsena42.mandacaru.BuildConfig
 import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.domain.model.Constants
 import com.github.jvsena42.mandacaru.presentation.ui.components.ExpandableHeader
@@ -381,6 +385,104 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                             Spacer(modifier = Modifier.size(8.dp))
                             Text(stringResource(R.string.rescan))
                         }
+                    }
+                }
+            }
+
+            // Donate Section
+            item {
+                val clipboardManager = LocalClipboardManager.current
+                val donateAddress = "jvsena42@blink.sv"
+                val copiedMessage = stringResource(R.string.lightning_address_copied)
+
+                SectionCard(
+                    title = stringResource(R.string.donate),
+                    icon = Icons.Outlined.Favorite,
+                    isExpanded = uiState.isDonateExpanded,
+                    onToggle = { onAction(SettingsAction.ToggleDonateExpanded) }
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = stringResource(R.string.lightning_address),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    clipboardManager.setText(AnnotatedString(donateAddress))
+                                    scope.launch {
+                                        snackBarHostState.showSnackbar(message = copiedMessage)
+                                    }
+                                },
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = donateAddress,
+                                    fontFamily = FontFamily.Monospace,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Icon(
+                                    Icons.Outlined.ContentCopy,
+                                    contentDescription = "Copy",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // About Section
+            item {
+                val uriHandler = LocalUriHandler.current
+
+                SectionCard(
+                    title = stringResource(R.string.about),
+                    icon = Icons.Outlined.Info,
+                    isExpanded = uiState.isAboutExpanded,
+                    onToggle = { onAction(SettingsAction.ToggleAboutExpanded) }
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "${stringResource(R.string.app_name)} — ${stringResource(R.string.version, BuildConfig.VERSION_NAME)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = stringResource(R.string.suggestions_and_bugs),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.clickable {
+                                uriHandler.openUri("https://github.com/jvsena42/mandacaru/issues")
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = stringResource(R.string.license),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.clickable {
+                                uriHandler.openUri("https://github.com/jvsena42/mandacaru/blob/main/LICENSE")
+                            }
+                        )
                     }
                 }
             }
