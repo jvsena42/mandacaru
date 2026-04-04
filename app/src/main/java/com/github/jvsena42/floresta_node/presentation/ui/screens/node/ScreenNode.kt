@@ -318,6 +318,24 @@ private fun PeerItem(peer: PeerInfoResult) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
+        Spacer(modifier = Modifier.height(2.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                peer.services
+                    .removePrefix("ServiceFlags(")
+                    .removeSuffix(")"),
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace,
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Spacer(modifier = Modifier.height(2.dp))
+
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
