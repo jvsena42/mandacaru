@@ -331,7 +331,7 @@ private fun PeerItem(peer: PeerInfoResult) {
 private fun PeerChip(text: String) {
     Surface(
         shape = RoundedCornerShape(4.dp),
-        color = MaterialTheme.colorScheme.tertiaryContainer
+        color = MaterialTheme.colorScheme.secondaryContainer
     ) {
         Text(
             text,
