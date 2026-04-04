@@ -47,6 +47,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.github.jvsena42.floresta_node.domain.floresta.FlorestaService
+import com.github.jvsena42.floresta_node.presentation.ui.screens.blockchain.ScreenBlockchain
 import com.github.jvsena42.floresta_node.presentation.ui.screens.node.ScreenNode
 import com.github.jvsena42.floresta_node.presentation.ui.screens.search.ScreenSearch
 import com.github.jvsena42.floresta_node.presentation.ui.screens.settings.ScreenSettings
@@ -251,6 +252,9 @@ private fun MainScreen(
             }
             composable(Destinations.NODE.route) {
                 ScreenNode()
+            }
+            composable(Destinations.BLOCKCHAIN.route) {
+                ScreenBlockchain()
             }
             composable(Destinations.SETTINGS.route) {
                 ScreenSettings(

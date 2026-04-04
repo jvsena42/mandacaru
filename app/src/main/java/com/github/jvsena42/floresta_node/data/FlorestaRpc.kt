@@ -1,6 +1,9 @@
 package com.github.jvsena42.floresta_node.data
 
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.AddNodeResponse
+import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetBlockCountResponse
+import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetBlockHashResponse
+import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetBlockHeaderResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetBlockchainInfoResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetMemoryInfoResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetPeerInfoResponse
@@ -87,4 +90,30 @@ interface FlorestaRpc {
      * @return A `Result` containing `GetMemoryInfoResponse` with memory stats
      */
     suspend fun getMemoryInfo(): Flow<Result<GetMemoryInfoResponse>>
+
+    /**
+     * Returns the block hash at the given height.
+     * @param height The block height
+     * @return A `Result` containing `GetBlockHashResponse` with the block hash as a hex string
+     */
+    suspend fun getBlockHash(height: Int): Flow<Result<GetBlockHashResponse>>
+
+    /**
+     * Returns block header data for a given block hash.
+     * @param blockHash The block hash as a hex string
+     * @return A `Result` containing `GetBlockHeaderResponse` with header fields
+     */
+    suspend fun getBlockHeader(blockHash: String): Flow<Result<GetBlockHeaderResponse>>
+
+    /**
+     * Returns the hash of the best (most recent) block.
+     * @return A `Result` containing `GetBlockHashResponse` with the best block hash
+     */
+    suspend fun getBestBlockHash(): Flow<Result<GetBlockHashResponse>>
+
+    /**
+     * Returns the number of blocks in the longest chain.
+     * @return A `Result` containing `GetBlockCountResponse` with the block count
+     */
+    suspend fun getBlockCount(): Flow<Result<GetBlockCountResponse>>
 }

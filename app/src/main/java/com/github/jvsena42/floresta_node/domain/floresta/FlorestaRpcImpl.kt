@@ -7,6 +7,9 @@ import com.github.jvsena42.floresta_node.data.PreferencesDataSource
 import com.github.jvsena42.floresta_node.domain.model.Constants
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.RpcMethods
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.AddNodeResponse
+import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetBlockCountResponse
+import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetBlockHashResponse
+import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetBlockHeaderResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetBlockchainInfoResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetMemoryInfoResponse
 import com.github.jvsena42.floresta_node.domain.model.florestaRPC.response.GetPeerInfoResponse
@@ -80,6 +83,18 @@ class FlorestaRpcImpl(
 
     override suspend fun getMemoryInfo(): Flow<Result<GetMemoryInfoResponse>> =
         executeRpcCall(RpcMethods.GET_MEMORY_INFO, "stats")
+
+    override suspend fun getBlockHash(height: Int): Flow<Result<GetBlockHashResponse>> =
+        executeRpcCall(RpcMethods.GET_BLOCK_HASH, height)
+
+    override suspend fun getBlockHeader(blockHash: String): Flow<Result<GetBlockHeaderResponse>> =
+        executeRpcCall(RpcMethods.GET_BLOCK_HEADER, blockHash)
+
+    override suspend fun getBestBlockHash(): Flow<Result<GetBlockHashResponse>> =
+        executeRpcCall(RpcMethods.GET_BEST_BLOCK_HASH)
+
+    override suspend fun getBlockCount(): Flow<Result<GetBlockCountResponse>> =
+        executeRpcCall(RpcMethods.GET_BLOCK_COUNT)
 
     private inline fun <reified T> executeRpcCall(
         method: RpcMethods,
