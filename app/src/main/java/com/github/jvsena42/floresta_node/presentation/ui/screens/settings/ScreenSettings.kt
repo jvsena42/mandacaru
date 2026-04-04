@@ -26,7 +26,6 @@ import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -102,17 +101,6 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
     }
 
     Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        stringResource(R.string.settings),
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
-            )
-        },
         snackbarHost = {
             SnackbarHost(hostState = snackBarHostState)
         }
@@ -124,6 +112,17 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                 .background(MaterialTheme.colorScheme.background)
                 .padding(contentPadding)
         ) {
+            item {
+                Text(
+                    stringResource(R.string.settings),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
             item {
                 AnimatedVisibility(visible = uiState.isLoading) {
                     LinearProgressIndicator(
