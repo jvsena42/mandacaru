@@ -6,9 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
-import android.os.Build
 import android.os.IBinder
-import android.os.Process
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.github.jvsena42.floresta_node.R
@@ -17,14 +15,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.android.ext.android.inject
-import kotlin.system.exitProcess
+import java.util.concurrent.atomic.AtomicBoolean
 
 class FlorestaService : Service() {
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val florestaDaemon: FlorestaDaemon by inject()
+    private val isStopping = AtomicBoolean(false)
 
     companion object {
         private const val TAG = "FlorestaService"
@@ -34,6 +34,7 @@ class FlorestaService : Service() {
 
         const val ACTION_STOP_SERVICE = "com.github.jvsena42.floresta_node.ACTION_STOP_SERVICE"
         const val ACTION_EXIT_APP = "com.github.jvsena42.floresta_node.ACTION_EXIT_APP"
+        private const val STOP_TIMEOUT_MS = 10_000L
     }
 
     override fun onCreate() {
@@ -121,51 +122,64 @@ class FlorestaService : Service() {
     }
 
     private fun stopServiceAndExitApp() {
+        if (!isStopping.compareAndSet(false, true)) {
+            Log.d(TAG, "stopServiceAndExitApp: already stopping, ignoring")
+            return
+        }
         Log.d(TAG, "stopServiceAndExitApp called")
 
-        // Immediately remove notification for instant feedback
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        Log.d(TAG, "Notification removed")
+        // Update notification to show shutdown in progress
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager?.notify(FLORESTA_NOTIFICATION_ID, createStoppingNotification())
 
-        // Stop daemon and exit asynchronously
         ioScope.launch {
-            try {
-                Log.d(TAG, "Stopping Floresta daemon")
-                florestaDaemon.stop()
-                Log.d(TAG, "Floresta daemon stopped successfully")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error stopping daemon: ", e)
-            }
-
-            // Small delay to ensure daemon cleanup
-            delay(500)
+            stopDaemonWithTimeout()
 
             // Send broadcast to close activities
             sendBroadcast(Intent(ACTION_EXIT_APP))
 
-            // Stop service
+            // Stop foreground service and remove notification
+            stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
-
-            // Small delay before killing process
-            delay(200)
-
-            // Kill the app process
-            Log.d(TAG, "Killing app process")
-            Process.killProcess(Process.myPid())
-            exitProcess(0)
         }
+    }
+
+    private suspend fun stopDaemonWithTimeout() {
+        Log.d(TAG, "Stopping Floresta daemon")
+        runCatching {
+            withTimeoutOrNull(STOP_TIMEOUT_MS) {
+                florestaDaemon.stop()
+            }
+        }.onSuccess { result ->
+            if (result == null) {
+                Log.w(TAG, "Floresta daemon stop timed out after ${STOP_TIMEOUT_MS}ms")
+            } else {
+                Log.d(TAG, "Floresta daemon stopped successfully")
+            }
+        }.onFailure { e ->
+            Log.e(TAG, "Error stopping daemon: ", e)
+        }
+    }
+
+    private fun createStoppingNotification(): Notification {
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Floresta Node")
+            .setContentText("Stopping node...")
+            .setSmallIcon(R.drawable.ic_app_icon)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setAutoCancel(false)
+            .setOngoing(true)
+            .build()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "onDestroy called")
-        ioScope.launch {
-            try {
-                if (florestaDaemon.isRunning()) {
-                    florestaDaemon.stop()
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error in onDestroy: ", e)
+        if (isStopping.compareAndSet(false, true)) {
+            // Only stop daemon here if stopServiceAndExitApp wasn't called
+            runBlocking(Dispatchers.IO) {
+                stopDaemonWithTimeout()
             }
         }
         ioScope.cancel()
