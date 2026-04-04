@@ -24,4 +24,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "mandacaru"
 include(":app")
-include(":florestaDaemon")
