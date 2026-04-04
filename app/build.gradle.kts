@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation("androidx.compose.foundation:foundation")
     implementation(libs.compose.navigation)
     implementation("com.google.code.gson:gson:2.11.0")
     implementation("net.java.dev.jna:jna:5.14.0@aar")

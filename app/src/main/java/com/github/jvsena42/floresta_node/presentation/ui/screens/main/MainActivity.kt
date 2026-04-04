@@ -17,6 +17,8 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +35,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,10 +44,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.github.jvsena42.floresta_node.domain.floresta.FlorestaService
 import com.github.jvsena42.floresta_node.presentation.ui.screens.blockchain.ScreenBlockchain
 import com.github.jvsena42.floresta_node.presentation.ui.screens.node.ScreenNode
@@ -160,8 +158,12 @@ private fun MainScreen(
     requestNotificationPermission: () -> Unit = {},
     hasNotificationPermission: Boolean = true
 ) {
-    var navigationSelectedItem by rememberSaveable { mutableStateOf(Destinations.NODE) }
-    val navController = rememberNavController()
+    val pages = Destinations.entries
+    val pagerState = rememberPagerState(
+        initialPage = pages.indexOf(Destinations.NODE),
+        pageCount = { pages.size }
+    )
+    val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var showPermissionSnackbar by remember { mutableStateOf(!hasNotificationPermission) }
 
@@ -202,24 +204,19 @@ private fun MainScreen(
                             shape = RoundedCornerShape(16.dp)
                         )
                 ) {
-                    Destinations.entries.forEach { destination ->
+                    pages.forEachIndexed { index, destination ->
                         NavigationBarItem(
-                            selected = destination == navigationSelectedItem,
+                            selected = pagerState.currentPage == index,
                             onClick = {
-                                navigationSelectedItem = destination
-                                navController.navigate(destination.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(index)
                                 }
                             },
                             label = {
                                 Text(
                                     destination.label,
                                     style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = if (destination == navigationSelectedItem)
+                                    fontWeight = if (pagerState.currentPage == index)
                                         FontWeight.Bold else FontWeight.Normal
                                 )
                             },
@@ -242,22 +239,16 @@ private fun MainScreen(
             }
         }
     ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = Destinations.NODE.route,
-            modifier = Modifier.padding(paddingValues = innerPadding)
-        ) {
-            composable(Destinations.TRANSACTION.route) {
-                ScreenTransaction()
-            }
-            composable(Destinations.NODE.route) {
-                ScreenNode()
-            }
-            composable(Destinations.BLOCKCHAIN.route) {
-                ScreenBlockchain()
-            }
-            composable(Destinations.SETTINGS.route) {
-                ScreenSettings(
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.padding(paddingValues = innerPadding),
+            beyondViewportPageCount = 1
+        ) { page ->
+            when (pages[page]) {
+                Destinations.TRANSACTION -> ScreenTransaction()
+                Destinations.NODE -> ScreenNode()
+                Destinations.BLOCKCHAIN -> ScreenBlockchain()
+                Destinations.SETTINGS -> ScreenSettings(
                     restartApplication = restartApplication
                 )
             }
