@@ -84,6 +84,7 @@ fun ScreenNode(
     onPingPeers: () -> Unit = {}
 ) {
     var peerToDisconnect by remember { mutableStateOf<String?>(null) }
+    var showPingConfirmation by remember { mutableStateOf(false) }
 
     peerToDisconnect?.let { address ->
         AlertDialog(
@@ -100,6 +101,27 @@ fun ScreenNode(
             },
             dismissButton = {
                 TextButton(onClick = { peerToDisconnect = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showPingConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showPingConfirmation = false },
+            title = { Text("Ping All Peers") },
+            text = { Text("Send a ping to all connected peers?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onPingPeers()
+                    showPingConfirmation = false
+                }) {
+                    Text("Ping")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPingConfirmation = false }) {
                     Text("Cancel")
                 }
             }
@@ -266,7 +288,7 @@ fun ScreenNode(
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 if (uiState.peers.isNotEmpty()) {
-                                    TextButton(onClick = onPingPeers) {
+                                    TextButton(onClick = { showPingConfirmation = true }) {
                                         Icon(
                                             Icons.Outlined.NetworkPing,
                                             contentDescription = null,
