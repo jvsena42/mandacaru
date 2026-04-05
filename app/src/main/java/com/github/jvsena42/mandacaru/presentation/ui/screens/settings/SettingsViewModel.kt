@@ -3,16 +3,15 @@ package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.jvsena42.mandacaru.BuildConfig
 import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
-import com.github.jvsena42.mandacaru.domain.model.Constants
+import com.github.jvsena42.mandacaru.presentation.utils.DescriptorUtils
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlowImpl
+import com.github.jvsena42.mandacaru.presentation.utils.getElectrumPort
 import com.github.jvsena42.mandacaru.presentation.utils.getNetwork
 import com.github.jvsena42.mandacaru.presentation.utils.getRpcPort
-import com.github.jvsena42.mandacaru.presentation.utils.DescriptorUtils
 import com.github.jvsena42.mandacaru.presentation.utils.removeSpaces
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -105,10 +104,11 @@ class SettingsViewModel(
     }
 
     private suspend fun updateElectrumAddress() {
-        val port = preferencesDataSource.getString(
-            PreferenceKeys.CURRENT_RPC_PORT,
-            defaultValue = Constants.RPC_PORT_MAINNET
-        )
+        val network = preferencesDataSource.getString(
+            PreferenceKeys.CURRENT_NETWORK,
+            FlorestaNetwork.BITCOIN.name
+        ).getNetwork()
+        val port = network.getElectrumPort()
         _uiState.update { it.copy(electrumAddress = "127.0.0.1:$port") }
     }
 

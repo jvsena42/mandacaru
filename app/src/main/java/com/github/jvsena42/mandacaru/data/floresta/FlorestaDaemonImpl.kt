@@ -29,7 +29,6 @@ class FlorestaDaemonImpl(
             Log.d(TAG, "start: datadir: $datadir")
             val config = Config(
                 dataDir = datadir,
-                electrumAddress = Constants.ELECTRUM_ADDRESS,
                 network = preferencesDataSource.getString(
                     PreferenceKeys.CURRENT_NETWORK,
                     FlorestaNetwork.BITCOIN.name

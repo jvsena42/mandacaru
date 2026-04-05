@@ -19,6 +19,16 @@ fun Network.getRpcPort() : String {
     }
 }
 
+fun Network.getElectrumPort() : String {
+    return when(this) {
+        Network.BITCOIN -> Constants.ELECTRUM_PORT_MAINNET
+        Network.SIGNET -> Constants.ELECTRUM_PORT_SIGNET
+        Network.TESTNET -> Constants.ELECTRUM_PORT_TESTNET
+        Network.REGTEST -> Constants.ELECTRUM_PORT_REGTEST
+        Network.TESTNET4 -> Constants.ELECTRUM_PORT_TESTNET_4
+    }
+}
+
 fun Float.toScientificNotationString(): String {
     val stringValue = this.toString()
     if (!stringValue.contains('E', ignoreCase = true)) {

@@ -7,4 +7,9 @@ object Constants {
     const val RPC_PORT_TESTNET_4 = "48332"
     const val RPC_PORT_SIGNET = "38332"
     const val RPC_PORT_REGTEST = "18443"
+    const val ELECTRUM_PORT_MAINNET = "50001"
+    const val ELECTRUM_PORT_TESTNET = "30001"
+    const val ELECTRUM_PORT_TESTNET_4 = "40001"
+    const val ELECTRUM_PORT_SIGNET = "60001"
+    const val ELECTRUM_PORT_REGTEST = "20001"
 }
