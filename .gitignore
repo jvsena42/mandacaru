@@ -81,3 +81,4 @@ captures/
 *.apk
 output.json
 /gradle/gradle-daemon-jvm.properties
+*.salive
