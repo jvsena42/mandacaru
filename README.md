@@ -8,11 +8,14 @@ Run a full Bitcoin node directly on your phone with minimal storage requirements
 
 - ⚡ **Lightweight**: Uses Utreexo to dramatically reduce storage requirements
 - 🔒 **Self-sovereign**: Validate Bitcoin transactions directly on your device
-- 🌐 **Multi-network**: Support for Bitcoin Mainnet, Testnet, Signet, and Regtest
-- 🔍 **Transaction Lookup**: Search and verify transactions on the blockchain
-- 👥 **P2P Networking**: Connect to Bitcoin peers and manage node connections
+- 🌐 **Multi-network**: Support for Bitcoin Mainnet, Testnet, Testnet4, Signet, and Regtest
+- 🔍 **Transaction & Broadcast**: Search transactions and broadcast raw transactions
+- 🧱 **Blockchain Explorer**: Search blocks by height or hash, view headers and chain status
+- 👥 **P2P Networking**: Connect, disconnect, and ping Bitcoin peers
 - 💼 **Wallet Integration**: Load descriptors and track your Bitcoin addresses
+- 🔌 **Electrum Server**: Built-in Electrum server for wallet pairing
 - 📊 **Real-time Sync**: Monitor blockchain synchronization progress
+- 🩺 **Diagnostics**: Monitor node uptime and memory usage
 - 🎨 **Modern UI**: Beautiful Material Design 3 interface with dark/light themes
 
 ## Screenshots
@@ -31,11 +34,23 @@ Run a full Bitcoin node directly on your phone with minimal storage requirements
   </tr>
 </table>
 
-### Transaction Search
+### Transactions
 <table>
   <tr>
-    <td><img src="screenshots/search_light.png" alt="Search Screen Light" width="250"/></td>
-    <td><img src="screenshots/search_dark.png" alt="Search Screen Dark" width="250"/></td>
+    <td><img src="screenshots/transactions_light.png" alt="Transactions Screen Light" width="250"/></td>
+    <td><img src="screenshots/transactions_dark.png" alt="Transactions Screen Dark" width="250"/></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Light Theme</em></td>
+    <td align="center"><em>Dark Theme</em></td>
+  </tr>
+</table>
+
+### Blockchain
+<table>
+  <tr>
+    <td><img src="screenshots/blockchain_light.png" alt="Blockchain Screen Light" width="250"/></td>
+    <td><img src="screenshots/blockchain_dark.png" alt="Blockchain Screen Dark" width="250"/></td>
   </tr>
   <tr>
     <td align="center"><em>Light Theme</em></td>
@@ -68,6 +83,9 @@ Utreexo is a dynamic hash-based accumulator that allows Bitcoin nodes to validat
 - ARM64 device (arm64-v8a architecture)
 - Internet connection
 
+### Releases
+Download the latest APK from [GitHub Releases](https://github.com/jvsena42/mandacaru/releases).
+
 ### From Source
 1. Clone the repository:
 ```bash
@@ -88,29 +106,37 @@ cd mandacaru
 ## Usage
 
 ### Getting Started
-1. Launch the app - Mandacaru will start automatically in the background
-2. Select your preferred network (Bitcoin, Testnet, Signet, or Regtest) in Settings
-3. Wait for initial sync to complete
-4. Optionally add wallet descriptors to track your addresses
+1. Launch the app and enable notifications when prompted
+2. Add a wallet descriptor to track your addresses (in Settings > Descriptors)
+3. Copy the Electrum server address (in Settings), then configure your wallet to use it as an Electrum server
 
-### Node Screen
+### Node Info Screen
 Monitor your node's status:
 - **Sync Progress**: Current blockchain synchronization percentage
 - **Network Info**: Connected network, peer count, and difficulty
-- **Block Info**: Latest block height, hash, and validated blocks
+- **Peers** (expandable): View connected peers, connect to new nodes, disconnect, or ping
+- **Diagnostics** (expandable): Node uptime and memory usage
 
-### Search Screen
-Look up transactions:
-- Enter a transaction ID (txid)
-- View complete transaction details
-- Verify transaction confirmations
+### Transaction Screen
+Search and broadcast transactions:
+- Enter a transaction ID (txid) to look up transaction details
+- Broadcast a raw transaction to the network
+- View complete transaction details and confirmations
+
+### Blockchain Screen
+Explore the blockchain:
+- **Block Search**: Look up blocks by height or hash
+- **Chain Status**: View block count, best block hash, and validated blocks
+- **Block Headers**: View detailed block header information
 
 ### Settings Screen
 Configure your node:
-- **Descriptors**: Add wallet descriptors to track your addresses
+- **Electrum Address**: Copy the local Electrum server address to pair with your wallet
+- **Descriptors**: Add or list wallet descriptors to track your addresses
 - **Network**: Switch between Bitcoin networks (requires app restart)
 - **Node**: Connect directly to specific Bitcoin nodes
-- **Rescan**: Trigger a blockchain rescan for your wallet
+- **About**: App version and project information
+- **Donate**: Support the project via Lightning
 
 ## Architecture
 
@@ -118,23 +144,13 @@ Built with modern Android development practices:
 - **Kotlin**: 100% Kotlin codebase
 - **Jetpack Compose**: Declarative UI framework
 - **Material Design 3**: Modern, adaptive design system
+- **HorizontalPager + BottomNavigationBar**: Swipeable screen navigation
 - **MVVM Architecture**: Clean separation of concerns
 - **Coroutines & Flow**: Async operations and reactive streams
+- **DataStore**: Persistent preferences
 - **Koin**: Lightweight dependency injection
 - **OkHttp**: Network communication
 - **JSON-RPC**: Bitcoin Core compatible RPC interface
-
-## RPC Methods
-
-The node exposes a JSON-RPC interface on `localhost`:
-- **getblockchaininfo**: Get blockchain synchronization status
-- **getpeerinfo**: List connected peers
-- **gettransaction**: Retrieve transaction details
-- **loaddescriptor**: Add wallet descriptor
-- **listdescriptors**: List loaded descriptors
-- **addnode**: Connect to a specific node
-- **rescan**: Rescan blockchain for wallet transactions
-- **stop**: Gracefully stop the node
 
 ## Related Projects
 
@@ -153,7 +169,7 @@ This project is open source. Please check the repository for license details.
 
 ## Acknowledgments
 
-- Built on top of [Floresta](https://github.com/vinteumorg/Floresta) by Davidson Souza
+- Built on top of [Floresta](https://github.com/vinteumorg/Floresta)
 - Implements [Utreexo](https://dci.mit.edu/utreexo) accumulator design
 - Inspired by the Bitcoin community's commitment to decentralization
 
