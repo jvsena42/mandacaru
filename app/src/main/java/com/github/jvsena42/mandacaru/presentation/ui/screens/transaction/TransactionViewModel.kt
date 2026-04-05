@@ -69,12 +69,31 @@ class TransactionViewModel(
                     }
                 }.onFailure { error ->
                     Log.e(TAG, "getTransaction error: ${error.message}")
-                    _uiState.update {
-                        it.copy(
-                            errorMessage = error.message ?: "Failed to fetch transaction",
-                            isSearchLoading = false,
-                            searchResult = null
-                        )
+                    if (error.message == "Transaction not found") {
+                        florestaRpc.getBlockchainInfo().collect { infoResult ->
+                            infoResult.onSuccess { info ->
+                                val msg = if (info.result.ibd) {
+                                    "Node is still syncing (${(info.result.progress * 100).toInt()}%). Transaction may appear once the relevant block is processed."
+                                } else {
+                                    "Transaction not found"
+                                }
+                                _uiState.update {
+                                    it.copy(errorMessage = msg, isSearchLoading = false, searchResult = null)
+                                }
+                            }.onFailure {
+                                _uiState.update {
+                                    it.copy(errorMessage = "Transaction not found", isSearchLoading = false, searchResult = null)
+                                }
+                            }
+                        }
+                    } else {
+                        _uiState.update {
+                            it.copy(
+                                errorMessage = error.message ?: "Failed to fetch transaction",
+                                isSearchLoading = false,
+                                searchResult = null
+                            )
+                        }
                     }
                 }
             }
