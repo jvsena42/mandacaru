@@ -34,7 +34,7 @@
         </activity>
 
         <service
-            android:name=".domain.floresta.FlorestaService"
+            android:name=".presentation.service.FlorestaService"
             android:enabled="true"
             android:permission="android.permission.FOREGROUND_SERVICE_DATA_SYNC"
             android:foregroundServiceType="dataSync"

@@ -1,4 +1,4 @@
-package com.github.jvsena42.mandacaru.domain.floresta
+package com.github.jvsena42.mandacaru.presentation.service
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.graphics.toColorInt
 import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.data.FlorestaRpc
+import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.presentation.ui.screens.main.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

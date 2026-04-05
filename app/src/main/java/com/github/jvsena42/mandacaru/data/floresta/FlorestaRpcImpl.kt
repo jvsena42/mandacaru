@@ -1,4 +1,4 @@
-package com.github.jvsena42.mandacaru.domain.floresta
+package com.github.jvsena42.mandacaru.data.floresta
 
 import android.util.Log
 import com.github.jvsena42.mandacaru.data.FlorestaRpc

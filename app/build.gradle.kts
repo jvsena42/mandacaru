@@ -76,7 +76,7 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
     implementation(libs.compose.navigation)
     implementation(libs.gson)
-    implementation(libs.jna)
+    implementation(libs.jna) { artifact { type = "aar" } }
 
     implementation(libs.okhttp)
     implementation(libs.androidx.datastore.preferences)

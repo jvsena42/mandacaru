@@ -8,10 +8,10 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
-import com.github.jvsena42.mandacaru.domain.PreferencesDataSourceImpl
+import com.github.jvsena42.mandacaru.data.PreferencesDataSourceImpl
+import com.github.jvsena42.mandacaru.data.floresta.FlorestaDaemonImpl
+import com.github.jvsena42.mandacaru.data.floresta.FlorestaRpcImpl
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
-import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemonImpl
-import com.github.jvsena42.mandacaru.domain.floresta.FlorestaRpcImpl
 import com.github.jvsena42.mandacaru.presentation.ui.screens.blockchain.BlockchainViewModel
 import com.github.jvsena42.mandacaru.presentation.ui.screens.node.NodeViewModel
 import com.github.jvsena42.mandacaru.presentation.ui.screens.transaction.TransactionViewModel
@@ -38,7 +38,7 @@ class MandacaruApplication : Application() {
             androidContext(this@MandacaruApplication)
             modules(
                 presentationModule,
-                domainModule
+                dataModule
             )
         }
     }
@@ -51,7 +51,7 @@ val presentationModule = module {
     viewModel { BlockchainViewModel(florestaRpc = get()) }
 }
 
-val domainModule = module {
+val dataModule = module {
     single<FlorestaDaemon> {
         FlorestaDaemonImpl(
             datadir = androidContext().filesDir.toString(),

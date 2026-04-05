@@ -1,10 +1,8 @@
-package com.github.jvsena42.mandacaru.domain
+package com.github.jvsena42.mandacaru.data
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
-import com.github.jvsena42.mandacaru.data.PreferenceKeys
-import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
