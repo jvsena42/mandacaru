@@ -12,6 +12,7 @@ import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlowImpl
 import com.github.jvsena42.mandacaru.presentation.utils.getNetwork
 import com.github.jvsena42.mandacaru.presentation.utils.getRpcPort
+import com.github.jvsena42.mandacaru.presentation.utils.DescriptorUtils
 import com.github.jvsena42.mandacaru.presentation.utils.removeSpaces
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -143,9 +144,18 @@ class SettingsViewModel(
     }
 
     private fun updateDescriptor() {
+        val input = _uiState.value.descriptorText
+
+        if (DescriptorUtils.isPrivateKey(input)) {
+            _uiState.update {
+                it.copy(snackBarMessage = "Private keys are not supported. Please use a public key (xpub, zpub, etc.) or a full descriptor.")
+            }
+            return
+        }
+
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch(Dispatchers.IO) {
-            florestaRpc.loadDescriptor(_uiState.value.descriptorText)
+            florestaRpc.loadDescriptor(DescriptorUtils.wrapDescriptorIfNeeded(input))
                 .collect { result ->
                     result.onSuccess { data ->
                         _uiState.update { it.copy(descriptorText = "", snackBarMessage = "Descriptor loaded successfully") }

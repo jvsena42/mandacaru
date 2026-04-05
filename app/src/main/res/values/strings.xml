@@ -27,7 +27,7 @@
     <string name="restore_wallet">Restore wallet</string>
     <string name="settings">Settings</string>
     <string name="set_your_wallet_descriptor">Set your wallet descriptor</string>
-    <string name="descriptor_placeholder">wpkh([fingerprint/derivation]xpub.../0/*)</string>
+    <string name="descriptor_placeholder">zpub…, xpub…, or wpkh([fp/path]xpub…/0/*)</string>
     <string name="update_descriptor">Update Descriptor</string>
     <string name="rescan">Rescan</string>
     <string name="node_address">Electrum Address: %1$s</string>
@@ -68,7 +68,7 @@
     <string name="memory_total">Memory Total</string>
     <string name="transaction_lookup">Transaction Lookup</string>
     <string name="transaction_lookup_hint">Only transactions from your loaded wallet descriptors can be found</string>
-    <string name="descriptor_hint">Descriptors define which addresses your node will track on the blockchain</string>
+    <string name="descriptor_hint">Accepts public keys (xpub, zpub, ypub) or full descriptors. Private keys are not supported.</string>
     <string name="broadcast_hint">The transaction must be fully signed before broadcasting</string>
     <string name="broadcast_transaction">Broadcast Transaction</string>
     <string name="raw_tx_hint">Raw transaction hex</string>
