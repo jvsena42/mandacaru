@@ -31,13 +31,19 @@ Release process for Mandacaru. Version: $ARGUMENTS
    - Push the tag: `git push origin <version>`.
    - Push the commit: `git push origin main`.
 
-6. **Create GitHub release**:
+6. **Generate changelog**:
+   - Find the previous tag: `git describe --tags --abbrev=0 HEAD~1` (if no previous tag exists, use all commits).
+   - List commits since the previous tag: `git log <previous_tag>..HEAD --oneline --no-merges`.
+   - Write a short changelog as a bullet-point list summarizing the user-facing changes (group related commits, skip chore/CI-only commits, keep each bullet to one sentence in English).
+   - Show the changelog to the user for approval before proceeding.
+
+7. **Create GitHub release**:
    - Use `gh release create <version>` with the signed APK attached.
    - Title: `Mandacaru <version>`.
-   - Generate release notes automatically using `--generate-notes`.
+   - Use the approved changelog as the release body (pass via `--notes`).
    - Mark as latest release.
 
-7. **Summary**: Print the release URL and confirm success.
+8. **Summary**: Print the release URL and confirm success.
 
 ## Important
 
