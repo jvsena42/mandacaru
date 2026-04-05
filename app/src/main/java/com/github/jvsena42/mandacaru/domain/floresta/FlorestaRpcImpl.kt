@@ -15,22 +15,33 @@ import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetMemory
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetPeerInfoResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.SendRawTransactionResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetTransactionResponse
+import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.ListDescriptorsResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.UptimeResponse
 import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.concurrent.TimeUnit
 
 class FlorestaRpcImpl(
     private val gson: Gson,
     private val preferencesDataSource: PreferencesDataSource
 ) : FlorestaRpc {
 
-    private val client by lazy { OkHttpClient() }
+    private val client by lazy {
+        OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(10, TimeUnit.SECONDS)
+            .build()
+    }
 
     private suspend fun getRpcHost(): String {
         val port = preferencesDataSource.getString(
@@ -40,69 +51,69 @@ class FlorestaRpcImpl(
         return "http://127.0.0.1:$port"
     }
 
-    override suspend fun rescan(): Flow<Result<JSONObject>> =
+    override fun rescan(): Flow<Result<JSONObject>> =
         executeRpcCall(RpcMethods.RESCAN, params = arrayOf(0))
 
-    override suspend fun loadDescriptor(descriptor: String): Flow<Result<JSONObject>> =
+    override fun loadDescriptor(descriptor: String): Flow<Result<JSONObject>> =
         executeRpcCall(RpcMethods.LOAD_DESCRIPTOR, params = arrayOf(descriptor))
 
-    override suspend fun getPeerInfo(): Flow<Result<GetPeerInfoResponse>> =
+    override fun getPeerInfo(): Flow<Result<GetPeerInfoResponse>> =
         executeRpcCall(RpcMethods.GET_PEER_INFO)
 
-    override suspend fun stop(): Flow<Result<JSONObject>> =
+    override fun stop(): Flow<Result<JSONObject>> =
         executeRpcCall(RpcMethods.STOP)
 
-    override suspend fun getTransaction(txId: String): Flow<Result<GetTransactionResponse>> =
+    override fun getTransaction(txId: String): Flow<Result<GetTransactionResponse>> =
         executeRpcCall(RpcMethods.GET_TRANSACTION, params = arrayOf(txId))
 
-    override suspend fun listDescriptors(): Flow<Result<JSONObject>> =
+    override fun listDescriptors(): Flow<Result<ListDescriptorsResponse>> =
         executeRpcCall(RpcMethods.LIST_DESCRIPTORS)
 
-    override suspend fun addNode(node: String): Flow<Result<AddNodeResponse>> = flow {
+    override fun addNode(node: String): Flow<Result<AddNodeResponse>> {
         Log.d(TAG, "addNode: $node")
-        executeRpcCall<AddNodeResponse>(RpcMethods.ADD_NODE, params = arrayOf(node))
-            .collect { result ->
+        return executeRpcCall<AddNodeResponse>(RpcMethods.ADD_NODE, params = arrayOf(node))
+            .map { result ->
                 result.fold(
                     onSuccess = { response ->
                         if (response.result?.success == false) {
-                            emit(Result.failure(Exception("Failed to add node")))
+                            Result.failure(Exception("Failed to add node"))
                         } else {
-                            emit(Result.success(response))
+                            Result.success(response)
                         }
                     },
-                    onFailure = { emit(Result.failure(it)) }
+                    onFailure = { Result.failure(it) }
                 )
             }
     }
 
-    override suspend fun getBlockchainInfo(): Flow<Result<GetBlockchainInfoResponse>> =
+    override fun getBlockchainInfo(): Flow<Result<GetBlockchainInfoResponse>> =
         executeRpcCall(RpcMethods.GET_BLOCKCHAIN_INFO)
 
-    override suspend fun getUptime(): Flow<Result<UptimeResponse>> =
+    override fun getUptime(): Flow<Result<UptimeResponse>> =
         executeRpcCall(RpcMethods.UPTIME)
 
-    override suspend fun getMemoryInfo(): Flow<Result<GetMemoryInfoResponse>> =
+    override fun getMemoryInfo(): Flow<Result<GetMemoryInfoResponse>> =
         executeRpcCall(RpcMethods.GET_MEMORY_INFO, "stats")
 
-    override suspend fun getBlockHash(height: Int): Flow<Result<GetBlockHashResponse>> =
+    override fun getBlockHash(height: Int): Flow<Result<GetBlockHashResponse>> =
         executeRpcCall(RpcMethods.GET_BLOCK_HASH, height)
 
-    override suspend fun getBlockHeader(blockHash: String): Flow<Result<GetBlockHeaderResponse>> =
+    override fun getBlockHeader(blockHash: String): Flow<Result<GetBlockHeaderResponse>> =
         executeRpcCall(RpcMethods.GET_BLOCK_HEADER, blockHash)
 
-    override suspend fun getBestBlockHash(): Flow<Result<GetBlockHashResponse>> =
+    override fun getBestBlockHash(): Flow<Result<GetBlockHashResponse>> =
         executeRpcCall(RpcMethods.GET_BEST_BLOCK_HASH)
 
-    override suspend fun getBlockCount(): Flow<Result<GetBlockCountResponse>> =
+    override fun getBlockCount(): Flow<Result<GetBlockCountResponse>> =
         executeRpcCall(RpcMethods.GET_BLOCK_COUNT)
 
-    override suspend fun sendRawTransaction(txHex: String): Flow<Result<SendRawTransactionResponse>> =
+    override fun sendRawTransaction(txHex: String): Flow<Result<SendRawTransactionResponse>> =
         executeRpcCall(RpcMethods.SEND_RAW_TRANSACTION, txHex)
 
-    override suspend fun disconnectNode(address: String): Flow<Result<JSONObject>> =
+    override fun disconnectNode(address: String): Flow<Result<JSONObject>> =
         executeRpcCall(RpcMethods.DISCONNECT_NODE, address)
 
-    override suspend fun ping(): Flow<Result<JSONObject>> =
+    override fun ping(): Flow<Result<JSONObject>> =
         executeRpcCall(RpcMethods.PING)
 
     private inline fun <reified T> executeRpcCall(
@@ -111,7 +122,9 @@ class FlorestaRpcImpl(
     ): Flow<Result<T>> = flow {
         Log.d(TAG, "${method.method}: ${params.joinToString()}")
 
-        val result = sendJsonRpcRequest(getRpcHost(), method.method, params.toJsonArray())
+        val result = withContext(Dispatchers.IO) {
+            sendJsonRpcRequest(getRpcHost(), method.method, params.toJsonArray())
+        }
 
         result.fold(
             onSuccess = { json ->

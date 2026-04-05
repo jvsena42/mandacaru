@@ -116,13 +116,7 @@ class SettingsViewModel(
             florestaRpc.listDescriptors().collect { result ->
                 result.onSuccess { data ->
                     Log.d(TAG, "getDescriptors: $data")
-                    val resultArray = data.optJSONArray("result")
-                    val descriptorList = if (resultArray != null) {
-                        (0 until resultArray.length()).map { i -> resultArray.getString(i) }
-                    } else {
-                        emptyList()
-                    }
-                    _uiState.update { it.copy(descriptors = descriptorList) }
+                    _uiState.update { it.copy(descriptors = data.result) }
                 }
             }
         }
