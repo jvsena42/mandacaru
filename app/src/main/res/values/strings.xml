@@ -68,6 +68,8 @@
     <string name="memory_total">Memory Total</string>
     <string name="transaction_lookup">Transaction Lookup</string>
     <string name="transaction_lookup_hint">Only transactions from your loaded wallet descriptors can be found</string>
+    <string name="descriptor_hint">Descriptors define which addresses your node will track on the blockchain</string>
+    <string name="broadcast_hint">The transaction must be fully signed before broadcasting</string>
     <string name="broadcast_transaction">Broadcast Transaction</string>
     <string name="raw_tx_hint">Raw transaction hex</string>
     <string name="raw_tx_placeholder">Paste signed transaction hex…</string>
