@@ -95,10 +95,10 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(uiState.errorMessage) {
-        if (uiState.errorMessage.isNotEmpty()) {
+    LaunchedEffect(uiState.snackBarMessage) {
+        if (uiState.snackBarMessage.isNotEmpty()) {
             scope.launch {
-                snackBarHostState.showSnackbar(message = uiState.errorMessage)
+                snackBarHostState.showSnackbar(message = uiState.snackBarMessage)
                 onAction(SettingsAction.ClearSnackBarMessage)
             }
         }

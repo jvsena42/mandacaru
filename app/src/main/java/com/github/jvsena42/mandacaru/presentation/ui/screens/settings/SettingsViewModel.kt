@@ -57,7 +57,7 @@ class SettingsViewModel(
             is SettingsAction.OnClickUpdateDescriptor -> updateDescriptor()
 
             SettingsAction.OnClickRescan -> rescan()
-            SettingsAction.ClearSnackBarMessage -> _uiState.update { it.copy(errorMessage = "") }
+            SettingsAction.ClearSnackBarMessage -> _uiState.update { it.copy(snackBarMessage = "") }
             SettingsAction.OnClickConnectNode -> connectNode()
             is SettingsAction.OnNodeAddressChanged -> _uiState.update {
                 it.copy(nodeAddress = action.address.removeSpaces())
@@ -129,11 +129,11 @@ class SettingsViewModel(
             florestaRpc.addNode(_uiState.value.nodeAddress)
                 .collect { result ->
                     result.onSuccess { data ->
-                        _uiState.update { it.copy(nodeAddress = "") }
+                        _uiState.update { it.copy(nodeAddress = "", snackBarMessage = "Node connected successfully") }
                         Log.d(TAG, "connectNode: Success: $data")
                     }.onFailure { error ->
                         Log.d(TAG, "connectNode: Fail: ${error.message}")
-                        _uiState.update { it.copy(errorMessage = error.message.toString()) }
+                        _uiState.update { it.copy(snackBarMessage = error.message.toString()) }
                     }
 
                     delay(2.seconds)
@@ -148,12 +148,12 @@ class SettingsViewModel(
             florestaRpc.loadDescriptor(_uiState.value.descriptorText)
                 .collect { result ->
                     result.onSuccess { data ->
-                        _uiState.update { it.copy(descriptorText = "") }
+                        _uiState.update { it.copy(descriptorText = "", snackBarMessage = "Descriptor loaded successfully") }
                         getDescriptors()
                         Log.d(TAG, "updateDescriptor: Success: $data")
                     }.onFailure { error ->
                         Log.d(TAG, "updateDescriptor: Fail: ${error.message}")
-                        _uiState.update { it.copy(errorMessage = error.message.toString()) }
+                        _uiState.update { it.copy(snackBarMessage = error.message.toString()) }
                     }
 
                     delay(2.seconds)
@@ -168,10 +168,11 @@ class SettingsViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             florestaRpc.rescan().collect { result ->
                 result.onSuccess { data ->
+                    _uiState.update { it.copy(snackBarMessage = "Rescan started") }
                     Log.d(TAG, "rescan: Success: $data")
                 }.onFailure { error ->
                     Log.d(TAG, "rescan: Fail: ${error.message}")
-                    _uiState.update { it.copy(errorMessage = error.message.toString()) }
+                    _uiState.update { it.copy(snackBarMessage = error.message.toString()) }
                 }
 
                 delay(2.seconds)

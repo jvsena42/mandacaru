@@ -9,7 +9,7 @@ data class SettingsUiState(
     val descriptorText: String = "",
     val electrumAddress: String = "",
     val nodeAddress: String = "",
-    val errorMessage: String = "",
+    val snackBarMessage: String = "",
     val selectedNetwork: String = "",
     val isLoading: Boolean = false,
     val descriptors: List<String> = emptyList(),
