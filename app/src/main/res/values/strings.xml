@@ -34,9 +34,10 @@
     <string name="node_address_copied_to_clipboard">Node address copied to clipboard</string>
     <string name="search">Search</string>
     <string name="enter_the_transaction_id">Enter the transaction Id</string>
-    <string name="node_address_placeholder">ip[:port]</string>
-    <string name="connect_directly_with_a_node">Connect directly with a node</string>
+    <string name="node_address_placeholder">189.44.63.101:8333</string>
+    <string name="connect_directly_with_a_node">Node address (ip:port)</string>
     <string name="connect">Connect</string>
+    <string name="node_address_hint">Accepts IPv4 (e.g. 189.44.63.101:8333) and IPv6 (e.g. [2001:db8::1]:8333). Port defaults to 8333 if omitted.</string>
     <string name="select_a_network">Select a network</string>
     <string name="the_application_will_be_restarted_to_update_the_network">The application will be restarted to update the network</string>
     <string name="validated_blocks">Validated Blocks</string>
