@@ -71,7 +71,7 @@ class FlorestaRpcImpl(
 
     override fun addNode(node: String): Flow<Result<AddNodeResponse>> {
         Log.d(TAG, "addNode: $node")
-        return executeRpcCall<AddNodeResponse>(RpcMethods.ADD_NODE, params = arrayOf(node))
+        return executeRpcCall<AddNodeResponse>(RpcMethods.ADD_NODE, params = arrayOf(node, "add"))
             .map { result ->
                 result.fold(
                     onSuccess = { response ->
