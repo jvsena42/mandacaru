@@ -68,6 +68,9 @@ detekt {
     buildUponDefaultConfig = true
     config.setFrom("$rootDir/config/detekt/detekt.yml")
     parallel = true
+    source.setFrom(
+        "src/main/java/com/github/jvsena42/mandacaru"
+    )
 }
 
 dependencies {
