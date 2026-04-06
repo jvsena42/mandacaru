@@ -16,6 +16,8 @@ nav-version = "2.9.7"
 okhttp = "5.3.2"
 jetbrainsKotlinJvm = "2.3.20"
 datastorePreferences = "1.2.1"
+detekt = "1.23.7"
+detektComposeRules = "0.4.22"
 
 [libraries]
 androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
@@ -47,10 +49,12 @@ koin-test = { module = "io.insert-koin:koin-test-junit4" }
 
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
+detekt-compose-rules = { module = "io.nlopez.compose.rules:detekt", version.ref = "detektComposeRules" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "jetbrainsKotlinJvm" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 

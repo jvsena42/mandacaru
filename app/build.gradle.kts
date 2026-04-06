@@ -8,6 +8,7 @@ val localProperties = Properties().apply {
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.detekt)
 }
 
 android {
@@ -63,7 +64,14 @@ kotlin {
     }
 }
 
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom("$rootDir/config/detekt/detekt.yml")
+    parallel = true
+}
+
 dependencies {
+    detektPlugins(libs.detekt.compose.rules)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
