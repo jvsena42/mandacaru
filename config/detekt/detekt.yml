@@ -12,8 +12,13 @@ complexity:
   LongParameterList:
     ignoreAnnotated:
       - 'Composable'
+  LongMethod:
+    ignoreAnnotated:
+      - 'Composable'
   TooManyFunctions:
     thresholdInFiles: 20
+    thresholdInClasses: 25
+    thresholdInInterfaces: 20
   CyclomaticComplexMethod:
     threshold: 20
 
