@@ -1,0 +1,46 @@
+name: Feature Request
+description: Suggest a new feature or improvement for Mandacaru
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Mandacaru is a free, open-source project.
+        If you'd like to help accelerate development, consider making a donation
+        to support the project and keep it growing.
+
+        **Lightning**: `jvsena42@blink.sv`
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear description of the feature you'd like to see.
+      placeholder: Describe the feature...
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Problem / Motivation
+      description: What problem does this feature solve? Why is it needed?
+      placeholder: I'm always frustrated when...
+    validations:
+      required: false
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How do you think this could be implemented?
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative solutions or workarounds you've considered.
+    validations:
+      required: false
