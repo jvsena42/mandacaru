@@ -39,7 +39,7 @@ class FlorestaDaemonImpl(
                 Log.i(TAG, "start: Floresta running with config $config")
                 isRunning = true
             }
-        } catch (e: Exception) {
+        } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
             Log.e(TAG, "start error: ", e)
             isRunning = false
         }
@@ -55,7 +55,7 @@ class FlorestaDaemonImpl(
         try {
             daemon?.stop()
             Log.i(TAG, "stop: Floresta daemon stopped successfully")
-        } catch (e: Exception) {
+        } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
             Log.e(TAG, "stop error: ", e)
         } finally {
             isRunning = false

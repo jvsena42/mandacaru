@@ -44,7 +44,7 @@ class NodeViewModel(
                             difficulty = data.result.difficulty.toHumanReadableDifficulty(),
                             network = data.result.chain.uppercase(),
                             blockHash = data.result.bestBlock,
-                            syncPercentage = "%.2f".format(data.result.progress * 100),
+                            syncPercentage = "%.2f".format(data.result.progress * PERCENTAGE_MULTIPLIER),
                             syncDecimal = data.result.progress,
                             validatedBLocks = data.result.validated
                         )
@@ -85,10 +85,10 @@ class NodeViewModel(
     }
 
     private fun formatUptime(seconds: Long): String {
-        val days = seconds / 86400
-        val hours = (seconds % 86400) / 3600
-        val minutes = (seconds % 3600) / 60
-        val secs = seconds % 60
+        val days = seconds / SECONDS_PER_DAY
+        val hours = (seconds % SECONDS_PER_DAY) / SECONDS_PER_HOUR
+        val minutes = (seconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE
+        val secs = seconds % SECONDS_PER_MINUTE
         return buildString {
             if (days > 0) append("${days}d ")
             if (hours > 0 || days > 0) append("${hours}h ")
@@ -99,8 +99,8 @@ class NodeViewModel(
 
     private fun formatBytes(bytes: Long): String {
         return when {
-            bytes >= 1_048_576 -> "%.1f MB".format(bytes / 1_048_576.0)
-            bytes >= 1_024 -> "%.1f KB".format(bytes / 1_024.0)
+            bytes >= BYTES_PER_MB -> "%.1f MB".format(bytes / BYTES_PER_MB.toDouble())
+            bytes >= BYTES_PER_KB -> "%.1f KB".format(bytes / BYTES_PER_KB.toDouble())
             else -> "$bytes B"
         }
     }
@@ -145,5 +145,11 @@ class NodeViewModel(
 
     private companion object {
         const val TAG = "NodeViewModel"
+        const val PERCENTAGE_MULTIPLIER = 100
+        const val SECONDS_PER_DAY = 86400L
+        const val SECONDS_PER_HOUR = 3600L
+        const val SECONDS_PER_MINUTE = 60L
+        const val BYTES_PER_KB = 1_024L
+        const val BYTES_PER_MB = 1_048_576L
     }
 }

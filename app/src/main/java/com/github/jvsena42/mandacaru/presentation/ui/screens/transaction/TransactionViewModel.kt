@@ -72,8 +72,11 @@ class TransactionViewModel(
                     if (error.message == "Transaction not found") {
                         florestaRpc.getBlockchainInfo().collect { infoResult ->
                             infoResult.onSuccess { info ->
+                                val syncPercent =
+                                    (info.result.progress * PERCENTAGE_MULTIPLIER).toInt()
                                 val msg = if (info.result.ibd) {
-                                    "Node is still syncing (${(info.result.progress * 100).toInt()}%). Transaction may appear once the relevant block is processed."
+                                    "Node is still syncing ($syncPercent%)." +
+                                        " Transaction may appear once the relevant block is processed."
                                 } else {
                                     "Transaction not found"
                                 }
@@ -142,5 +145,6 @@ class TransactionViewModel(
 
     companion object {
         private const val TAG = "TransactionViewModel"
+        private const val PERCENTAGE_MULTIPLIER = 100
     }
 }

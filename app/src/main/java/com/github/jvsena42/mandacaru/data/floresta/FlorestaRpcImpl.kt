@@ -134,7 +134,7 @@ class FlorestaRpcImpl(
                         else -> gson.fromJson(json.toString(), T::class.java)
                     }
                     emit(Result.success(response))
-                } catch (e: Exception) {
+                } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
                     Log.e(TAG, "${method.method} parse error: ${e.message}")
                     emit(Result.failure(Exception("Failed to parse response: ${e.message}")))
                 }
@@ -174,6 +174,7 @@ class FlorestaRpcImpl(
             val json = JSONObject(response.body.string())
 
             if (json.has("error")) {
+                @Suppress("TooGenericExceptionThrown")
                 throw Exception(json.getJSONObject("error").getString("message"))
             }
             json

@@ -36,3 +36,6 @@ style:
       - 'PreviewLightDark'
   MaxLineLength:
     maxLineLength: 150
+    excludes:
+      - '**/test/**'
+      - '**/androidTest/**'

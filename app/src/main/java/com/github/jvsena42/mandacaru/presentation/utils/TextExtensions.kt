@@ -3,6 +3,13 @@ package com.github.jvsena42.mandacaru.presentation.utils
 import com.florestad.Network
 import com.github.jvsena42.mandacaru.domain.model.Constants
 
+private const val SUPERSCRIPT_THREE_EXPONENT = 3
+private const val EXPECTED_PARTS_COUNT = 2
+private const val TRILLION = 1e12f
+private const val BILLION = 1e9f
+private const val MILLION = 1e6f
+private const val THOUSAND = 1e3f
+
 fun String.removeSpaces() = this.replace(" ", "")
 
 fun String.getNetwork() : Network {
@@ -31,23 +38,14 @@ fun Network.getElectrumPort() : String {
 
 fun Float.toScientificNotationString(): String {
     val stringValue = this.toString()
-    if (!stringValue.contains('E', ignoreCase = true)) {
-        return stringValue
-    }
-
     val parts = stringValue.split('E', ignoreCase = true)
-    if (parts.size != 2) {
-        return stringValue // Invalid format
+    val exponent = parts.takeIf { it.size == EXPECTED_PARTS_COUNT }?.get(1)?.toIntOrNull()
+
+    return when {
+        !stringValue.contains('E', ignoreCase = true) -> stringValue
+        exponent == null -> stringValue
+        else -> "${parts[0]}x10${'\u00B3'.takeIf { exponent == SUPERSCRIPT_THREE_EXPONENT } ?: exponent.toSuperscript()}"
     }
-
-    val coefficient = parts[0]
-    val exponent = parts[1].toIntOrNull()
-
-    if (exponent == null) {
-        return stringValue // Invalid exponent
-    }
-
-    return "${coefficient}x10${'\u00B3'.takeIf { exponent == 3 } ?: exponent.toSuperscript()}"
 }
 
 private fun Int.toSuperscript(): String {
@@ -71,31 +69,22 @@ private fun Int.toSuperscript(): String {
 
 fun Float.toHumanReadableDifficulty(): String {
     return when {
-        this >= 1e12f -> "%.2f T".format(this / 1e12f)
-        this >= 1e9f -> "%.2f B".format(this / 1e9f)
-        this >= 1e6f -> "%.2f M".format(this / 1e6f)
-        this >= 1e3f -> "%.2f K".format(this / 1e3f)
+        this >= TRILLION -> "%.2f T".format(this / TRILLION)
+        this >= BILLION -> "%.2f B".format(this / BILLION)
+        this >= MILLION -> "%.2f M".format(this / MILLION)
+        this >= THOUSAND -> "%.2f K".format(this / THOUSAND)
         else -> "%.2f".format(this)
     }
 }
 
 fun Double.toScientificNotationString(): String {
     val stringValue = this.toString()
-    if (!stringValue.contains('E', ignoreCase = true)) {
-        return stringValue
-    }
-
     val parts = stringValue.split('E', ignoreCase = true)
-    if (parts.size != 2) {
-        return stringValue // Invalid format
+    val exponent = parts.takeIf { it.size == EXPECTED_PARTS_COUNT }?.get(1)?.toIntOrNull()
+
+    return when {
+        !stringValue.contains('E', ignoreCase = true) -> stringValue
+        exponent == null -> stringValue
+        else -> "${parts[0]}x10${'\u00B3'.takeIf { exponent == SUPERSCRIPT_THREE_EXPONENT } ?: exponent.toSuperscript()}"
     }
-
-    val coefficient = parts[0]
-    val exponent = parts[1].toIntOrNull()
-
-    if (exponent == null) {
-        return stringValue // Invalid exponent
-    }
-
-    return "${coefficient}x10${'\u00B3'.takeIf { exponent == 3 } ?: exponent.toSuperscript()}"
 }

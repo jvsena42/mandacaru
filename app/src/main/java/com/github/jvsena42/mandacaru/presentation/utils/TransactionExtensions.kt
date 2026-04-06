@@ -5,22 +5,31 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+private const val MILLIS_PER_SECOND = 1000L
+private const val SECONDS_PER_MINUTE = 60L
+private const val SECONDS_PER_HOUR = 3600L
+private const val SECONDS_PER_DAY = 86400L
+private const val SECONDS_PER_MONTH = 2592000L
+private const val SECONDS_PER_YEAR = 31536000L
+private const val CONFIRMATION_THRESHOLD = 6
+private const val ELLIPSIS_LENGTH = 3
+
 fun Long.toFormattedDate(): String {
     return SimpleDateFormat("MMM dd, yyyy HH:mm:ss", Locale.getDefault())
-        .format(Date(this * 1000))
+        .format(Date(this * MILLIS_PER_SECOND))
 }
 
 fun Long.toRelativeTime(): String {
-    val now = System.currentTimeMillis() / 1000
+    val now = System.currentTimeMillis() / MILLIS_PER_SECOND
     val diff = now - this
 
     return when {
-        diff < 60 -> "Just now"
-        diff < 3600 -> "${diff / 60} minutes ago"
-        diff < 86400 -> "${diff / 3600} hours ago"
-        diff < 2592000 -> "${diff / 86400} days ago"
-        diff < 31536000 -> "${diff / 2592000} months ago"
-        else -> "${diff / 31536000} years ago"
+        diff < SECONDS_PER_MINUTE -> "Just now"
+        diff < SECONDS_PER_HOUR -> "${diff / SECONDS_PER_MINUTE} minutes ago"
+        diff < SECONDS_PER_DAY -> "${diff / SECONDS_PER_HOUR} hours ago"
+        diff < SECONDS_PER_MONTH -> "${diff / SECONDS_PER_DAY} days ago"
+        diff < SECONDS_PER_YEAR -> "${diff / SECONDS_PER_MONTH} months ago"
+        else -> "${diff / SECONDS_PER_YEAR} years ago"
     }
 }
 
@@ -28,16 +37,10 @@ fun TransactionResult.getTotalOutputValue(): Double {
     return vout?.sumOf { it.value ?: 0.0 } ?: 0.0
 }
 
-fun TransactionResult.getEstimatedFee(): String {
-    val outputValue = getTotalOutputValue()
-    // Fee calculation would require input values
-    return "N/A"
-}
-
 fun Int.getConfirmationStatus(): ConfirmationStatus {
     return when {
         this == 0 -> ConfirmationStatus.UNCONFIRMED
-        this < 6 -> ConfirmationStatus.PENDING
+        this < CONFIRMATION_THRESHOLD -> ConfirmationStatus.PENDING
         else -> ConfirmationStatus.CONFIRMED
     }
 }
@@ -50,7 +53,7 @@ enum class ConfirmationStatus {
 
 fun String.truncateMiddle(maxLength: Int = 16): String {
     if (this.length <= maxLength) return this
-    val charsToShow = maxLength - 3
+    val charsToShow = maxLength - ELLIPSIS_LENGTH
     val frontChars = charsToShow / 2
     val backChars = charsToShow - frontChars
     return "${this.take(frontChars)}...${this.takeLast(backChars)}"

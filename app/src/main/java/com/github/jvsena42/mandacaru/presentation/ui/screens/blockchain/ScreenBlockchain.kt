@@ -40,6 +40,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
@@ -71,22 +72,25 @@ fun ScreenBlockchain(
 @Composable
 fun ScreenBlockchainContent(
     uiState: BlockchainUiState,
-    onAction: (BlockchainAction) -> Unit
+    onAction: (BlockchainAction) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
+    val currentOnAction by rememberUpdatedState(onAction)
 
     LaunchedEffect(uiState.errorMessage) {
         if (uiState.errorMessage.isNotEmpty()) {
             scope.launch {
                 snackBarHostState.showSnackbar(message = uiState.errorMessage)
-                onAction(BlockchainAction.ClearSnackBarMessage)
+                currentOnAction(BlockchainAction.ClearSnackBarMessage)
             }
         }
     }
 
     Scaffold(
+        modifier = modifier,
         snackbarHost = {
             SnackbarHost(hostState = snackBarHostState)
         }
@@ -468,7 +472,7 @@ private fun Preview() {
     MandacaruTheme {
         Surface {
             ScreenBlockchainContent(
-                BlockchainUiState(
+                uiState = BlockchainUiState(
                     blockCount = "943,609",
                     bestBlockHash = "00000000000000000001234567890abcdef1234567890abcdef1234567890ab",
                     validatedBlocks = 943609,
@@ -482,8 +486,9 @@ private fun Preview() {
                     ),
                     blockHash = "00000000000000000001234567890abcdef1234567890abcdef1234567890ab",
                     blockHeight = "943609"
-                )
-            ) {}
+                ),
+                onAction = {}
+            )
         }
     }
 }
@@ -494,11 +499,12 @@ private fun PreviewEmpty() {
     MandacaruTheme {
         Surface {
             ScreenBlockchainContent(
-                BlockchainUiState(
+                uiState = BlockchainUiState(
                     blockCount = "943,609",
                     bestBlockHash = "00000000000000000001234567890abcdef1234567890abcdef1234567890ab"
-                )
-            ) {}
+                ),
+                onAction = {}
+            )
         }
     }
 }

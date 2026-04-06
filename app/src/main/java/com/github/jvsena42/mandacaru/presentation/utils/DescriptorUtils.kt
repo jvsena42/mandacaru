@@ -4,6 +4,10 @@ import java.security.MessageDigest
 
 object DescriptorUtils {
 
+    private const val VERSION_PREFIX_LENGTH = 4
+    private const val CHECKSUM_LENGTH = 4
+    private const val BASE58_RADIX = 58L
+
     private val PRIVATE_KEY_PREFIXES = listOf("xprv", "yprv", "zprv", "tprv", "uprv", "vprv")
 
     // SLIP-132 version bytes for public keys
@@ -39,11 +43,13 @@ object DescriptorUtils {
         return PRIVATE_KEY_PREFIXES.any { input.startsWith(it) }
     }
 
+    @Suppress("ReturnCount")
     internal fun convertSlip132ToStandard(key: String): String {
         val decoded = base58CheckDecode(key) ?: return key
-        if (decoded.size < 4) return key
 
-        val prefix = decoded.sliceArray(0 until 4).toList()
+        if (decoded.size < VERSION_PREFIX_LENGTH) return key
+
+        val prefix = decoded.sliceArray(0 until VERSION_PREFIX_LENGTH).toList()
         val standardPrefix = SLIP132_TO_STANDARD[prefix] ?: return key
 
         standardPrefix.copyInto(decoded, 0)
@@ -54,19 +60,20 @@ object DescriptorUtils {
 
     private const val BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 
+    @Suppress("ReturnCount")
     private fun base58CheckDecode(input: String): ByteArray? {
         val decoded = base58Decode(input) ?: return null
-        if (decoded.size < 4) return null
+        if (decoded.size < CHECKSUM_LENGTH) return null
 
-        val payload = decoded.sliceArray(0 until decoded.size - 4)
-        val checksum = decoded.sliceArray(decoded.size - 4 until decoded.size)
-        val expectedChecksum = doubleSha256(payload).sliceArray(0 until 4)
+        val payload = decoded.sliceArray(0 until decoded.size - CHECKSUM_LENGTH)
+        val checksum = decoded.sliceArray(decoded.size - CHECKSUM_LENGTH until decoded.size)
+        val expectedChecksum = doubleSha256(payload).sliceArray(0 until CHECKSUM_LENGTH)
 
         return if (checksum.contentEquals(expectedChecksum)) payload else null
     }
 
     private fun base58CheckEncode(payload: ByteArray): String {
-        val checksum = doubleSha256(payload).sliceArray(0 until 4)
+        val checksum = doubleSha256(payload).sliceArray(0 until CHECKSUM_LENGTH)
         return base58Encode(payload + checksum)
     }
 
@@ -75,7 +82,7 @@ object DescriptorUtils {
         for (c in input) {
             val digit = BASE58_ALPHABET.indexOf(c)
             if (digit < 0) return null
-            result = result.multiply(java.math.BigInteger.valueOf(58)) + java.math.BigInteger.valueOf(digit.toLong())
+            result = result.multiply(java.math.BigInteger.valueOf(BASE58_RADIX)) + java.math.BigInteger.valueOf(digit.toLong())
         }
 
         val bytes = result.toByteArray()
@@ -90,7 +97,7 @@ object DescriptorUtils {
     private fun base58Encode(data: ByteArray): String {
         var num = java.math.BigInteger(1, data)
         val sb = StringBuilder()
-        val fiftyEight = java.math.BigInteger.valueOf(58)
+        val fiftyEight = java.math.BigInteger.valueOf(BASE58_RADIX)
 
         while (num > java.math.BigInteger.ZERO) {
             val (quotient, remainder) = num.divideAndRemainder(fiftyEight)

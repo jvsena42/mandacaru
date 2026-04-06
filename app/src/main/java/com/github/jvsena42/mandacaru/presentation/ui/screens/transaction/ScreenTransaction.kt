@@ -41,6 +41,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
@@ -74,22 +75,25 @@ fun ScreenTransaction(
 @Composable
 fun ScreenTransactionContent(
     uiState: TransactionUiState,
-    onAction: (TransactionAction) -> Unit
+    onAction: (TransactionAction) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
+    val currentOnAction by rememberUpdatedState(onAction)
 
     LaunchedEffect(uiState.errorMessage) {
         if (uiState.errorMessage.isNotEmpty()) {
             scope.launch {
                 snackBarHostState.showSnackbar(message = uiState.errorMessage)
-                onAction(TransactionAction.ClearSnackBarMessage)
+                currentOnAction(TransactionAction.ClearSnackBarMessage)
             }
         }
     }
 
     Scaffold(
+        modifier = modifier,
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) }
     ) { contentPadding ->
         Column(
@@ -488,7 +492,7 @@ private fun Preview() {
     MandacaruTheme {
         Surface {
             ScreenTransactionContent(
-                TransactionUiState(
+                uiState = TransactionUiState(
                     searchResult = GetTransactionResponse(
                         id = 1,
                         jsonrpc = "2.0",
@@ -510,8 +514,9 @@ private fun Preview() {
                             vout = listOf()
                         )
                     )
-                )
-            ) {}
+                ),
+                onAction = {}
+            )
         }
     }
 }
@@ -522,10 +527,11 @@ private fun PreviewBroadcast() {
     MandacaruTheme {
         Surface {
             ScreenTransactionContent(
-                TransactionUiState(
+                uiState = TransactionUiState(
                     broadcastResult = "abc123def456abc123def456abc123def456abc123def456abc123def456abc1"
-                )
-            ) {}
+                ),
+                onAction = {}
+            )
         }
     }
 }
@@ -535,7 +541,7 @@ private fun PreviewBroadcast() {
 private fun PreviewEmpty() {
     MandacaruTheme {
         Surface {
-            ScreenTransactionContent(TransactionUiState()) {}
+            ScreenTransactionContent(uiState = TransactionUiState(), onAction = {})
         }
     }
 }

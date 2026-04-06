@@ -9,6 +9,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
@@ -22,6 +23,7 @@ fun RequestNotificationPermissions(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val currentOnPermissionChange by rememberUpdatedState(onPermissionChange)
 
     // Check if permission is required (Android 13+)
     val requiresPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
@@ -35,7 +37,7 @@ fun RequestNotificationPermissions(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         isGranted = granted
-        onPermissionChange(granted)
+        currentOnPermissionChange(granted)
     }
 
     // Monitor lifecycle to check permission when returning from settings
@@ -45,7 +47,7 @@ fun RequestNotificationPermissions(
                 val currentPermissionState = NotificationUtils.areNotificationsEnabled(context)
                 if (currentPermissionState != isGranted) {
                     isGranted = currentPermissionState
-                    onPermissionChange(currentPermissionState)
+                    currentOnPermissionChange(currentPermissionState)
                 }
             }
         }
@@ -61,7 +63,7 @@ fun RequestNotificationPermissions(
     DisposableEffect(Unit) {
         val currentPermissionState = NotificationUtils.areNotificationsEnabled(context)
         isGranted = currentPermissionState
-        onPermissionChange(currentPermissionState)
+        currentOnPermissionChange(currentPermissionState)
 
         if (!currentPermissionState && requiresPermission && showPermissionDialog) {
             launcher.launch(Manifest.permission.POST_NOTIFICATIONS)

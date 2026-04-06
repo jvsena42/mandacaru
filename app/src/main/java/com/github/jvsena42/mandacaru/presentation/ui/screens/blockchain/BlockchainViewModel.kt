@@ -159,10 +159,11 @@ class BlockchainViewModel(
 
     companion object {
         private const val TAG = "BlockchainViewModel"
+        private const val MILLIS_PER_SECOND = 1000
 
         fun formatBlockTime(timestamp: Long): String {
             return SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
-                .format(Date(timestamp * 1000))
+                .format(Date(timestamp * MILLIS_PER_SECOND))
         }
     }
 }

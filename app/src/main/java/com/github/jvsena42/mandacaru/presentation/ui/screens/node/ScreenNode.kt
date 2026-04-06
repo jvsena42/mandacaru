@@ -78,6 +78,7 @@ fun ScreenNode(
 @Composable
 fun ScreenNode(
     uiState: NodeUiState,
+    modifier: Modifier = Modifier,
     onTogglePeers: () -> Unit = {},
     onToggleDiagnostics: () -> Unit = {},
     onDisconnectPeer: (String) -> Unit = {},
@@ -129,7 +130,7 @@ fun ScreenNode(
     }
 
     LazyColumn(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
         contentPadding = PaddingValues(16.dp),
@@ -471,9 +472,9 @@ private fun PeerChip(text: String) {
 private fun InfoRow(
     label: String,
     value: String,
+    modifier: Modifier = Modifier,
     icon: @Composable (() -> Unit)? = null,
     isLoading: Boolean = false,
-    modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),

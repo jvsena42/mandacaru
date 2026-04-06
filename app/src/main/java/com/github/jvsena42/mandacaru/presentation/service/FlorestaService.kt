@@ -46,6 +46,8 @@ class FlorestaService : Service() {
         private const val NOTIFICATION_POLL_INTERVAL_MS = 10_000L
         private const val COLOR_PRIMARY = "#FF815600"
         private const val COLOR_SYNCED = "#006D37"
+        private const val FULL_SYNC_THRESHOLD = 1.0f
+        private const val PERCENTAGE_MULTIPLIER = 100
     }
 
     override fun onCreate() {
@@ -128,7 +130,7 @@ class FlorestaService : Service() {
                         florestaDaemon.start()
                     }
                     startNotificationPolling()
-                } catch (e: Exception) {
+                } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
                     Log.e(TAG, "onStartCommand error: ", e)
                 }
             }
@@ -148,7 +150,7 @@ class FlorestaService : Service() {
                             updateSyncNotification(data.result.progress, data.result.height)
                         }
                     }
-                } catch (e: Exception) {
+                } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
                     Log.d(TAG, "Notification poll failed: ${e.message}")
                 }
             }
@@ -184,11 +186,11 @@ class FlorestaService : Service() {
             .setContentIntent(openAppPendingIntent)
             .addAction(R.drawable.ic_x, "Stop", stopPendingIntent)
 
-        if (progress < 1.0f) {
-            val percentage = progress * 100
+        if (progress < FULL_SYNC_THRESHOLD) {
+            val percentage = progress * PERCENTAGE_MULTIPLIER
             builder.setContentText("Syncing: ${"%.2f".format(percentage)}%")
                 .setSubText("${"%.2f".format(percentage)}% complete")
-                .setProgress(100, percentage.toInt(), false)
+                .setProgress(PERCENTAGE_MULTIPLIER, percentage.toInt(), false)
                 .setColor(COLOR_PRIMARY.toColorInt())
                 .setColorized(true)
         } else {

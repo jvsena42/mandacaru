@@ -36,6 +36,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -129,7 +130,7 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
         try {
             unregisterReceiver(exitReceiver)
-        } catch (e: Exception) {
+        } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
             Log.e(TAG, "Error unregistering receiver", e)
         }
     }
@@ -140,7 +141,7 @@ class MainActivity : ComponentActivity() {
             try {
                 Log.d(TAG, "Starting FlorestaService")
                 startForegroundService(Intent(this, FlorestaService::class.java))
-            } catch (e: Exception) {
+            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
                 Log.e(TAG, "Error starting service", e)
             }
         }
@@ -153,8 +154,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun MainScreen(
-    modifier: Modifier = Modifier,
     restartApplication: () -> Unit,
+    modifier: Modifier = Modifier,
     requestNotificationPermission: () -> Unit = {},
     hasNotificationPermission: Boolean = true
 ) {
@@ -166,6 +167,7 @@ private fun MainScreen(
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var showPermissionSnackbar by remember { mutableStateOf(!hasNotificationPermission) }
+    val currentRequestNotificationPermission by rememberUpdatedState(requestNotificationPermission)
 
     // Show snackbar if permission was denied
     LaunchedEffect(hasNotificationPermission) {
@@ -177,7 +179,7 @@ private fun MainScreen(
                     withDismissAction = true
                 )
                 if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
-                    requestNotificationPermission()
+                    currentRequestNotificationPermission()
                 }
                 showPermissionSnackbar = false
             }

@@ -50,6 +50,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,15 +76,17 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun ScreenSettings(
+    restartApplication: () -> Unit,
+    modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = koinViewModel(),
-    restartApplication: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    ScreenSettings(uiState = uiState, onAction = viewModel::onAction)
+    val currentRestartApplication by rememberUpdatedState(restartApplication)
+    ScreenSettings(uiState = uiState, onAction = viewModel::onAction, modifier = modifier)
     LaunchedEffect(viewModel.eventFlow) {
         viewModel.eventFlow.collect { event ->
             when (event) {
-                is SettingsEvents.OnNetworkChanged -> restartApplication()
+                is SettingsEvents.OnNetworkChanged -> currentRestartApplication()
             }
         }
     }
@@ -91,20 +94,22 @@ fun ScreenSettings(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) -> Unit) {
+private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) -> Unit, modifier: Modifier = Modifier) {
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val currentOnAction by rememberUpdatedState(onAction)
 
     LaunchedEffect(uiState.snackBarMessage) {
         if (uiState.snackBarMessage.isNotEmpty()) {
             scope.launch {
                 snackBarHostState.showSnackbar(message = uiState.snackBarMessage)
-                onAction(SettingsAction.ClearSnackBarMessage)
+                currentOnAction(SettingsAction.ClearSnackBarMessage)
             }
         }
     }
 
     Scaffold(
+        modifier = modifier,
         snackbarHost = {
             SnackbarHost(hostState = snackBarHostState)
         }
