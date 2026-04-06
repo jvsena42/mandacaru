@@ -1,0 +1,76 @@
+name: Bug Report
+description: Report a bug or unexpected behavior in Mandacaru
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: App Version
+      description: Which version of Mandacaru are you using?
+      placeholder: "e.g. v0.2.1"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear description of the bug.
+      placeholder: Describe what happened...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce the issue?
+      placeholder: |
+        1. Open the app
+        2. Go to '...'
+        3. Tap on '...'
+        4. See error
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs Actual Behavior
+      description: What did you expect to happen, and what actually happened?
+      placeholder: |
+        Expected: ...
+        Actual: ...
+    validations:
+      required: false
+
+  - type: input
+    id: device
+    attributes:
+      label: Device Info
+      description: Your device model and Android version.
+      placeholder: "e.g. Pixel 7, Android 14"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: network
+    attributes:
+      label: Network
+      description: Which Bitcoin network were you using?
+      options:
+        - Bitcoin (Mainnet)
+        - Testnet
+        - Signet
+        - Regtest
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Any relevant log output or error messages.
+      render: shell
+    validations:
+      required: false
