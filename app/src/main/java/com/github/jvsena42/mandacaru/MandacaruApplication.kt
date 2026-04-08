@@ -46,7 +46,7 @@ class MandacaruApplication : Application() {
 
 val presentationModule = module {
     viewModel { NodeViewModel(florestaRpc = get()) }
-    viewModel { SettingsViewModel(florestaRpc = get(), preferencesDataSource = get()) }
+    viewModel { SettingsViewModel(florestaRpc = get(), preferencesDataSource = get(), context = androidContext()) }
     viewModel { TransactionViewModel(florestaRpc = get()) }
     viewModel { BlockchainViewModel(florestaRpc = get()) }
 }

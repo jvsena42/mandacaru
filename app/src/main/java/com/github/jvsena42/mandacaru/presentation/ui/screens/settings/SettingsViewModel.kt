@@ -1,6 +1,8 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 
+import android.content.Context
 import android.util.Log
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.jvsena42.mandacaru.data.FlorestaRpc
@@ -14,6 +16,7 @@ import com.github.jvsena42.mandacaru.presentation.utils.getNetwork
 import com.github.jvsena42.mandacaru.presentation.utils.getRpcPort
 import com.github.jvsena42.mandacaru.presentation.utils.removeSpaces
 import kotlinx.coroutines.Dispatchers
+import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,7 +28,8 @@ import com.florestad.Network as FlorestaNetwork
 
 class SettingsViewModel(
     private val florestaRpc: FlorestaRpc,
-    private val preferencesDataSource: PreferencesDataSource
+    private val preferencesDataSource: PreferencesDataSource,
+    private val context: Context
 ) : ViewModel(), EventFlow<SettingsEvents> by EventFlowImpl() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -85,6 +89,8 @@ class SettingsViewModel(
             SettingsAction.ToggleDonateExpanded -> _uiState.update {
                 it.copy(isDonateExpanded = !it.isDonateExpanded)
             }
+
+            SettingsAction.OnClickExportLogs -> exportLogs()
         }
     }
 
@@ -188,6 +194,27 @@ class SettingsViewModel(
                 delay(2.seconds)
                 _uiState.update { it.copy(isLoading = false) }
             }
+        }
+    }
+
+    private fun exportLogs() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val logFile = File(context.filesDir, "debug.log")
+            if (!logFile.exists()) {
+                _uiState.update { it.copy(snackBarMessage = "Log file not found") }
+                return@launch
+            }
+
+            val cacheDir = File(context.cacheDir, "logs").apply { mkdirs() }
+            val cachedLog = File(cacheDir, "debug.log")
+            logFile.copyTo(cachedLog, overwrite = true)
+
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                cachedLog
+            )
+            viewModelScope.sendEvent(SettingsEvents.OnExportLogs(uri))
         }
     }
 

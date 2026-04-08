@@ -15,4 +15,5 @@ sealed interface SettingsAction {
     object ToggleNodeExpanded: SettingsAction
     object ToggleAboutExpanded: SettingsAction
     object ToggleDonateExpanded: SettingsAction
+    object OnClickExportLogs: SettingsAction
 }
