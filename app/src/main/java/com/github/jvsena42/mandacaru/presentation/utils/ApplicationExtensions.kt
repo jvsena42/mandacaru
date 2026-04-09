@@ -2,11 +2,10 @@ package com.github.jvsena42.mandacaru.presentation.utils
 
 import android.content.Context
 import android.content.Intent
-import kotlin.system.exitProcess
 
 fun Context.restartApplication() {
-    val intent = packageManager.getLaunchIntentForPackage(packageName)
-    intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+    val intent = packageManager.getLaunchIntentForPackage(packageName) ?: return
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
     startActivity(intent)
-    exitProcess(0)
+    Runtime.getRuntime().exit(0)
 }
