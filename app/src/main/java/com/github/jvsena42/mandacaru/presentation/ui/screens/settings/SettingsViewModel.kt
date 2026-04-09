@@ -45,7 +45,7 @@ class SettingsViewModel(
                     ),
                     isFastSyncEnabled = preferencesDataSource.getBoolean(
                         PreferenceKeys.FAST_SYNC_ENABLED,
-                        true
+                        false
                     ),
                 )
             }

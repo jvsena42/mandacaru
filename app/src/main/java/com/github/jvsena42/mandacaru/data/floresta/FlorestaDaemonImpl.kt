@@ -29,7 +29,7 @@ class FlorestaDaemonImpl(
             Log.d(TAG, "start: datadir: $datadir")
             val fastSyncEnabled = preferencesDataSource.getBoolean(
                 PreferenceKeys.FAST_SYNC_ENABLED,
-                true
+                false
             )
             val config = Config(
                 dataDir = datadir,
