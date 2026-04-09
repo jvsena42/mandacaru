@@ -21,4 +21,16 @@ class PreferencesDataSourceImpl(
             .map { preferences -> preferences[key.dataStoreKey] ?: defaultValue }
             .first()
     }
+
+    override suspend fun setBoolean(key: PreferenceKeys, value: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[key.dataStoreKey] = value.toString()
+        }
+    }
+
+    override suspend fun getBoolean(key: PreferenceKeys, defaultValue: Boolean): Boolean {
+        return dataStore.data
+            .map { preferences -> preferences[key.dataStoreKey]?.toBooleanStrictOrNull() ?: defaultValue }
+            .first()
+    }
 }

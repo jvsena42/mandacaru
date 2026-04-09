@@ -43,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import com.github.jvsena42.mandacaru.presentation.service.FlorestaService
@@ -218,6 +219,8 @@ private fun MainScreen(
                                 Text(
                                     destination.label,
                                     style = MaterialTheme.typography.labelMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                     fontWeight = if (pagerState.currentPage == index)
                                         FontWeight.Bold else FontWeight.Normal
                                 )

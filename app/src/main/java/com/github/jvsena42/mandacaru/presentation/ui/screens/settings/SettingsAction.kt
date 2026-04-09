@@ -16,4 +16,6 @@ sealed interface SettingsAction {
     object ToggleAboutExpanded: SettingsAction
     object ToggleDonateExpanded: SettingsAction
     object OnClickExportLogs: SettingsAction
+    data class OnFastSyncToggled(val enabled: Boolean): SettingsAction
+    object ToggleFastSyncExpanded: SettingsAction
 }

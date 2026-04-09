@@ -606,6 +606,26 @@ public object FfiConverterInt: FfiConverter<Int, Int> {
     }
 }
 
+public object FfiConverterBoolean: FfiConverter<Boolean, Byte> {
+    override fun lift(value: Byte): Boolean {
+        return value.toInt() != 0
+    }
+
+    override fun read(buf: ByteBuffer): Boolean {
+        return lift(buf.get())
+    }
+
+    override fun lower(value: Boolean): Byte {
+        return if (value) 1.toByte() else 0.toByte()
+    }
+
+    override fun allocationSize(value: Boolean) = 1
+
+    override fun write(value: Boolean, buf: ByteBuffer) {
+        buf.put(lower(value))
+    }
+}
+
 public object FfiConverterString: FfiConverter<String, RustBuffer.ByValue> {
     // Note: we don't inherit from FfiConverterRustBuffer, because we use a
     // special encoding when lowering/lifting.  We can use `RustBuffer.len` to
@@ -1008,7 +1028,8 @@ data class Config (
     var `network`: Network = Network.BITCOIN, 
     var `walletXpub`: String? = null, 
     var `walletDescriptor`: String? = null, 
-    var `filtersStartHeight`: Int? = null
+    var `filtersStartHeight`: Int? = null, 
+    var `assumeUtreexo`: Boolean = false
 ) {
     
     companion object
@@ -1024,6 +1045,7 @@ public object FfiConverterTypeConfig: FfiConverterRustBuffer<Config> {
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalInt.read(buf),
+            FfiConverterBoolean.read(buf),
         )
     }
 
@@ -1034,7 +1056,8 @@ public object FfiConverterTypeConfig: FfiConverterRustBuffer<Config> {
             FfiConverterTypeNetwork.allocationSize(value.`network`) +
             FfiConverterOptionalString.allocationSize(value.`walletXpub`) +
             FfiConverterOptionalString.allocationSize(value.`walletDescriptor`) +
-            FfiConverterOptionalInt.allocationSize(value.`filtersStartHeight`)
+            FfiConverterOptionalInt.allocationSize(value.`filtersStartHeight`) +
+            FfiConverterBoolean.allocationSize(value.`assumeUtreexo`)
     )
 
     override fun write(value: Config, buf: ByteBuffer) {
@@ -1045,6 +1068,7 @@ public object FfiConverterTypeConfig: FfiConverterRustBuffer<Config> {
             FfiConverterOptionalString.write(value.`walletXpub`, buf)
             FfiConverterOptionalString.write(value.`walletDescriptor`, buf)
             FfiConverterOptionalInt.write(value.`filtersStartHeight`, buf)
+            FfiConverterBoolean.write(value.`assumeUtreexo`, buf)
     }
 }
 

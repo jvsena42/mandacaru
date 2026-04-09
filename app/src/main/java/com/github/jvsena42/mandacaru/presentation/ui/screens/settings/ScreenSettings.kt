@@ -26,6 +26,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.NetworkCheck
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.Wallet
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -44,6 +45,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -364,6 +366,48 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                 }
             }
 
+            // Fast Sync Section
+            item {
+                val uriHandler = LocalUriHandler.current
+
+                SectionCard(
+                    title = stringResource(R.string.fast_sync),
+                    icon = Icons.Outlined.Speed,
+                    isExpanded = uiState.isFastSyncExpanded,
+                    onToggle = { onAction(SettingsAction.ToggleFastSyncExpanded) }
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                stringResource(R.string.fast_sync_description),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Switch(
+                                checked = uiState.isFastSyncEnabled,
+                                onCheckedChange = { onAction(SettingsAction.OnFastSyncToggled(it)) }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            stringResource(R.string.fast_sync_learn_more),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.clickable {
+                                uriHandler.openUri("https://bitcoinops.org/en/topics/assumeutxo/")
+                            }
+                        )
+                    }
+                }
+            }
+
             // Node Section
             item {
                 SectionCard(
@@ -471,7 +515,7 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                                 Icons.Outlined.Description,
                                 contentDescription = null,
                                 modifier = Modifier.size(24.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                tint = MaterialTheme.colorScheme.primary
                             )
                             Text(
                                 stringResource(R.string.logs),

@@ -19,4 +19,6 @@ data class SettingsUiState(
     val isNodeExpanded: Boolean = false,
     val isAboutExpanded: Boolean = false,
     val isDonateExpanded: Boolean = false,
+    val isFastSyncEnabled: Boolean = true,
+    val isFastSyncExpanded: Boolean = false,
 )
