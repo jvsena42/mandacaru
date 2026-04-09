@@ -46,7 +46,8 @@ class NodeViewModel(
                             blockHash = data.result.bestBlock,
                             syncPercentage = "%.2f".format(data.result.progress * PERCENTAGE_MULTIPLIER),
                             syncDecimal = data.result.progress,
-                            validatedBLocks = data.result.validated
+                            validatedBLocks = data.result.validated,
+                            ibd = data.result.ibd
                         )
                     }
                 }

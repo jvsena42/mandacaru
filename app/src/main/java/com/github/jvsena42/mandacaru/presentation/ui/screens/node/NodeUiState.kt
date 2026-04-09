@@ -12,6 +12,7 @@ data class NodeUiState(
     val difficulty: String = "",
     val syncPercentage: String = "0.00",
     val syncDecimal: Float = 0f,
+    val ibd: Boolean = false,
     val validatedBLocks: Int = 0,
     val peers: List<PeerInfoResult> = emptyList(),
     val isPeersExpanded: Boolean = false,
