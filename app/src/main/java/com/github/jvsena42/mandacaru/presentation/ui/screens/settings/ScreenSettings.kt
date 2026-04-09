@@ -515,7 +515,7 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                                 Icons.Outlined.Description,
                                 contentDescription = null,
                                 modifier = Modifier.size(24.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                tint = MaterialTheme.colorScheme.primary
                             )
                             Text(
                                 stringResource(R.string.logs),
