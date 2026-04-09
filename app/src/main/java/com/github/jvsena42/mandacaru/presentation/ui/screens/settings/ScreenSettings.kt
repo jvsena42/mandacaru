@@ -401,7 +401,7 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.clickable {
-                                uriHandler.openUri("https://blog.dlsouza.lol/2023/07/12/assume-utreexo.html")
+                                uriHandler.openUri("https://bitcoinops.org/en/topics/assumeutxo/")
                             }
                         )
                     }
