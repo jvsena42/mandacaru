@@ -633,6 +633,17 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                                 uriHandler.openUri("https://github.com/jvsena42/mandacaru/blob/main/LICENSE")
                             }
                         )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = stringResource(R.string.check_for_updates),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.clickable {
+                                uriHandler.openUri("https://github.com/jvsena42/mandacaru/releases/latest")
+                            }
+                        )
                     }
                 }
             }
