@@ -47,7 +47,7 @@ data class Result(
     @SerializedName("latest_work")
     val latestWork: String,
     @SerializedName("leaf_count")
-    val leafCount: Int,
+    val leafCount: Long,
     @SerializedName("progress")
     val progress: Float,
     @SerializedName("root_count")

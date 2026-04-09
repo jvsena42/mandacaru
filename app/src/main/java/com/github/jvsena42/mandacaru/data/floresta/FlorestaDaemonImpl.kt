@@ -27,12 +27,17 @@ class FlorestaDaemonImpl(
         }
         try {
             Log.d(TAG, "start: datadir: $datadir")
+            val fastSyncEnabled = preferencesDataSource.getBoolean(
+                PreferenceKeys.FAST_SYNC_ENABLED,
+                true
+            )
             val config = Config(
                 dataDir = datadir,
                 network = preferencesDataSource.getString(
                     PreferenceKeys.CURRENT_NETWORK,
                     FlorestaNetwork.BITCOIN.name
                 ).toFlorestaNetwork(),
+                assumeUtreexo = fastSyncEnabled,
             )
             daemon = Florestad.fromConfig(config)
             daemon?.start()?.also {
