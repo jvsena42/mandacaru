@@ -13,6 +13,7 @@ import androidx.core.graphics.toColorInt
 import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
+import com.github.jvsena42.mandacaru.domain.floresta.UtreexoBridgeAutoConnect
 import com.github.jvsena42.mandacaru.presentation.ui.screens.main.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,8 +32,10 @@ class FlorestaService : Service() {
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val florestaDaemon: FlorestaDaemon by inject()
     private val florestaRpc: FlorestaRpc by inject()
+    private val utreexoBridgeAutoConnect: UtreexoBridgeAutoConnect by inject()
     private val isStopping = AtomicBoolean(false)
     private var notificationPollingJob: Job? = null
+    private var startupSeedDone = false
 
     companion object {
         private const val TAG = "FlorestaService"
@@ -148,6 +151,12 @@ class FlorestaService : Service() {
                     florestaRpc.getBlockchainInfo().collect { result ->
                         result.onSuccess { data ->
                             updateSyncNotification(data.result.progress, data.result.height)
+                            if (!startupSeedDone) {
+                                startupSeedDone = true
+                                launch { utreexoBridgeAutoConnect.seedOnStartup() }
+                            } else {
+                                launch { utreexoBridgeAutoConnect.ensureUtreexoPeers() }
+                            }
                         }
                     }
                 } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {

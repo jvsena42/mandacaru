@@ -15,6 +15,7 @@ data class NodeUiState(
     val ibd: Boolean = false,
     val validatedBLocks: Int = 0,
     val peers: List<PeerInfoResult> = emptyList(),
+    val utreexoPeerCount: Int = 0,
     val isPeersExpanded: Boolean = false,
     val uptime: String = "",
     val memoryUsed: String = "",
