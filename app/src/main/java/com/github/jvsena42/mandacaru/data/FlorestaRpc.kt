@@ -78,8 +78,9 @@ interface FlorestaRpc {
     /**
      * Adds a new node to our list of peers. This will make our node try to connect to this peer.
      * @param node A network address with the format ip[:port]
+     * @param command One of "add" (persistent), "remove", or "onetry" (immediate one-shot dial).
      */
-    fun addNode(node: String): Flow<Result<AddNodeResponse>>
+    fun addNode(node: String, command: String = "add"): Flow<Result<AddNodeResponse>>
 
     /**
      * Returns the number of seconds the daemon has been running.

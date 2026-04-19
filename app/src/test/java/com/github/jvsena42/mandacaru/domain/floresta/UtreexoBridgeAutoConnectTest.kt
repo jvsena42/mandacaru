@@ -27,7 +27,7 @@ import org.junit.Test
 class UtreexoBridgeAutoConnectTest {
 
     @Test
-    fun `ensureUtreexoPeers adds all bridges when no utreexo peer is present`() = runBlocking {
+    fun `ensureUtreexoPeers fires onetry then add for each bridge when no utreexo peer is present`() = runBlocking {
         val rpc = FakeFlorestaRpc(
             peers = listOf(peer("NETWORK|WITNESS|NETWORK_LIMITED|P2P_V2"))
         )
@@ -37,7 +37,12 @@ class UtreexoBridgeAutoConnectTest {
         sut.ensureUtreexoPeers()
 
         assertEquals(
-            listOf("189.44.63.101:8333", "195.26.240.213:8333"),
+            listOf(
+                "189.44.63.101:8333" to "onetry",
+                "189.44.63.101:8333" to "add",
+                "195.26.240.213:8333" to "onetry",
+                "195.26.240.213:8333" to "add",
+            ),
             rpc.addNodeCalls
         )
     }
@@ -104,7 +109,8 @@ class UtreexoBridgeAutoConnectTest {
 
         sut.seedOnStartup()
         val afterStartup = rpc.addNodeCalls.size
-        assertEquals(2, afterStartup)
+        // 2 bridges x 2 commands (onetry + add) = 4
+        assertEquals(4, afterStartup)
 
         // A follow-up ensureUtreexoPeers within 60s should be throttled.
         now = 10_000L
@@ -120,7 +126,13 @@ class UtreexoBridgeAutoConnectTest {
 
         sut.ensureUtreexoPeers()
 
-        assertEquals(listOf("189.44.63.101:38333"), rpc.addNodeCalls)
+        assertEquals(
+            listOf(
+                "189.44.63.101:38333" to "onetry",
+                "189.44.63.101:38333" to "add",
+            ),
+            rpc.addNodeCalls
+        )
     }
 
     private fun peer(services: String) = PeerInfoResult(
@@ -144,12 +156,12 @@ private class FakePreferences(private val network: String) : PreferencesDataSour
 private class FakeFlorestaRpc(
     private val peers: List<PeerInfoResult>
 ) : FlorestaRpc {
-    val addNodeCalls = mutableListOf<String>()
+    val addNodeCalls = mutableListOf<Pair<String, String>>()
     var getPeerInfoCallCount = 0
         private set
 
-    override fun addNode(node: String): Flow<Result<AddNodeResponse>> {
-        addNodeCalls.add(node)
+    override fun addNode(node: String, command: String): Flow<Result<AddNodeResponse>> {
+        addNodeCalls.add(node to command)
         return flowOf(Result.success(AddNodeResponse(id = 1, jsonrpc = "2.0", result = ResultAddNode(success = true))))
     }
 

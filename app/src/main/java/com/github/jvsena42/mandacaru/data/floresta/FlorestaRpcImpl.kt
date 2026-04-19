@@ -70,9 +70,9 @@ class FlorestaRpcImpl(
     override fun listDescriptors(): Flow<Result<ListDescriptorsResponse>> =
         executeRpcCall(RpcMethods.LIST_DESCRIPTORS)
 
-    override fun addNode(node: String): Flow<Result<AddNodeResponse>> {
-        Log.d(TAG, "addNode: $node")
-        return executeRpcCall<AddNodeResponse>(RpcMethods.ADD_NODE, params = arrayOf(node, "add"))
+    override fun addNode(node: String, command: String): Flow<Result<AddNodeResponse>> {
+        Log.d(TAG, "addNode: $node ($command)")
+        return executeRpcCall<AddNodeResponse>(RpcMethods.ADD_NODE, params = arrayOf(node, command))
             .map { result ->
                 result.fold(
                     onSuccess = { response ->

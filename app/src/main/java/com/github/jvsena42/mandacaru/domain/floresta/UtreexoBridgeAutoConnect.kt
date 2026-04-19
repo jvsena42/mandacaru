@@ -70,10 +70,19 @@ class UtreexoBridgeAutoConnect(
 
     private suspend fun addBridges(bridges: List<String>) {
         bridges.forEach { bridge ->
-            val result = florestaRpc.addNode(bridge).firstOrNull()
-            result?.onSuccess { Log.d(TAG, "addNode($bridge) ok") }
-            result?.onFailure { Log.w(TAG, "addNode($bridge) failed: ${it.message}") }
+            // "onetry" forces an immediate outbound connection attempt; "add" registers the
+            // address in the persistent pool so Floresta retries on its own if the link drops.
+            // Without "onetry" the Rust daemon often accepts "add" without ever dialling the
+            // address
+            addBridgeWith(bridge, command = "onetry")
+            addBridgeWith(bridge, command = "add")
         }
+    }
+
+    private suspend fun addBridgeWith(bridge: String, command: String) {
+        val result = florestaRpc.addNode(bridge, command).firstOrNull()
+        result?.onSuccess { Log.d(TAG, "addNode($bridge, $command) ok") }
+        result?.onFailure { Log.w(TAG, "addNode($bridge, $command) failed: ${it.message}") }
     }
 
     private companion object {
