@@ -3,6 +3,7 @@ package com.github.jvsena42.mandacaru.domain.floresta
 import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
+import com.github.jvsena42.mandacaru.domain.model.florestaRPC.AddNodeCommand
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.AddNodeResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetBlockCountResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetBlockHashResponse
@@ -38,10 +39,10 @@ class UtreexoBridgeAutoConnectTest {
 
         assertEquals(
             listOf(
-                "1.228.21.110:38333" to "onetry",
-                "1.228.21.110:38333" to "add",
-                "189.44.63.101:38333" to "onetry",
-                "189.44.63.101:38333" to "add",
+                "1.228.21.110:38333" to AddNodeCommand.ONETRY,
+                "1.228.21.110:38333" to AddNodeCommand.ADD,
+                "189.44.63.101:38333" to AddNodeCommand.ONETRY,
+                "189.44.63.101:38333" to AddNodeCommand.ADD,
             ),
             rpc.addNodeCalls
         )
@@ -141,8 +142,8 @@ class UtreexoBridgeAutoConnectTest {
 
         assertEquals(
             listOf(
-                "1.228.21.110:18333" to "onetry",
-                "1.228.21.110:18333" to "add",
+                "1.228.21.110:18333" to AddNodeCommand.ONETRY,
+                "1.228.21.110:18333" to AddNodeCommand.ADD,
             ),
             rpc.addNodeCalls
         )
@@ -169,11 +170,11 @@ private class FakePreferences(private val network: String) : PreferencesDataSour
 private class FakeFlorestaRpc(
     private val peers: List<PeerInfoResult>
 ) : FlorestaRpc {
-    val addNodeCalls = mutableListOf<Pair<String, String>>()
+    val addNodeCalls = mutableListOf<Pair<String, AddNodeCommand>>()
     var getPeerInfoCallCount = 0
         private set
 
-    override fun addNode(node: String, command: String): Flow<Result<AddNodeResponse>> {
+    override fun addNode(node: String, command: AddNodeCommand): Flow<Result<AddNodeResponse>> {
         addNodeCalls.add(node to command)
         return flowOf(Result.success(AddNodeResponse(id = 1, jsonrpc = "2.0", result = ResultAddNode(success = true))))
     }

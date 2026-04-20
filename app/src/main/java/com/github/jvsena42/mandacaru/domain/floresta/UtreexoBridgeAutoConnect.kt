@@ -6,6 +6,7 @@ import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.domain.model.Constants
+import com.github.jvsena42.mandacaru.domain.model.florestaRPC.AddNodeCommand
 import kotlinx.coroutines.flow.firstOrNull
 
 // When an IBD node has zero Utreexo-flagged peers it cannot make progress, because inclusion
@@ -70,19 +71,19 @@ class UtreexoBridgeAutoConnect(
 
     private suspend fun addBridges(bridges: List<String>) {
         bridges.forEach { bridge ->
-            // "onetry" forces an immediate outbound connection attempt; "add" registers the
+            // ONETRY forces an immediate outbound connection attempt; ADD registers the
             // address in the persistent pool so Floresta retries on its own if the link drops.
-            // Without "onetry" the Rust daemon often accepts "add" without ever dialling the
+            // Without ONETRY the Rust daemon often accepts ADD without ever dialling the
             // address
-            addBridgeWith(bridge, command = "onetry")
-            addBridgeWith(bridge, command = "add")
+            addBridgeWith(bridge, AddNodeCommand.ONETRY)
+            addBridgeWith(bridge, AddNodeCommand.ADD)
         }
     }
 
-    private suspend fun addBridgeWith(bridge: String, command: String) {
+    private suspend fun addBridgeWith(bridge: String, command: AddNodeCommand) {
         val result = florestaRpc.addNode(bridge, command).firstOrNull()
-        result?.onSuccess { Log.d(TAG, "addNode($bridge, $command) ok") }
-        result?.onFailure { Log.w(TAG, "addNode($bridge, $command) failed: ${it.message}") }
+        result?.onSuccess { Log.d(TAG, "addNode($bridge, ${command.value}) ok") }
+        result?.onFailure { Log.w(TAG, "addNode($bridge, ${command.value}) failed: ${it.message}") }
     }
 
     private companion object {

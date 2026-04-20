@@ -93,11 +93,31 @@ class AddNodeRequestTest {
         assertEquals("add", params[1].asString)
     }
 
+    @Test
+    fun `addnode request includes onetry command when forcing immediate dial`() {
+        val request = buildAddNodeRequest("189.44.63.101:8333", command = "onetry")
+        val params = request.getAsJsonArray("params")
+        assertEquals(2, params.size())
+        assertEquals("189.44.63.101:8333", params[0].asString)
+        assertEquals("onetry", params[1].asString)
+    }
+
+    @Test
+    fun `addnode params are address and command regardless of command value`() {
+        listOf("add", "onetry", "remove").forEach { command ->
+            val request = buildAddNodeRequest("194.163.132.180:8333", command = command)
+            val params = request.getAsJsonArray("params")
+            assertEquals("command=$command: params size", 2, params.size())
+            assertEquals("command=$command: address", "194.163.132.180:8333", params[0].asString)
+            assertEquals("command=$command: command", command, params[1].asString)
+        }
+    }
+
     /**
      * Builds a JSON-RPC request body the same way [FlorestaRpcImpl] does for addNode.
      */
-    private fun buildAddNodeRequest(nodeAddress: String): JsonObject {
-        val params = listOf(nodeAddress, "add")
+    private fun buildAddNodeRequest(nodeAddress: String, command: String = "add"): JsonObject {
+        val params = listOf(nodeAddress, command)
         val request = mapOf(
             "jsonrpc" to "2.0",
             "method" to "addnode",

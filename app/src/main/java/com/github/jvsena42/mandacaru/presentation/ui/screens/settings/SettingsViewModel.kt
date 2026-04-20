@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
+import com.github.jvsena42.mandacaru.domain.model.florestaRPC.AddNodeCommand
 import com.github.jvsena42.mandacaru.presentation.utils.DescriptorUtils
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlowImpl
@@ -20,6 +21,7 @@ import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -153,22 +155,29 @@ class SettingsViewModel(
     }
 
     private fun connectNode() {
-        if (_uiState.value.nodeAddress.isEmpty()) return
+        val address = _uiState.value.nodeAddress
+        if (address.isEmpty()) return
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch(Dispatchers.IO) {
-            florestaRpc.addNode(_uiState.value.nodeAddress)
-                .collect { result ->
-                    result.onSuccess { data ->
-                        _uiState.update { it.copy(nodeAddress = "", snackBarMessage = "Node connected successfully") }
-                        Log.d(TAG, "connectNode: Success: $data")
-                    }.onFailure { error ->
-                        Log.d(TAG, "connectNode: Fail: ${error.message}")
-                        _uiState.update { it.copy(snackBarMessage = error.message.toString()) }
-                    }
+            val onetryResult = florestaRpc.addNode(address, AddNodeCommand.ONETRY).firstOrNull()
 
-                    delay(2.seconds)
-                    _uiState.update { it.copy(isLoading = false) }
+            onetryResult?.onSuccess { data ->
+                Log.d(TAG, "connectNode: onetry ok: $data")
+                _uiState.update {
+                    it.copy(
+                        nodeAddress = "",
+                        snackBarMessage = "Attempting connection to $address…"
+                    )
                 }
+                florestaRpc.addNode(address, AddNodeCommand.ADD).firstOrNull()
+                    ?.onFailure { Log.w(TAG, "connectNode: add (persist) failed: ${it.message}") }
+            }?.onFailure { error ->
+                Log.d(TAG, "connectNode: onetry failed: ${error.message}")
+                _uiState.update { it.copy(snackBarMessage = error.message.toString()) }
+            }
+
+            delay(2.seconds)
+            _uiState.update { it.copy(isLoading = false) }
         }
     }
 
