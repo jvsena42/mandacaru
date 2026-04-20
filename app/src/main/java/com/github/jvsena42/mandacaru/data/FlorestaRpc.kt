@@ -1,5 +1,6 @@
 package com.github.jvsena42.mandacaru.data
 
+import com.github.jvsena42.mandacaru.domain.model.florestaRPC.AddNodeCommand
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.AddNodeResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetBlockCountResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetBlockHashResponse
@@ -78,9 +79,13 @@ interface FlorestaRpc {
     /**
      * Adds a new node to our list of peers. This will make our node try to connect to this peer.
      * @param node A network address with the format ip[:port]
-     * @param command One of "add" (persistent), "remove", or "onetry" (immediate one-shot dial).
+     * @param command [AddNodeCommand.ADD] (persistent), [AddNodeCommand.REMOVE], or
+     *   [AddNodeCommand.ONETRY] (immediate one-shot dial).
      */
-    fun addNode(node: String, command: String = "add"): Flow<Result<AddNodeResponse>>
+    fun addNode(
+        node: String,
+        command: AddNodeCommand = AddNodeCommand.ADD,
+    ): Flow<Result<AddNodeResponse>>
 
     /**
      * Returns the number of seconds the daemon has been running.

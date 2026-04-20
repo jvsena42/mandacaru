@@ -5,6 +5,7 @@ import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.domain.model.Constants
+import com.github.jvsena42.mandacaru.domain.model.florestaRPC.AddNodeCommand
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.RpcMethods
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.AddNodeResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetBlockCountResponse
@@ -70,9 +71,9 @@ class FlorestaRpcImpl(
     override fun listDescriptors(): Flow<Result<ListDescriptorsResponse>> =
         executeRpcCall(RpcMethods.LIST_DESCRIPTORS)
 
-    override fun addNode(node: String, command: String): Flow<Result<AddNodeResponse>> {
-        Log.d(TAG, "addNode: $node ($command)")
-        return executeRpcCall<AddNodeResponse>(RpcMethods.ADD_NODE, params = arrayOf(node, command))
+    override fun addNode(node: String, command: AddNodeCommand): Flow<Result<AddNodeResponse>> {
+        Log.d(TAG, "addNode: $node (${command.value})")
+        return executeRpcCall<AddNodeResponse>(RpcMethods.ADD_NODE, params = arrayOf(node, command.value))
             .map { result ->
                 result.fold(
                     onSuccess = { response ->
