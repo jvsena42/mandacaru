@@ -31,17 +31,17 @@ class UtreexoBridgeAutoConnectTest {
         val rpc = FakeFlorestaRpc(
             peers = listOf(peer("NETWORK|WITNESS|NETWORK_LIMITED|P2P_V2"))
         )
-        val prefs = FakePreferences(network = "BITCOIN")
+        val prefs = FakePreferences(network = "SIGNET")
         val sut = UtreexoBridgeAutoConnect(rpc, prefs, nowMs = { 0L })
 
         sut.ensureUtreexoPeers()
 
         assertEquals(
             listOf(
-                "189.44.63.101:8333" to "onetry",
-                "189.44.63.101:8333" to "add",
-                "195.26.240.213:8333" to "onetry",
-                "195.26.240.213:8333" to "add",
+                "1.228.21.110:38333" to "onetry",
+                "1.228.21.110:38333" to "add",
+                "189.44.63.101:38333" to "onetry",
+                "189.44.63.101:38333" to "add",
             ),
             rpc.addNodeCalls
         )
@@ -52,7 +52,7 @@ class UtreexoBridgeAutoConnectTest {
         val rpc = FakeFlorestaRpc(
             peers = listOf(peer("NETWORK|WITNESS|0x1000"))
         )
-        val prefs = FakePreferences(network = "BITCOIN")
+        val prefs = FakePreferences(network = "SIGNET")
         val sut = UtreexoBridgeAutoConnect(rpc, prefs, nowMs = { 0L })
 
         sut.ensureUtreexoPeers()
@@ -74,9 +74,22 @@ class UtreexoBridgeAutoConnectTest {
     }
 
     @Test
-    fun `ensureUtreexoPeers honours the 60 second throttle`() = runBlocking {
+    fun `BITCOIN mainnet has no bridges until a live utreexo peer is published`() = runBlocking {
         val rpc = FakeFlorestaRpc(peers = emptyList())
         val prefs = FakePreferences(network = "BITCOIN")
+        val sut = UtreexoBridgeAutoConnect(rpc, prefs, nowMs = { 0L })
+
+        sut.ensureUtreexoPeers()
+        sut.seedOnStartup()
+
+        assertTrue(rpc.addNodeCalls.isEmpty())
+        assertEquals(0, rpc.getPeerInfoCallCount)
+    }
+
+    @Test
+    fun `ensureUtreexoPeers honours the 60 second throttle`() = runBlocking {
+        val rpc = FakeFlorestaRpc(peers = emptyList())
+        val prefs = FakePreferences(network = "SIGNET")
         var now = 0L
         val sut = UtreexoBridgeAutoConnect(rpc, prefs, nowMs = { now })
 
@@ -103,7 +116,7 @@ class UtreexoBridgeAutoConnectTest {
     @Test
     fun `seedOnStartup fires immediately even before the throttle window`() = runBlocking {
         val rpc = FakeFlorestaRpc(peers = emptyList())
-        val prefs = FakePreferences(network = "BITCOIN")
+        val prefs = FakePreferences(network = "SIGNET")
         var now = 1_000L
         val sut = UtreexoBridgeAutoConnect(rpc, prefs, nowMs = { now })
 
@@ -119,17 +132,17 @@ class UtreexoBridgeAutoConnectTest {
     }
 
     @Test
-    fun `signet network uses the single known bridge`() = runBlocking {
+    fun `testnet network uses the single known utreexod bridge`() = runBlocking {
         val rpc = FakeFlorestaRpc(peers = emptyList())
-        val prefs = FakePreferences(network = "SIGNET")
+        val prefs = FakePreferences(network = "TESTNET")
         val sut = UtreexoBridgeAutoConnect(rpc, prefs, nowMs = { 0L })
 
         sut.ensureUtreexoPeers()
 
         assertEquals(
             listOf(
-                "189.44.63.101:38333" to "onetry",
-                "189.44.63.101:38333" to "add",
+                "1.228.21.110:18333" to "onetry",
+                "1.228.21.110:18333" to "add",
             ),
             rpc.addNodeCalls
         )
