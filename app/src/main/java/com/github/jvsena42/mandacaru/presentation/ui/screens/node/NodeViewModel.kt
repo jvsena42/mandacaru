@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.jvsena42.mandacaru.data.FlorestaRpc
+import com.github.jvsena42.mandacaru.domain.floresta.hasUtreexoServiceFlag
 import com.github.jvsena42.mandacaru.presentation.utils.toHumanReadableDifficulty
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -138,6 +139,7 @@ class NodeViewModel(
                     it.copy(
                         numberOfPeers = peers.size.toString(),
                         peers = peers,
+                        utreexoPeerCount = peers.count { p -> p.services.hasUtreexoServiceFlag() },
                     )
                 }
             }

@@ -12,6 +12,7 @@ import com.github.jvsena42.mandacaru.data.PreferencesDataSourceImpl
 import com.github.jvsena42.mandacaru.data.floresta.FlorestaDaemonImpl
 import com.github.jvsena42.mandacaru.data.floresta.FlorestaRpcImpl
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
+import com.github.jvsena42.mandacaru.domain.floresta.UtreexoBridgeAutoConnect
 import com.github.jvsena42.mandacaru.presentation.ui.screens.blockchain.BlockchainViewModel
 import com.github.jvsena42.mandacaru.presentation.ui.screens.node.NodeViewModel
 import com.github.jvsena42.mandacaru.presentation.ui.screens.transaction.TransactionViewModel
@@ -64,4 +65,5 @@ val dataModule = module {
             dataStore = androidContext().florestaDataStore
         )
     }
+    single { UtreexoBridgeAutoConnect(florestaRpc = get(), preferencesDataSource = get()) }
 }

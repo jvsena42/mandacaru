@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.LinkOff
 import androidx.compose.material.icons.outlined.NetworkPing
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -147,6 +148,9 @@ fun ScreenNode(
                 textAlign = TextAlign.Center
             )
         }
+            if (uiState.ibd && uiState.utreexoPeerCount == 0) {
+                item { UtreexoWarningCard() }
+            }
             // Sync Progress Card
             item {
                 Card(
@@ -405,6 +409,45 @@ fun ScreenNode(
     }
 
 @Composable
+private fun UtreexoWarningCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Icon(
+                Icons.Outlined.Warning,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    stringResource(R.string.utreexo_warning_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+                Text(
+                    stringResource(R.string.utreexo_warning_message),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun PeerItem(
     peer: PeerInfoResult,
     onDisconnect: () -> Unit = {}
@@ -542,6 +585,8 @@ private fun Preview() {
                     difficulty = "138.97 T",
                     syncPercentage = "78.00",
                     syncDecimal = 0.78f,
+                    ibd = true,
+                    utreexoPeerCount = 0,
                     isPeersExpanded = true,
                     uptime = "2d 5h 32m 10s",
                     memoryUsed = "12.4 MB",

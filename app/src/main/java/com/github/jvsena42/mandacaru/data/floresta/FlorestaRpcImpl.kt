@@ -18,6 +18,7 @@ import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetTransa
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.ListDescriptorsResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.UptimeResponse
 import com.google.gson.Gson
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -69,9 +70,9 @@ class FlorestaRpcImpl(
     override fun listDescriptors(): Flow<Result<ListDescriptorsResponse>> =
         executeRpcCall(RpcMethods.LIST_DESCRIPTORS)
 
-    override fun addNode(node: String): Flow<Result<AddNodeResponse>> {
-        Log.d(TAG, "addNode: $node")
-        return executeRpcCall<AddNodeResponse>(RpcMethods.ADD_NODE, params = arrayOf(node, "add"))
+    override fun addNode(node: String, command: String): Flow<Result<AddNodeResponse>> {
+        Log.d(TAG, "addNode: $node ($command)")
+        return executeRpcCall<AddNodeResponse>(RpcMethods.ADD_NODE, params = arrayOf(node, command))
             .map { result ->
                 result.fold(
                     onSuccess = { response ->
@@ -126,24 +127,27 @@ class FlorestaRpcImpl(
             sendJsonRpcRequest(getRpcHost(), method.method, params.toJsonArray())
         }
 
-        result.fold(
+        val emission = result.fold(
             onSuccess = { json ->
                 try {
                     val response = when (T::class) {
                         JSONObject::class -> json as T
                         else -> gson.fromJson(json.toString(), T::class.java)
                     }
-                    emit(Result.success(response))
+                    Result.success(response)
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
                     Log.e(TAG, "${method.method} parse error: ${e.message}")
-                    emit(Result.failure(Exception("Failed to parse response: ${e.message}")))
+                    Result.failure(Exception("Failed to parse response: ${e.message}"))
                 }
             },
             onFailure = { e ->
                 Log.e(TAG, "${method.method} failure: ${e.message}")
-                emit(Result.failure(e))
+                Result.failure(e)
             }
         )
+        emit(emission)
     }
 
     private fun Array<out Any>.toJsonArray() = JSONArray().apply {
