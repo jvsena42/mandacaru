@@ -13,17 +13,20 @@ object Constants {
     const val ELECTRUM_PORT_SIGNET = "60001"
     const val ELECTRUM_PORT_REGTEST = "20001"
 
-    // Known Utreexo bridge nodes, keyed by FlorestaNetwork enum `.name` (e.g. "BITCOIN").
-    // Each entry must be a peer confirmed to advertise NODE_UTREEXO (service flag bit 12).
+    // Known Utreexo bridge nodes, keyed by FlorestaNetwork enum `.name`.
+    // Each entry must be a peer confirmed to advertise NODE_UTREEXO (bit 12).
     //
-    // BITCOIN is intentionally empty: a full v2 sweep of the 7 UTREEXO-flagged entries in
-    // Floresta/crates/floresta-wire/seeds/mainnet_seeds.json found zero live utreexo peers
-    // on mainnet (5 are unreachable; 195.26.240.213 now runs vanilla Bitcoin Core 30.0.0;
-    // Casa21's 189.44.63.101:8333 accepts TCP but never completes the v2 handshake).
-    //
-    // 1.228.21.110 (testnet:18333 / signet:38333) runs `utreexod 0.5.0` and is the only
-    // verified live Utreexo peer we found across all 7 seed-file entries.
+    // 195.26.240.213:8433 — luisschwab's Utreexo bridge (confirmed by operator
+    //   in getfloresta/Floresta#971 comment 4284241912). The :8333 entry that
+    //   appears in Floresta's mainnet_seeds.json is his regular Bitcoin Core
+    //   and should not be treated as a Utreexo peer.
+    // 1.228.21.110 — runs `utreexod 0.5.0`; advertises UTREEXO + UTREEXO_ARCHIVE
+    //   on testnet (18333) and signet (38333). Mainnet port (8333) is closed.
+    // 189.44.63.101:38333 (Casa21) — signet bridge added upstream in 7afd8d2.
     private val UTREEXO_BRIDGES: Map<String, List<String>> = mapOf(
+        "BITCOIN" to listOf(
+            "195.26.240.213:8433",
+        ),
         "SIGNET" to listOf(
             "1.228.21.110:38333",
             "189.44.63.101:38333",

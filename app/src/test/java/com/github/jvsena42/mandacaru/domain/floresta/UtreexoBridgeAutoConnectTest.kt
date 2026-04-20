@@ -75,16 +75,20 @@ class UtreexoBridgeAutoConnectTest {
     }
 
     @Test
-    fun `BITCOIN mainnet has no bridges until a live utreexo peer is published`() = runBlocking {
+    fun `BITCOIN mainnet fires addnode for the one verified utreexo bridge`() = runBlocking {
         val rpc = FakeFlorestaRpc(peers = emptyList())
         val prefs = FakePreferences(network = "BITCOIN")
         val sut = UtreexoBridgeAutoConnect(rpc, prefs, nowMs = { 0L })
 
         sut.ensureUtreexoPeers()
-        sut.seedOnStartup()
 
-        assertTrue(rpc.addNodeCalls.isEmpty())
-        assertEquals(0, rpc.getPeerInfoCallCount)
+        assertEquals(
+            listOf(
+                "195.26.240.213:8433" to AddNodeCommand.ONETRY,
+                "195.26.240.213:8433" to AddNodeCommand.ADD,
+            ),
+            rpc.addNodeCalls,
+        )
     }
 
     @Test
