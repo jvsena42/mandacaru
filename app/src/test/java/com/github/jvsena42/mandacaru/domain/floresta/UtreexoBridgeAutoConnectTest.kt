@@ -75,7 +75,7 @@ class UtreexoBridgeAutoConnectTest {
     }
 
     @Test
-    fun `BITCOIN mainnet fires addnode for the one verified utreexo bridge`() = runBlocking {
+    fun `BITCOIN mainnet fires addnode for the verified utreexo bridges`() = runBlocking {
         val rpc = FakeFlorestaRpc(peers = emptyList())
         val prefs = FakePreferences(network = "BITCOIN")
         val sut = UtreexoBridgeAutoConnect(rpc, prefs, nowMs = { 0L })
@@ -84,6 +84,8 @@ class UtreexoBridgeAutoConnectTest {
 
         assertEquals(
             listOf(
+                "45.77.242.77:8333" to AddNodeCommand.ONETRY,
+                "45.77.242.77:8333" to AddNodeCommand.ADD,
                 "195.26.240.213:8433" to AddNodeCommand.ONETRY,
                 "195.26.240.213:8433" to AddNodeCommand.ADD,
             ),
