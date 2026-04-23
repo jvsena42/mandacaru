@@ -23,14 +23,17 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import com.github.jvsena42.mandacaru.R
+import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
 
 @Composable
 fun UtreexoExportCard(
@@ -114,6 +117,40 @@ fun UtreexoExportCard(
                     }
                 }
             }
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun UtreexoExportCardCollapsedPreview() {
+    MandacaruTheme {
+        Surface {
+            UtreexoExportCard(
+                isExpanded = false,
+                onToggle = {},
+                onShowQrClick = {},
+                onCopyClick = {},
+                onShareClick = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun UtreexoExportCardExpandedPreview() {
+    MandacaruTheme {
+        Surface {
+            UtreexoExportCard(
+                isExpanded = true,
+                onToggle = {},
+                onShowQrClick = {},
+                onCopyClick = {},
+                onShareClick = {},
+                modifier = Modifier.padding(16.dp),
+            )
         }
     }
 }

@@ -23,8 +23,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.Surface
 import com.github.jvsena42.mandacaru.R
+import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
 
 @Composable
 fun UtreexoImportCard(
@@ -97,6 +100,20 @@ fun UtreexoImportCard(
                     )
                 }
             }
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun UtreexoImportCardPreview() {
+    MandacaruTheme {
+        Surface {
+            UtreexoImportCard(
+                onScanClick = {},
+                onPasteClick = {},
+                modifier = Modifier.padding(16.dp),
+            )
         }
     }
 }
