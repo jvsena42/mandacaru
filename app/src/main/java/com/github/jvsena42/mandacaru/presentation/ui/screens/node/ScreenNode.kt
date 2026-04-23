@@ -160,6 +160,8 @@ fun ScreenNode(
     var peerToDisconnect by remember { mutableStateOf<String?>(null) }
     var showPingConfirmation by remember { mutableStateOf(false) }
 
+    val isHeaderSync = uiState.ibd && uiState.syncDecimal == 0f
+
     peerToDisconnect?.let { address ->
         AlertDialog(
             onDismissRequest = { peerToDisconnect = null },
@@ -283,7 +285,7 @@ fun ScreenNode(
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
-                        if (uiState.ibd && uiState.syncDecimal == 0f) {
+                        if (isHeaderSync) {
                             Text(
                                 stringResource(R.string.syncing_headers),
                                 style = MaterialTheme.typography.bodyMedium,
@@ -301,7 +303,7 @@ fun ScreenNode(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    if (uiState.ibd && uiState.syncDecimal == 0f) {
+                    if (isHeaderSync) {
                         LinearProgressIndicator(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -390,7 +392,7 @@ fun ScreenNode(
             }
         }
 
-        if (uiState.ibd) {
+        if (uiState.ibd && !isHeaderSync) {
             item {
                 UtreexoImportCard(
                     isExpanded = uiState.isImportCardExpanded,
