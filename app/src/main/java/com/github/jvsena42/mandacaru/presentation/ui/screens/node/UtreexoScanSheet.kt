@@ -20,8 +20,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -97,8 +100,9 @@ fun UtreexoScanSheet(
             }
 
             Spacer(Modifier.height(8.dp))
-            OutlinedButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.cancel))
+            OutlinedButton(onClick = onPasteFallback, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Outlined.ContentPaste, contentDescription = null)
+                Text(text = " ${stringResource(R.string.utreexo_paste_payload)}")
             }
         }
     }
@@ -231,7 +235,8 @@ private fun UtreexoScanSheetPreview() {
                 CameraDeniedFallback(onPasteFallback = {})
                 Spacer(Modifier.height(8.dp))
                 OutlinedButton(onClick = {}, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.cancel))
+                    Icon(Icons.Outlined.ContentPaste, contentDescription = null)
+                    Text(text = " ${stringResource(R.string.utreexo_paste_payload)}")
                 }
             }
         }
