@@ -90,21 +90,20 @@ class FlorestaDaemonImpl(
                 IllegalStateException("Daemon is still running; call stop() first")
             )
         }
-        runCatching {
-            val base = File(datadir)
-            listOf("chaindata", "cfilters").forEach { sub ->
-                val dir = File(base, sub)
-                val existed = dir.exists()
-                val sizeBefore = if (existed) dirSize(dir) else 0L
-                val deleted = !existed || dir.deleteRecursively()
-                Log.i(
-                    TAG,
-                    "prepareForSnapshotImport: $sub existed=$existed " +
-                        "size=$sizeBefore deleted=$deleted",
-                )
-                if (existed && !deleted) error("Failed to wipe $sub")
-            }
+        // We deliberately do NOT wipe chaindata/ or cfilters/. The core's
+        // `mark_chain_as_assumed` overlays the user-supplied accumulator on top
+        // of whatever headers the chain already has; preserving the existing
+        // chain store lets header re-sync start from the last known height
+        // (not from genesis), which is the whole point of passing a snapshot.
+        // If the chain is already past the snapshot height the core treats the
+        // assume as a no-op and the user doesn't regress.
+        val base = File(datadir)
+        listOf("chaindata", "cfilters").forEach { sub ->
+            val dir = File(base, sub)
+            val size = if (dir.exists()) dirSize(dir) else 0L
+            Log.i(TAG, "prepareForSnapshotImport: preserving $sub (size=$size)")
         }
+        Result.success(Unit)
     }
 
     private fun dirSize(dir: File): Long =
