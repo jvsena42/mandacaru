@@ -13,10 +13,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -63,8 +66,10 @@ fun UtreexoScanSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .fillMaxHeight(SHEET_HEIGHT_FRACTION)
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 stringResource(R.string.utreexo_scan_qr),
@@ -74,12 +79,19 @@ fun UtreexoScanSheet(
             RequestCameraPermission(onPermissionChange = { hasCamera = it })
 
             if (hasCamera) {
-                CameraPreview(
-                    onPayloadScanned = onPayloadScanned,
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(360.dp),
-                )
+                        .weight(1f),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CameraPreview(
+                        onPayloadScanned = onPayloadScanned,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(16.dp)),
+                    )
+                }
             } else {
                 CameraDeniedFallback(onPasteFallback = onPasteFallback)
             }
@@ -97,7 +109,6 @@ private fun CameraPreview(
     onPayloadScanned: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var alreadyFired by remember { mutableStateOf(false) }
     val scanner = remember {
@@ -112,7 +123,9 @@ private fun CameraPreview(
     AndroidView(
         modifier = modifier,
         factory = { ctx ->
-            val previewView = PreviewView(ctx)
+            val previewView = PreviewView(ctx).apply {
+                scaleType = PreviewView.ScaleType.FILL_CENTER
+            }
             val providerFuture = ProcessCameraProvider.getInstance(ctx)
             providerFuture.addListener({
                 val provider = providerFuture.get()
@@ -197,6 +210,8 @@ private fun CameraDeniedFallback(onPasteFallback: () -> Unit) {
     Box(Modifier.fillMaxWidth())
 }
 
+private const val SHEET_HEIGHT_FRACTION = 0.9f
+
 @PreviewLightDark
 @Composable
 private fun UtreexoScanSheetPreview() {
@@ -206,7 +221,8 @@ private fun UtreexoScanSheetPreview() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
                     stringResource(R.string.utreexo_scan_qr),
