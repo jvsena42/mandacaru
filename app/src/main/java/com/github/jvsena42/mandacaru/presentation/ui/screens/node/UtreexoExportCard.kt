@@ -89,17 +89,17 @@ fun UtreexoExportCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(4.dp))
+                    FilledTonalButton(
+                        onClick = onShowQrClick,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(Icons.Outlined.QrCode2, contentDescription = null)
+                        Text(text = " ${stringResource(R.string.utreexo_show_qr)}")
+                    }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        FilledTonalButton(
-                            onClick = onShowQrClick,
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Icon(Icons.Outlined.QrCode2, contentDescription = null)
-                            Text(text = " ${stringResource(R.string.utreexo_show_qr)}")
-                        }
                         OutlinedButton(
                             onClick = onCopyClick,
                             modifier = Modifier.weight(1f),
