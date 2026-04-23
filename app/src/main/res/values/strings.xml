@@ -95,4 +95,36 @@
     <string name="log_file_not_found">Log file not found</string>
     <string name="utreexo_warning_title">No Utreexo peers connected</string>
     <string name="utreexo_warning_message">The node cannot finish the initial block download without at least one peer advertising the Utreexo service flag. Attempting to connect to known bridges…</string>
+
+    <string name="cancel">Cancel</string>
+    <string name="close">Close</string>
+    <string name="open_app_settings">Open app settings</string>
+
+    <string name="share_validation">Share validation</string>
+    <string name="utreexo_snapshot_tagline">Transfer node state between devices to skip sync.</string>
+    <string name="utreexo_import_cta_title">Skip the wait</string>
+    <string name="utreexo_import_cta_body">Scan a Utreexo snapshot from a synced device to finish syncing instantly.</string>
+    <string name="utreexo_export_body">Share this node\'s state to let another device skip sync.</string>
+    <string name="utreexo_scan_qr">Scan QR</string>
+    <string name="utreexo_paste_payload">Paste</string>
+    <string name="utreexo_paste_hint">Paste the snapshot JSON produced by another synced Floresta node.</string>
+    <string name="utreexo_show_qr">Show QR</string>
+    <string name="utreexo_copy">Copy</string>
+    <string name="utreexo_share">Share</string>
+    <string name="utreexo_confirm_title">Import Utreexo snapshot?</string>
+    <string name="utreexo_confirm_network">Network</string>
+    <string name="utreexo_confirm_height">Height</string>
+    <string name="utreexo_confirm_block_hash">Block hash</string>
+    <string name="utreexo_confirm_roots">Roots</string>
+    <string name="utreexo_confirm_body">Existing sync progress will be replaced. Your wallet descriptors are preserved. The app will restart.</string>
+    <string name="utreexo_confirm_action_import">Import</string>
+    <string name="utreexo_copied">Copied to clipboard</string>
+    <string name="utreexo_imported_restarting">Applying snapshot…</string>
+    <string name="utreexo_error_wrong_network">This snapshot is for %1$s but your node is on %2$s.</string>
+    <string name="utreexo_error_invalid_json">Unrecognised snapshot format.</string>
+    <string name="utreexo_error_unsupported_version">This snapshot uses a newer format than this app supports.</string>
+    <string name="utreexo_error_invalid_hex">Snapshot contains malformed data.</string>
+    <string name="utreexo_error_not_synced">This node hasn\'t finished syncing yet.</string>
+    <string name="utreexo_error_too_large_for_qr">This snapshot is too large for a QR code. Use Copy or Share instead.</string>
+    <string name="utreexo_scan_camera_denied">Camera permission is required to scan a QR.</string>
 </resources>
