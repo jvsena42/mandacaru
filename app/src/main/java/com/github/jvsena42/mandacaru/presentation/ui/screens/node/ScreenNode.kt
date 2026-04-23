@@ -392,7 +392,7 @@ fun ScreenNode(
             }
         }
 
-        if (uiState.ibd && !isHeaderSync) {
+        if (uiState.ibd && !isHeaderSync && uiState.utreexoPeerCount > 0) {
             item {
                 UtreexoImportCard(
                     isExpanded = uiState.isImportCardExpanded,
