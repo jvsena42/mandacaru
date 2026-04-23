@@ -50,7 +50,7 @@ fun UtreexoExportCard(
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             ExpandableHeader(
-                title = stringResource(R.string.utreexo_snapshot),
+                title = stringResource(R.string.share_validation),
                 icon = Icons.Outlined.Backup,
                 isExpanded = isExpanded,
                 onToggle = onToggle,
