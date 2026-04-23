@@ -396,9 +396,13 @@ internal interface UniffiLib : Library {
     ): Pointer
     fun uniffi_florestad_ffi_fn_constructor_florestad_new(uniffi_out_err: UniffiRustCallStatus, 
     ): Pointer
+    fun uniffi_florestad_ffi_fn_method_florestad_dump_utreexo_state(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_florestad_ffi_fn_method_florestad_start(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_florestad_ffi_fn_method_florestad_stop(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    fun uniffi_florestad_ffi_fn_func_validate_utreexo_snapshot_json(`payload`: RustBuffer.ByValue,`expectedNetwork`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun ffi_florestad_ffi_rustbuffer_alloc(`size`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -512,6 +516,10 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_florestad_ffi_rust_future_complete_void(`handle`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    fun uniffi_florestad_ffi_checksum_func_validate_utreexo_snapshot_json(
+    ): Short
+    fun uniffi_florestad_ffi_checksum_method_florestad_dump_utreexo_state(
+    ): Short
     fun uniffi_florestad_ffi_checksum_method_florestad_start(
     ): Short
     fun uniffi_florestad_ffi_checksum_method_florestad_stop(
@@ -537,6 +545,12 @@ private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
 
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: UniffiLib) {
+    if (lib.uniffi_florestad_ffi_checksum_func_validate_utreexo_snapshot_json() != 55281.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_florestad_ffi_checksum_method_florestad_dump_utreexo_state() != 63731.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_florestad_ffi_checksum_method_florestad_start() != 38627.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -914,6 +928,8 @@ object NoPointer
 
 public interface FlorestadInterface {
     
+    fun `dumpUtreexoState`(): String
+    
     fun `start`()
     
     fun `stop`()
@@ -960,6 +976,18 @@ open class Florestad : FFIObject, FlorestadInterface {
         }
     }
 
+    
+    @Throws(UtreexoExportException::class)override fun `dumpUtreexoState`(): String =
+        callWithPointer {
+    uniffiRustCallWithError(UtreexoExportException) { _status ->
+    UniffiLib.INSTANCE.uniffi_florestad_ffi_fn_method_florestad_dump_utreexo_state(it,
+        
+        _status)
+}
+        }.let {
+            FfiConverterString.lift(it)
+        }
+    
     override fun `start`() =
         callWithPointer {
     uniffiRustCall() { _status ->
@@ -1029,7 +1057,8 @@ data class Config (
     var `walletXpub`: String? = null, 
     var `walletDescriptor`: String? = null, 
     var `filtersStartHeight`: Int? = null, 
-    var `assumeUtreexo`: Boolean = false
+    var `assumeUtreexo`: Boolean = false, 
+    var `userUtreexoSnapshotJson`: String? = null
 ) {
     
     companion object
@@ -1046,6 +1075,7 @@ public object FfiConverterTypeConfig: FfiConverterRustBuffer<Config> {
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalInt.read(buf),
             FfiConverterBoolean.read(buf),
+            FfiConverterOptionalString.read(buf),
         )
     }
 
@@ -1057,7 +1087,8 @@ public object FfiConverterTypeConfig: FfiConverterRustBuffer<Config> {
             FfiConverterOptionalString.allocationSize(value.`walletXpub`) +
             FfiConverterOptionalString.allocationSize(value.`walletDescriptor`) +
             FfiConverterOptionalInt.allocationSize(value.`filtersStartHeight`) +
-            FfiConverterBoolean.allocationSize(value.`assumeUtreexo`)
+            FfiConverterBoolean.allocationSize(value.`assumeUtreexo`) +
+            FfiConverterOptionalString.allocationSize(value.`userUtreexoSnapshotJson`)
     )
 
     override fun write(value: Config, buf: ByteBuffer) {
@@ -1069,6 +1100,7 @@ public object FfiConverterTypeConfig: FfiConverterRustBuffer<Config> {
             FfiConverterOptionalString.write(value.`walletDescriptor`, buf)
             FfiConverterOptionalInt.write(value.`filtersStartHeight`, buf)
             FfiConverterBoolean.write(value.`assumeUtreexo`, buf)
+            FfiConverterOptionalString.write(value.`userUtreexoSnapshotJson`, buf)
     }
 }
 
@@ -1099,6 +1131,126 @@ public object FfiConverterTypeNetwork: FfiConverterRustBuffer<Network> {
 }
 
 
+
+
+
+
+
+sealed class UtreexoExportException(message: String): Exception(message) {
+        
+        class NotStarted(message: String) : UtreexoExportException(message)
+        
+        class NotSynced(message: String) : UtreexoExportException(message)
+        
+        class Internal(message: String) : UtreexoExportException(message)
+        
+
+    companion object ErrorHandler : UniffiRustCallStatusErrorHandler<UtreexoExportException> {
+        override fun lift(error_buf: RustBuffer.ByValue): UtreexoExportException = FfiConverterTypeUtreexoExportError.lift(error_buf)
+    }
+}
+
+public object FfiConverterTypeUtreexoExportError : FfiConverterRustBuffer<UtreexoExportException> {
+    override fun read(buf: ByteBuffer): UtreexoExportException {
+        
+            return when(buf.getInt()) {
+            1 -> UtreexoExportException.NotStarted(FfiConverterString.read(buf))
+            2 -> UtreexoExportException.NotSynced(FfiConverterString.read(buf))
+            3 -> UtreexoExportException.Internal(FfiConverterString.read(buf))
+            else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
+        }
+        
+    }
+
+    override fun allocationSize(value: UtreexoExportException): Int {
+        return 4
+    }
+
+    override fun write(value: UtreexoExportException, buf: ByteBuffer) {
+        when(value) {
+            is UtreexoExportException.NotStarted -> {
+                buf.putInt(1)
+                Unit
+            }
+            is UtreexoExportException.NotSynced -> {
+                buf.putInt(2)
+                Unit
+            }
+            is UtreexoExportException.Internal -> {
+                buf.putInt(3)
+                Unit
+            }
+        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    }
+
+}
+
+
+
+
+
+sealed class UtreexoImportException(message: String): Exception(message) {
+        
+        class InvalidJson(message: String) : UtreexoImportException(message)
+        
+        class UnsupportedVersion(message: String) : UtreexoImportException(message)
+        
+        class UnknownNetwork(message: String) : UtreexoImportException(message)
+        
+        class InvalidHex(message: String) : UtreexoImportException(message)
+        
+        class NetworkMismatch(message: String) : UtreexoImportException(message)
+        
+
+    companion object ErrorHandler : UniffiRustCallStatusErrorHandler<UtreexoImportException> {
+        override fun lift(error_buf: RustBuffer.ByValue): UtreexoImportException = FfiConverterTypeUtreexoImportError.lift(error_buf)
+    }
+}
+
+public object FfiConverterTypeUtreexoImportError : FfiConverterRustBuffer<UtreexoImportException> {
+    override fun read(buf: ByteBuffer): UtreexoImportException {
+        
+            return when(buf.getInt()) {
+            1 -> UtreexoImportException.InvalidJson(FfiConverterString.read(buf))
+            2 -> UtreexoImportException.UnsupportedVersion(FfiConverterString.read(buf))
+            3 -> UtreexoImportException.UnknownNetwork(FfiConverterString.read(buf))
+            4 -> UtreexoImportException.InvalidHex(FfiConverterString.read(buf))
+            5 -> UtreexoImportException.NetworkMismatch(FfiConverterString.read(buf))
+            else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
+        }
+        
+    }
+
+    override fun allocationSize(value: UtreexoImportException): Int {
+        return 4
+    }
+
+    override fun write(value: UtreexoImportException, buf: ByteBuffer) {
+        when(value) {
+            is UtreexoImportException.InvalidJson -> {
+                buf.putInt(1)
+                Unit
+            }
+            is UtreexoImportException.UnsupportedVersion -> {
+                buf.putInt(2)
+                Unit
+            }
+            is UtreexoImportException.UnknownNetwork -> {
+                buf.putInt(3)
+                Unit
+            }
+            is UtreexoImportException.InvalidHex -> {
+                buf.putInt(4)
+                Unit
+            }
+            is UtreexoImportException.NetworkMismatch -> {
+                buf.putInt(5)
+                Unit
+            }
+        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    }
+
+}
 
 
 
@@ -1157,4 +1309,13 @@ public object FfiConverterOptionalString: FfiConverterRustBuffer<String?> {
         }
     }
 }
+@Throws(UtreexoImportException::class)
+
+fun `validateUtreexoSnapshotJson`(`payload`: String, `expectedNetwork`: Network) =
+    
+    uniffiRustCallWithError(UtreexoImportException) { _status ->
+    UniffiLib.INSTANCE.uniffi_florestad_ffi_fn_func_validate_utreexo_snapshot_json(FfiConverterString.lower(`payload`),FfiConverterTypeNetwork.lower(`expectedNetwork`),_status)
+}
+
+
 
