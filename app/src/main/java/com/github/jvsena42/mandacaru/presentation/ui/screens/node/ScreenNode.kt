@@ -463,6 +463,18 @@ fun ScreenNode(
             }
         }
 
+        if (!uiState.ibd) {
+            item {
+                UtreexoExportCard(
+                    isExpanded = uiState.isExportCardExpanded,
+                    onToggle = onToggleExportCard,
+                    onShowQrClick = onClickShowExportQr,
+                    onCopyClick = onClickCopyExport,
+                    onShareClick = onClickShareExport,
+                )
+            }
+        }
+
         // Diagnostics Card
         item {
             Card(
@@ -518,18 +530,6 @@ fun ScreenNode(
                         }
                     }
                 }
-            }
-        }
-
-        if (!uiState.ibd) {
-            item {
-                UtreexoExportCard(
-                    isExpanded = uiState.isExportCardExpanded,
-                    onToggle = onToggleExportCard,
-                    onShowQrClick = onClickShowExportQr,
-                    onCopyClick = onClickCopyExport,
-                    onShareClick = onClickShareExport,
-                )
             }
         }
     }
