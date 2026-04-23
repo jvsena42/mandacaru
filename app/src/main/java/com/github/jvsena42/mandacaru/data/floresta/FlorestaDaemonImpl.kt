@@ -30,18 +30,30 @@ class FlorestaDaemonImpl(
             val pendingSnapshot = preferencesDataSource
                 .getString(PreferenceKeys.PENDING_UTREEXO_SNAPSHOT, "")
                 .takeIf { it.isNotEmpty() }
+            val network = preferencesDataSource.getString(
+                PreferenceKeys.CURRENT_NETWORK,
+                FlorestaNetwork.BITCOIN.name
+            ).toFlorestaNetwork()
+            val effectiveAssumeUtreexo = fastSyncEnabled || pendingSnapshot != null
+            Log.i(
+                TAG,
+                "start: pendingSnapshot=${pendingSnapshot?.length ?: 0} chars, " +
+                    "fastSync=$fastSyncEnabled→$effectiveAssumeUtreexo, " +
+                    "network=$network, datadir=$datadir",
+            )
             val config = Config(
                 dataDir = datadir,
-                network = preferencesDataSource.getString(
-                    PreferenceKeys.CURRENT_NETWORK,
-                    FlorestaNetwork.BITCOIN.name
-                ).toFlorestaNetwork(),
-                assumeUtreexo = fastSyncEnabled,
+                network = network,
+                assumeUtreexo = effectiveAssumeUtreexo,
                 userUtreexoSnapshotJson = pendingSnapshot,
             )
             daemon = Florestad.fromConfig(config)
             daemon?.start()?.also {
-                Log.i(TAG, "start: Floresta running with config $config")
+                Log.i(
+                    TAG,
+                    "start: Floresta running (pendingSnapshot=${pendingSnapshot != null}, " +
+                        "assumeUtreexo=$effectiveAssumeUtreexo)",
+                )
                 isRunning = true
             }
         } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
@@ -82,12 +94,21 @@ class FlorestaDaemonImpl(
             val base = File(datadir)
             listOf("chaindata", "cfilters").forEach { sub ->
                 val dir = File(base, sub)
-                if (dir.exists() && !dir.deleteRecursively()) {
-                    error("Failed to wipe $sub")
-                }
+                val existed = dir.exists()
+                val sizeBefore = if (existed) dirSize(dir) else 0L
+                val deleted = !existed || dir.deleteRecursively()
+                Log.i(
+                    TAG,
+                    "prepareForSnapshotImport: $sub existed=$existed " +
+                        "size=$sizeBefore deleted=$deleted",
+                )
+                if (existed && !deleted) error("Failed to wipe $sub")
             }
         }
     }
+
+    private fun dirSize(dir: File): Long =
+        dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
 
     companion object {
         private const val TAG = "FlorestaDaemonImpl"

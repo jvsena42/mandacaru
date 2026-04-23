@@ -218,6 +218,11 @@ class NodeViewModel(
             )
         }
         viewModelScope.launch(Dispatchers.IO) {
+            Log.i(
+                TAG,
+                "onConfirmImport: payload len=${payload.length} " +
+                    "compact=${SnapshotCodec.isCompact(payload)}",
+            )
             val payloadToPersist = runCatching { SnapshotCodec.normalizeToJson(payload) }
                 .getOrElse { error ->
                     Log.e(TAG, "normalizeToJson failed", error)
@@ -229,10 +234,26 @@ class NodeViewModel(
                     }
                     return@launch
                 }
+            Log.i(
+                TAG,
+                "onConfirmImport: normalized JSON len=${payloadToPersist.length} " +
+                    "digest=${sha256Short(payloadToPersist)}",
+            )
             preferencesDataSource.setString(
                 PreferenceKeys.PENDING_UTREEXO_SNAPSHOT,
                 payloadToPersist,
             )
+            val readBack = preferencesDataSource
+                .getString(PreferenceKeys.PENDING_UTREEXO_SNAPSHOT, "")
+            if (readBack.length != payloadToPersist.length) {
+                Log.e(
+                    TAG,
+                    "onConfirmImport: DataStore read-back MISMATCH " +
+                        "wrote=${payloadToPersist.length} read=${readBack.length}",
+                )
+            } else {
+                Log.i(TAG, "onConfirmImport: setString OK, read-back len=${readBack.length}")
+            }
             florestaDaemon.stop()
             florestaDaemon.prepareForSnapshotImport()
                 .onFailure { error ->
@@ -245,6 +266,7 @@ class NodeViewModel(
                     }
                     return@launch
                 }
+            Log.i(TAG, "onConfirmImport: OK — restart pending")
             with(viewModelScope) { sendEvent(NodeEvents.OnSnapshotApplied) }
         }
     }
@@ -312,8 +334,26 @@ class NodeViewModel(
         val existing = preferencesDataSource
             .getString(PreferenceKeys.PENDING_UTREEXO_SNAPSHOT, "")
         if (existing.isNotEmpty()) {
+            Log.i(TAG, "clearPendingSnapshotIfAny: clearing ${existing.length}-char snapshot (ibd=false)")
             preferencesDataSource.setString(PreferenceKeys.PENDING_UTREEXO_SNAPSHOT, "")
         }
+    }
+
+    private fun sha256Short(s: String): String {
+        val digest = java.security.MessageDigest.getInstance("SHA-256").digest(s.toByteArray())
+        val sb = StringBuilder(16)
+        for (i in 0 until 4) {
+            val b = digest[i].toInt() and 0xFF
+            sb.append("0123456789abcdef"[b ushr 4])
+            sb.append("0123456789abcdef"[b and 0x0F])
+        }
+        sb.append("..")
+        for (i in digest.size - 4 until digest.size) {
+            val b = digest[i].toInt() and 0xFF
+            sb.append("0123456789abcdef"[b ushr 4])
+            sb.append("0123456789abcdef"[b and 0x0F])
+        }
+        return sb.toString()
     }
 
     private fun errorToMessage(error: Throwable, currentNetwork: FlorestaNetwork): String =
