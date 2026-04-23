@@ -13,6 +13,7 @@ import com.github.jvsena42.mandacaru.domain.floresta.UtreexoSnapshotService
 import com.github.jvsena42.mandacaru.domain.floresta.hasUtreexoServiceFlag
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlowImpl
+import com.github.jvsena42.mandacaru.presentation.utils.SnapshotCodec
 import com.github.jvsena42.mandacaru.presentation.utils.toHumanReadableDifficulty
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -217,7 +218,21 @@ class NodeViewModel(
             )
         }
         viewModelScope.launch(Dispatchers.IO) {
-            preferencesDataSource.setString(PreferenceKeys.PENDING_UTREEXO_SNAPSHOT, payload)
+            val payloadToPersist = runCatching { SnapshotCodec.normalizeToJson(payload) }
+                .getOrElse { error ->
+                    Log.e(TAG, "normalizeToJson failed", error)
+                    _uiState.update {
+                        it.copy(
+                            isApplyingSnapshot = false,
+                            snapshotMessage = "Snapshot payload was unreadable.",
+                        )
+                    }
+                    return@launch
+                }
+            preferencesDataSource.setString(
+                PreferenceKeys.PENDING_UTREEXO_SNAPSHOT,
+                payloadToPersist,
+            )
             florestaDaemon.stop()
             florestaDaemon.prepareForSnapshotImport()
                 .onFailure { error ->

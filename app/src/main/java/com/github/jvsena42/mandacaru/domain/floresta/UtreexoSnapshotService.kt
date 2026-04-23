@@ -2,6 +2,7 @@ package com.github.jvsena42.mandacaru.domain.floresta
 
 import com.florestad.Network
 import com.florestad.validateUtreexoSnapshotJson
+import com.github.jvsena42.mandacaru.presentation.utils.SnapshotCodec
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -16,15 +17,19 @@ data class SnapshotPreview(
 class UtreexoSnapshotService(
     private val daemon: FlorestaDaemon,
 ) {
-    suspend fun dump(): Result<String> = daemon.dumpUtreexoState()
+    suspend fun dump(): Result<String> =
+        daemon.dumpUtreexoState().mapCatching { SnapshotCodec.encodeCompact(it) }
 
     suspend fun validate(payload: String, expectedNetwork: Network) =
         withContext(Dispatchers.IO) {
-            runCatching { validateUtreexoSnapshotJson(payload, expectedNetwork) }
+            runCatching {
+                val json = SnapshotCodec.normalizeToJson(payload)
+                validateUtreexoSnapshotJson(json, expectedNetwork)
+            }
         }
 
     fun peek(payload: String): Result<SnapshotPreview> = runCatching {
-        val obj = JSONObject(payload)
+        val obj = JSONObject(SnapshotCodec.normalizeToJson(payload))
         val network = networkTagToEnum(obj.getString(KEY_NETWORK))
             ?: error("Unknown network tag")
         SnapshotPreview(
