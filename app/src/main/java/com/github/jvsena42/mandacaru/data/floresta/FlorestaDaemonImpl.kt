@@ -90,13 +90,6 @@ class FlorestaDaemonImpl(
                 IllegalStateException("Daemon is still running; call stop() first")
             )
         }
-        // We deliberately do NOT wipe chaindata/ or cfilters/. The core's
-        // `mark_chain_as_assumed` overlays the user-supplied accumulator on top
-        // of whatever headers the chain already has; preserving the existing
-        // chain store lets header re-sync start from the last known height
-        // (not from genesis), which is the whole point of passing a snapshot.
-        // If the chain is already past the snapshot height the core treats the
-        // assume as a no-op and the user doesn't regress.
         val base = File(datadir)
         listOf("chaindata", "cfilters").forEach { sub ->
             val dir = File(base, sub)
