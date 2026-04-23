@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -147,6 +148,7 @@ private fun CameraPreview(
     )
 }
 
+@androidx.annotation.OptIn(ExperimentalGetImage::class)
 private fun processFrame(
     proxy: ImageProxy,
     scanner: BarcodeScanner,
