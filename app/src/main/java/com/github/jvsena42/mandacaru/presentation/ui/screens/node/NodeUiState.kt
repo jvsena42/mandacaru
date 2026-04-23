@@ -1,6 +1,7 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.node
 
 import androidx.compose.runtime.Stable
+import com.github.jvsena42.mandacaru.domain.floresta.SnapshotPreview
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.PeerInfoResult
 
 @Stable
@@ -22,4 +23,14 @@ data class NodeUiState(
     val memoryFree: String = "",
     val memoryTotal: String = "",
     val isDiagnosticsExpanded: Boolean = false,
+
+    val isScanSheetOpen: Boolean = false,
+    val isPasteSheetOpen: Boolean = false,
+    val isExportQrSheetOpen: Boolean = false,
+    val isExportCardExpanded: Boolean = false,
+    val pendingSnapshotPreview: SnapshotPreview? = null,
+    val pendingSnapshotPayload: String? = null,
+    val exportPayload: String? = null,
+    val snapshotMessage: String? = null,
+    val isApplyingSnapshot: Boolean = false,
 )

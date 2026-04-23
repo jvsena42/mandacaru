@@ -251,7 +251,7 @@ private fun MainScreen(
         ) { page ->
             when (pages[page]) {
                 Destinations.TRANSACTION -> ScreenTransaction()
-                Destinations.NODE -> ScreenNode()
+                Destinations.NODE -> ScreenNode(restartApplication = restartApplication)
                 Destinations.BLOCKCHAIN -> ScreenBlockchain()
                 Destinations.SETTINGS -> ScreenSettings(
                     restartApplication = restartApplication

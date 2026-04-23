@@ -17,6 +17,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import android.content.Intent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.Hub
@@ -62,18 +72,68 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun ScreenNode(
+    restartApplication: () -> Unit = {},
     viewModel: NodeViewModel = koinViewModel()
 ) {
     RequestNotificationPermissions(onPermissionChange = {})
 
     val uiState by viewModel.uiState.collectAsState()
-    ScreenNode(
-        uiState = uiState,
-        onTogglePeers = viewModel::togglePeersExpanded,
-        onToggleDiagnostics = viewModel::toggleDiagnosticsExpanded,
-        onDisconnectPeer = viewModel::disconnectPeer,
-        onPingPeers = viewModel::pingPeers
-    )
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        viewModel.eventFlow.collect { event ->
+            when (event) {
+                NodeEvents.OnSnapshotApplied -> restartApplication()
+                is NodeEvents.OnShareAccumulator -> {
+                    val share = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, event.payload)
+                    }
+                    context.startActivity(Intent.createChooser(share, null))
+                }
+            }
+        }
+    }
+
+    val message = uiState.snapshotMessage
+    LaunchedEffect(message) {
+        if (message != null) {
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearSnapshotMessage()
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { padding ->
+        ScreenNode(
+            uiState = uiState,
+            modifier = Modifier.padding(padding),
+            onTogglePeers = viewModel::togglePeersExpanded,
+            onToggleDiagnostics = viewModel::toggleDiagnosticsExpanded,
+            onDisconnectPeer = viewModel::disconnectPeer,
+            onPingPeers = viewModel::pingPeers,
+            onClickScan = viewModel::onClickScan,
+            onClickPaste = viewModel::onClickPaste,
+            onDismissScanSheet = viewModel::onDismissScanSheet,
+            onDismissPasteSheet = viewModel::onDismissPasteSheet,
+            onAccumulatorReceived = viewModel::onAccumulatorReceived,
+            onDismissImportConfirm = viewModel::onDismissImportConfirm,
+            onConfirmImport = viewModel::onConfirmImport,
+            onToggleExportCard = viewModel::toggleExportCardExpanded,
+            onClickShowExportQr = viewModel::onClickShowExportQr,
+            onClickCopyExport = {
+                viewModel.onClickCopyExport()
+                uiState.exportPayload?.let { clipboard.setText(AnnotatedString(it)) }
+            },
+            onClickShareExport = viewModel::onClickShareExport,
+            onDismissExportQrSheet = viewModel::onDismissExportQrSheet,
+        )
+    }
 }
 
 @Composable
@@ -83,7 +143,19 @@ fun ScreenNode(
     onTogglePeers: () -> Unit = {},
     onToggleDiagnostics: () -> Unit = {},
     onDisconnectPeer: (String) -> Unit = {},
-    onPingPeers: () -> Unit = {}
+    onPingPeers: () -> Unit = {},
+    onClickScan: () -> Unit = {},
+    onClickPaste: () -> Unit = {},
+    onDismissScanSheet: () -> Unit = {},
+    onDismissPasteSheet: () -> Unit = {},
+    onAccumulatorReceived: (String) -> Unit = {},
+    onDismissImportConfirm: () -> Unit = {},
+    onConfirmImport: () -> Unit = {},
+    onToggleExportCard: () -> Unit = {},
+    onClickShowExportQr: () -> Unit = {},
+    onClickCopyExport: () -> Unit = {},
+    onClickShareExport: () -> Unit = {},
+    onDismissExportQrSheet: () -> Unit = {},
 ) {
     var peerToDisconnect by remember { mutableStateOf<String?>(null) }
     var showPingConfirmation by remember { mutableStateOf(false) }
@@ -130,6 +202,42 @@ fun ScreenNode(
         )
     }
 
+    if (uiState.ibd && uiState.isScanSheetOpen) {
+        UtreexoScanSheet(
+            onPayloadScanned = onAccumulatorReceived,
+            onDismiss = onDismissScanSheet,
+            onPasteFallback = {
+                onDismissScanSheet()
+                onClickPaste()
+            },
+        )
+    }
+    if (uiState.ibd && uiState.isPasteSheetOpen) {
+        UtreexoPasteSheet(
+            onPayloadSubmitted = onAccumulatorReceived,
+            onDismiss = onDismissPasteSheet,
+        )
+    }
+    val preview = uiState.pendingSnapshotPreview
+    if (uiState.ibd && preview != null) {
+        UtreexoImportConfirmDialog(
+            preview = preview,
+            onConfirm = onConfirmImport,
+            onDismiss = onDismissImportConfirm,
+        )
+    }
+    val exportForQr = uiState.exportPayload
+    if (!uiState.ibd && uiState.isExportQrSheetOpen && exportForQr != null) {
+        UtreexoExportQrSheet(
+            payload = exportForQr,
+            onDismiss = onDismissExportQrSheet,
+        )
+    }
+
+    if (uiState.isApplyingSnapshot) {
+        ApplyingSnapshotOverlay()
+    }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -148,265 +256,308 @@ fun ScreenNode(
                 textAlign = TextAlign.Center
             )
         }
-            if (uiState.ibd && uiState.utreexoPeerCount == 0) {
-                item { UtreexoWarningCard() }
-            }
-            // Sync Progress Card
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        if (uiState.ibd && uiState.utreexoPeerCount == 0) {
+            item { UtreexoWarningCard() }
+        }
+        // Sync Progress Card
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                stringResource(R.string.sync),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            if (uiState.ibd && uiState.syncDecimal == 0f) {
-                                Text(
-                                    stringResource(R.string.syncing_headers),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            } else {
-                                Text(
-                                    "${uiState.syncPercentage}%",
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        if (uiState.ibd && uiState.syncDecimal == 0f) {
-                            LinearProgressIndicator(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(8.dp)
-                                    .clip(RoundedCornerShape(4.dp)),
-                                color = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                            )
-                        } else {
-                            LinearProgressIndicator(
-                                progress = { uiState.syncDecimal },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(8.dp)
-                                    .clip(RoundedCornerShape(4.dp)),
-                                color = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Network Info Card
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "Network Information",
+                            stringResource(R.string.sync),
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
-
-                        InfoRow(
-                            label = stringResource(R.string.network),
-                            value = uiState.network,
-                            icon = {
-                                Icon(
-                                    Icons.Outlined.Cloud,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        )
-
-                        InfoRow(
-                            label = stringResource(R.string.number_of_peers),
-                            value = uiState.numberOfPeers,
-                            icon = {
-                                Icon(
-                                    Icons.Outlined.Person,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            },
-                            isLoading = uiState.numberOfPeers.isEmpty()
-                        )
-
-                        InfoRow(
-                            label = stringResource(R.string.difficulty),
-                            value = uiState.difficulty,
-                            icon = {
-                                Icon(
-                                    Icons.Outlined.Speed,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        )
-                    }
-                }
-            }
-
-            // Peers Info Card
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        ExpandableHeader(
-                            title = "Peers (${uiState.numberOfPeers.ifEmpty { "0" }})",
-                            icon = Icons.Outlined.Hub,
-                            isExpanded = uiState.isPeersExpanded,
-                            onToggle = onTogglePeers
-                        )
-
-                        AnimatedVisibility(
-                            visible = uiState.isPeersExpanded,
-                            enter = expandVertically(),
-                            exit = shrinkVertically()
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 20.dp)
-                                    .padding(bottom = 20.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                if (uiState.peers.isNotEmpty()) {
-                                    TextButton(onClick = { showPingConfirmation = true }) {
-                                        Icon(
-                                            Icons.Outlined.NetworkPing,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Ping All")
-                                    }
-                                }
-
-                                if (uiState.peers.isEmpty()) {
-                                    Text(
-                                        "No peers connected",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                } else {
-                                    uiState.peers.forEachIndexed { index, peer ->
-                                        PeerItem(
-                                            peer = peer,
-                                            onDisconnect = { peerToDisconnect = peer.address }
-                                        )
-                                        if (index < uiState.peers.lastIndex) {
-                                            HorizontalDivider(
-                                                color = MaterialTheme.colorScheme.outlineVariant
-                                            )
-                                        }
-                                    }
-                                }
-                            }
+                        if (uiState.ibd && uiState.syncDecimal == 0f) {
+                            Text(
+                                stringResource(R.string.syncing_headers),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        } else {
+                            Text(
+                                "${uiState.syncPercentage}%",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (uiState.ibd && uiState.syncDecimal == 0f) {
+                        LinearProgressIndicator(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(4.dp)),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        )
+                    } else {
+                        LinearProgressIndicator(
+                            progress = { uiState.syncDecimal },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(4.dp)),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        )
+                    }
                 }
             }
+        }
 
-            // Diagnostics Card
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        // Network Info Card
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        ExpandableHeader(
-                            title = stringResource(R.string.diagnostics),
-                            icon = Icons.Outlined.Info,
-                            isExpanded = uiState.isDiagnosticsExpanded,
-                            onToggle = onToggleDiagnostics
-                        )
+                    Text(
+                        "Network Information",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
 
-                        AnimatedVisibility(
-                            visible = uiState.isDiagnosticsExpanded,
-                            enter = expandVertically(),
-                            exit = shrinkVertically()
+                    InfoRow(
+                        label = stringResource(R.string.network),
+                        value = uiState.network,
+                        icon = {
+                            Icon(
+                                Icons.Outlined.Cloud,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    )
+
+                    InfoRow(
+                        label = stringResource(R.string.number_of_peers),
+                        value = uiState.numberOfPeers,
+                        icon = {
+                            Icon(
+                                Icons.Outlined.Person,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        isLoading = uiState.numberOfPeers.isEmpty()
+                    )
+
+                    InfoRow(
+                        label = stringResource(R.string.difficulty),
+                        value = uiState.difficulty,
+                        icon = {
+                            Icon(
+                                Icons.Outlined.Speed,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    )
+                }
+            }
+        }
+
+        if (uiState.ibd) {
+            item {
+                UtreexoImportCard(
+                    onScanClick = onClickScan,
+                    onPasteClick = onClickPaste,
+                )
+            }
+        }
+
+        // Peers Info Card
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    ExpandableHeader(
+                        title = "Peers (${uiState.numberOfPeers.ifEmpty { "0" }})",
+                        icon = Icons.Outlined.Hub,
+                        isExpanded = uiState.isPeersExpanded,
+                        onToggle = onTogglePeers
+                    )
+
+                    AnimatedVisibility(
+                        visible = uiState.isPeersExpanded,
+                        enter = expandVertically(),
+                        exit = shrinkVertically()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp)
+                                .padding(bottom = 20.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 20.dp)
-                                    .padding(bottom = 20.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                InfoRow(
-                                    label = stringResource(R.string.uptime),
-                                    value = uiState.uptime,
-                                    isLoading = uiState.uptime.isEmpty()
-                                )
+                            if (uiState.peers.isNotEmpty()) {
+                                TextButton(onClick = { showPingConfirmation = true }) {
+                                    Icon(
+                                        Icons.Outlined.NetworkPing,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Ping All")
+                                }
+                            }
 
-                                InfoRow(
-                                    label = stringResource(R.string.memory_used),
-                                    value = uiState.memoryUsed,
-                                    isLoading = uiState.memoryUsed.isEmpty()
+                            if (uiState.peers.isEmpty()) {
+                                Text(
+                                    "No peers connected",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-
-                                InfoRow(
-                                    label = stringResource(R.string.memory_free),
-                                    value = uiState.memoryFree,
-                                    isLoading = uiState.memoryFree.isEmpty()
-                                )
-
-                                InfoRow(
-                                    label = stringResource(R.string.memory_total),
-                                    value = uiState.memoryTotal,
-                                    isLoading = uiState.memoryTotal.isEmpty()
-                                )
+                            } else {
+                                uiState.peers.forEachIndexed { index, peer ->
+                                    PeerItem(
+                                        peer = peer,
+                                        onDisconnect = { peerToDisconnect = peer.address }
+                                    )
+                                    if (index < uiState.peers.lastIndex) {
+                                        HorizontalDivider(
+                                            color = MaterialTheme.colorScheme.outlineVariant
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
         }
+
+        // Diagnostics Card
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    ExpandableHeader(
+                        title = stringResource(R.string.diagnostics),
+                        icon = Icons.Outlined.Info,
+                        isExpanded = uiState.isDiagnosticsExpanded,
+                        onToggle = onToggleDiagnostics
+                    )
+
+                    AnimatedVisibility(
+                        visible = uiState.isDiagnosticsExpanded,
+                        enter = expandVertically(),
+                        exit = shrinkVertically()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp)
+                                .padding(bottom = 20.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            InfoRow(
+                                label = stringResource(R.string.uptime),
+                                value = uiState.uptime,
+                                isLoading = uiState.uptime.isEmpty()
+                            )
+
+                            InfoRow(
+                                label = stringResource(R.string.memory_used),
+                                value = uiState.memoryUsed,
+                                isLoading = uiState.memoryUsed.isEmpty()
+                            )
+
+                            InfoRow(
+                                label = stringResource(R.string.memory_free),
+                                value = uiState.memoryFree,
+                                isLoading = uiState.memoryFree.isEmpty()
+                            )
+
+                            InfoRow(
+                                label = stringResource(R.string.memory_total),
+                                value = uiState.memoryTotal,
+                                isLoading = uiState.memoryTotal.isEmpty()
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!uiState.ibd) {
+            item {
+                UtreexoExportCard(
+                    isExpanded = uiState.isExportCardExpanded,
+                    onToggle = onToggleExportCard,
+                    onShowQrClick = onClickShowExportQr,
+                    onCopyClick = onClickCopyExport,
+                    onShareClick = onClickShareExport,
+                )
+            }
+        }
     }
+}
+
+@Composable
+private fun ApplyingSnapshotOverlay() {
+    androidx.compose.foundation.layout.Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            CircularProgressIndicator()
+            Text(
+                stringResource(R.string.utreexo_imported_restarting),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
 
 @Composable
 private fun UtreexoWarningCard() {

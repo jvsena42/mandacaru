@@ -5,9 +5,10 @@ import com.florestad.Config
 import com.florestad.Florestad
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
-import com.github.jvsena42.mandacaru.domain.model.Constants
-import com.github.jvsena42.mandacaru.BuildConfig
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
 
 import com.florestad.Network as FlorestaNetwork
 
@@ -20,17 +21,15 @@ class FlorestaDaemonImpl(
     private var daemon: Florestad? = null
 
     override suspend fun start() {
-        Log.d(TAG, "start: ")
-        if (isRunning) {
-            Log.d(TAG, "start: Daemon already running")
-            return
-        }
+        if (isRunning) return
         try {
-            Log.d(TAG, "start: datadir: $datadir")
             val fastSyncEnabled = preferencesDataSource.getBoolean(
                 PreferenceKeys.FAST_SYNC_ENABLED,
                 false
             )
+            val pendingSnapshot = preferencesDataSource
+                .getString(PreferenceKeys.PENDING_UTREEXO_SNAPSHOT, "")
+                .takeIf { it.isNotEmpty() }
             val config = Config(
                 dataDir = datadir,
                 network = preferencesDataSource.getString(
@@ -38,6 +37,7 @@ class FlorestaDaemonImpl(
                     FlorestaNetwork.BITCOIN.name
                 ).toFlorestaNetwork(),
                 assumeUtreexo = fastSyncEnabled,
+                userUtreexoSnapshotJson = pendingSnapshot,
             )
             daemon = Florestad.fromConfig(config)
             daemon?.start()?.also {
@@ -51,15 +51,9 @@ class FlorestaDaemonImpl(
     }
 
     override suspend fun stop() {
-        Log.d(TAG, "stop: isRunning=$isRunning")
-        if (!isRunning) {
-            Log.d(TAG, "stop: Daemon not running, nothing to stop")
-            return
-        }
-
+        if (!isRunning) return
         try {
             daemon?.stop()
-            Log.i(TAG, "stop: Floresta daemon stopped successfully")
         } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
             Log.e(TAG, "stop error: ", e)
         } finally {
@@ -69,6 +63,31 @@ class FlorestaDaemonImpl(
     }
 
     override fun isRunning(): Boolean = isRunning
+
+    override suspend fun dumpUtreexoState(): Result<String> = withContext(Dispatchers.IO) {
+        val d = daemon
+        if (!isRunning || d == null) {
+            return@withContext Result.failure(IllegalStateException("Daemon not running"))
+        }
+        runCatching { d.dumpUtreexoState() }
+    }
+
+    override suspend fun prepareForSnapshotImport(): Result<Unit> = withContext(Dispatchers.IO) {
+        if (isRunning) {
+            return@withContext Result.failure(
+                IllegalStateException("Daemon is still running; call stop() first")
+            )
+        }
+        runCatching {
+            val base = File(datadir)
+            listOf("chaindata", "cfilters").forEach { sub ->
+                val dir = File(base, sub)
+                if (dir.exists() && !dir.deleteRecursively()) {
+                    error("Failed to wipe $sub")
+                }
+            }
+        }
+    }
 
     companion object {
         private const val TAG = "FlorestaDaemonImpl"
