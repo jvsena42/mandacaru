@@ -27,6 +27,7 @@ data class NodeUiState(
     val isScanSheetOpen: Boolean = false,
     val isPasteSheetOpen: Boolean = false,
     val isExportQrSheetOpen: Boolean = false,
+    val isImportCardExpanded: Boolean = true,
     val isExportCardExpanded: Boolean = false,
     val pendingSnapshotPreview: SnapshotPreview? = null,
     val pendingSnapshotPayload: String? = null,

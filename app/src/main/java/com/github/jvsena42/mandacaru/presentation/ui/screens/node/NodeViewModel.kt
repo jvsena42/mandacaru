@@ -234,6 +234,11 @@ class NodeViewModel(
         }
     }
 
+    fun toggleImportCardExpanded() {
+        if (!_uiState.value.ibd) return
+        _uiState.update { it.copy(isImportCardExpanded = !it.isImportCardExpanded) }
+    }
+
     fun toggleExportCardExpanded() {
         if (_uiState.value.ibd) return
         _uiState.update { it.copy(isExportCardExpanded = !it.isExportCardExpanded) }

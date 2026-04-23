@@ -122,6 +122,7 @@ fun ScreenNode(
             onAccumulatorReceived = viewModel::onAccumulatorReceived,
             onDismissImportConfirm = viewModel::onDismissImportConfirm,
             onConfirmImport = viewModel::onConfirmImport,
+            onToggleImportCard = viewModel::toggleImportCardExpanded,
             onToggleExportCard = viewModel::toggleExportCardExpanded,
             onClickShowExportQr = viewModel::onClickShowExportQr,
             onClickCopyExport = {
@@ -149,6 +150,7 @@ fun ScreenNode(
     onAccumulatorReceived: (String) -> Unit = {},
     onDismissImportConfirm: () -> Unit = {},
     onConfirmImport: () -> Unit = {},
+    onToggleImportCard: () -> Unit = {},
     onToggleExportCard: () -> Unit = {},
     onClickShowExportQr: () -> Unit = {},
     onClickCopyExport: () -> Unit = {},
@@ -391,6 +393,8 @@ fun ScreenNode(
         if (uiState.ibd) {
             item {
                 UtreexoImportCard(
+                    isExpanded = uiState.isImportCardExpanded,
+                    onToggle = onToggleImportCard,
                     onScanClick = onClickScan,
                     onPasteClick = onClickPaste,
                 )
