@@ -469,7 +469,7 @@ fun ScreenNode(
             }
         }
 
-        if (!uiState.ibd) {
+        if (!uiState.ibd && uiState.utreexoPeerCount > 0) {
             item {
                 UtreexoExportCard(
                     isExpanded = uiState.isExportCardExpanded,
