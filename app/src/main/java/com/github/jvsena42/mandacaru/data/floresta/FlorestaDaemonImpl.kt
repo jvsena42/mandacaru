@@ -23,10 +23,6 @@ class FlorestaDaemonImpl(
     override suspend fun start() {
         if (isRunning) return
         try {
-            val fastSyncEnabled = preferencesDataSource.getBoolean(
-                PreferenceKeys.FAST_SYNC_ENABLED,
-                false
-            )
             val pendingSnapshot = preferencesDataSource
                 .getString(PreferenceKeys.PENDING_UTREEXO_SNAPSHOT, "")
                 .takeIf { it.isNotEmpty() }
@@ -34,25 +30,22 @@ class FlorestaDaemonImpl(
                 PreferenceKeys.CURRENT_NETWORK,
                 FlorestaNetwork.BITCOIN.name
             ).toFlorestaNetwork()
-            val effectiveAssumeUtreexo = fastSyncEnabled || pendingSnapshot != null
             Log.i(
                 TAG,
                 "start: pendingSnapshot=${pendingSnapshot?.length ?: 0} chars, " +
-                    "fastSync=$fastSyncEnabled→$effectiveAssumeUtreexo, " +
                     "network=$network, datadir=$datadir",
             )
             val config = Config(
                 dataDir = datadir,
                 network = network,
-                assumeUtreexo = effectiveAssumeUtreexo,
+                assumeUtreexo = true,
                 userUtreexoSnapshotJson = pendingSnapshot,
             )
             daemon = Florestad.fromConfig(config)
             daemon?.start()?.also {
                 Log.i(
                     TAG,
-                    "start: Floresta running (pendingSnapshot=${pendingSnapshot != null}, " +
-                        "assumeUtreexo=$effectiveAssumeUtreexo)",
+                    "start: Floresta running (pendingSnapshot=${pendingSnapshot != null})",
                 )
                 isRunning = true
             }

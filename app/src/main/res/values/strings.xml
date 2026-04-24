@@ -18,10 +18,6 @@
     <string name="average_block_time">Average block time</string>
     <string name="sync">Sync</string>
     <string name="syncing_headers">Syncing headers…</string>
-    <string name="fast_sync">Fast Sync</string>
-    <string name="fast_sync_description">Uses AssumeUtreexo to skip full block validation during initial sync, making it significantly faster.</string>
-    <string name="fast_sync_learn_more">Learn more about AssumeUtreexo</string>
-    <string name="fast_sync_restart_warning">The application will be restarted when this setting is changed.</string>
     <string name="receive_bitcoin">Receive Bitcoin</string>
     <string name="your_bitcoin_infrastructure_in_a_single_app">Your bitcoin infrastructure in a single app</string>
     <string name="create_a_new_wallet">Create a new wallet</string>

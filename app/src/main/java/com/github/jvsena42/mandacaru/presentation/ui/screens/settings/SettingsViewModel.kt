@@ -45,10 +45,6 @@ class SettingsViewModel(
                         PreferenceKeys.CURRENT_NETWORK,
                         FlorestaNetwork.BITCOIN.name
                     ),
-                    isFastSyncEnabled = preferencesDataSource.getBoolean(
-                        PreferenceKeys.FAST_SYNC_ENABLED,
-                        false
-                    ),
                 )
             }
             updateElectrumAddress()
@@ -97,25 +93,6 @@ class SettingsViewModel(
             }
 
             SettingsAction.OnClickExportLogs -> exportLogs()
-            is SettingsAction.OnFastSyncToggled -> handleFastSyncToggled(action.enabled)
-            SettingsAction.ToggleFastSyncExpanded -> _uiState.update {
-                it.copy(isFastSyncExpanded = !it.isFastSyncExpanded)
-            }
-        }
-    }
-
-    private fun handleFastSyncToggled(enabled: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            preferencesDataSource.setBoolean(PreferenceKeys.FAST_SYNC_ENABLED, enabled)
-            _uiState.update {
-                it.copy(
-                    isFastSyncEnabled = enabled,
-                    isLoading = true,
-                    snackBarMessage = "Restarting to apply Fast Sync changes..."
-                )
-            }
-            delay(3.seconds)
-            viewModelScope.sendEvent(SettingsEvents.OnNetworkChanged)
         }
     }
 
