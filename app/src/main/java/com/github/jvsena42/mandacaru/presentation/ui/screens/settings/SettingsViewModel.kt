@@ -12,6 +12,7 @@ import com.github.jvsena42.mandacaru.domain.model.florestaRPC.AddNodeCommand
 import com.github.jvsena42.mandacaru.presentation.utils.DescriptorUtils
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlowImpl
+import com.github.jvsena42.mandacaru.presentation.utils.WalletBirthday
 import com.github.jvsena42.mandacaru.presentation.utils.getElectrumPort
 import com.github.jvsena42.mandacaru.presentation.utils.getNetwork
 import com.github.jvsena42.mandacaru.presentation.utils.getRpcPort
@@ -39,12 +40,17 @@ class SettingsViewModel(
 
     init {
         viewModelScope.launch {
+            val birthdayYear = preferencesDataSource
+                .getString(PreferenceKeys.WALLET_BIRTHDAY_YEAR, "")
+                .toIntOrNull()
+                ?: WalletBirthday.defaultYear()
             _uiState.update {
                 it.copy(
                     selectedNetwork = preferencesDataSource.getString(
                         PreferenceKeys.CURRENT_NETWORK,
                         FlorestaNetwork.BITCOIN.name
                     ),
+                    walletBirthdayYear = birthdayYear,
                 )
             }
             updateElectrumAddress()
@@ -93,6 +99,47 @@ class SettingsViewModel(
             }
 
             SettingsAction.OnClickExportLogs -> exportLogs()
+
+            SettingsAction.ToggleBirthdayExpanded -> _uiState.update {
+                it.copy(isBirthdayExpanded = !it.isBirthdayExpanded)
+            }
+
+            SettingsAction.OnClickChangeBirthdayYear -> _uiState.update {
+                it.copy(isBirthdayPickerOpen = true)
+            }
+
+            SettingsAction.OnDismissBirthdayPicker -> _uiState.update {
+                it.copy(isBirthdayPickerOpen = false)
+            }
+
+            is SettingsAction.OnBirthdayYearSelected -> _uiState.update {
+                it.copy(isBirthdayPickerOpen = false, pendingBirthdayYear = action.year)
+            }
+
+            SettingsAction.OnCancelBirthdayRestart -> _uiState.update {
+                it.copy(pendingBirthdayYear = null)
+            }
+
+            SettingsAction.OnConfirmBirthdayRestart -> applyBirthdayYearAndRestart()
+        }
+    }
+
+    private fun applyBirthdayYearAndRestart() {
+        val year = _uiState.value.pendingBirthdayYear ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            preferencesDataSource.setString(
+                PreferenceKeys.WALLET_BIRTHDAY_YEAR,
+                year.toString()
+            )
+            _uiState.update {
+                it.copy(
+                    walletBirthdayYear = year,
+                    pendingBirthdayYear = null,
+                    isLoading = true,
+                )
+            }
+            delay(2.seconds)
+            viewModelScope.sendEvent(SettingsEvents.OnBirthdayChanged)
         }
     }
 

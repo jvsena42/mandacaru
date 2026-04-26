@@ -2,6 +2,7 @@ package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 
 import androidx.compose.runtime.Stable
 import com.florestad.Network
+import com.github.jvsena42.mandacaru.presentation.utils.WalletBirthday
 
 
 @Stable
@@ -19,4 +20,8 @@ data class SettingsUiState(
     val isNodeExpanded: Boolean = false,
     val isAboutExpanded: Boolean = false,
     val isDonateExpanded: Boolean = false,
+    val walletBirthdayYear: Int = WalletBirthday.defaultYear(),
+    val isBirthdayExpanded: Boolean = false,
+    val isBirthdayPickerOpen: Boolean = false,
+    val pendingBirthdayYear: Int? = null,
 )

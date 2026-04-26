@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Favorite
@@ -27,9 +28,12 @@ import androidx.compose.material.icons.outlined.NetworkCheck
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Wallet
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -45,6 +49,8 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -74,8 +80,13 @@ import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.domain.model.Constants
 import com.github.jvsena42.mandacaru.presentation.ui.components.ExpandableHeader
 import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
+import com.github.jvsena42.mandacaru.presentation.utils.WalletBirthday
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import java.time.Instant
+import java.time.LocalDate
+import java.time.Year
+import java.time.ZoneOffset
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -92,6 +103,7 @@ fun ScreenSettings(
         viewModel.eventFlow.collect { event ->
             when (event) {
                 is SettingsEvents.OnNetworkChanged -> currentRestartApplication()
+                is SettingsEvents.OnBirthdayChanged -> currentRestartApplication()
                 is SettingsEvents.OnExportLogs -> {
                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
@@ -296,6 +308,86 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(stringResource(R.string.update_descriptor))
+                        }
+                    }
+                }
+            }
+
+
+            // Search Transactions From Section (Bitcoin mainnet only)
+            if (uiState.selectedNetwork == Network.BITCOIN.name) {
+                item {
+                    SectionCard(
+                        title = stringResource(R.string.search_transactions_from_title),
+                        icon = Icons.Outlined.CalendarMonth,
+                        isExpanded = uiState.isBirthdayExpanded,
+                        onToggle = { onAction(SettingsAction.ToggleBirthdayExpanded) }
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                stringResource(R.string.search_transactions_from_body),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                ) {
+                                    Text(
+                                        stringResource(R.string.search_transactions_from_year_label),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = uiState.walletBirthdayYear.toString(),
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                )
+                            ) {
+                                Text(
+                                    stringResource(R.string.search_transactions_from_restart_note),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.padding(12.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Button(
+                                onClick = { onAction(SettingsAction.OnClickChangeBirthdayYear) },
+                                enabled = !uiState.isLoading,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                            ) {
+                                Icon(
+                                    Icons.Outlined.CalendarMonth,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(modifier = Modifier.size(8.dp))
+                                Text(stringResource(R.string.search_transactions_from_change))
+                            }
                         }
                     }
                 }
@@ -608,7 +700,97 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
+
+        if (uiState.isBirthdayPickerOpen) {
+            BirthdayYearPickerDialog(
+                initialYear = uiState.walletBirthdayYear,
+                onYearSelected = { year -> currentOnAction(SettingsAction.OnBirthdayYearSelected(year)) },
+                onDismiss = { currentOnAction(SettingsAction.OnDismissBirthdayPicker) },
+            )
+        }
+
+        uiState.pendingBirthdayYear?.let { year ->
+            BirthdayRestartConfirmDialog(
+                year = year,
+                onConfirm = { currentOnAction(SettingsAction.OnConfirmBirthdayRestart) },
+                onDismiss = { currentOnAction(SettingsAction.OnCancelBirthdayRestart) },
+            )
+        }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BirthdayYearPickerDialog(
+    initialYear: Int,
+    onYearSelected: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val currentYear = Year.now().value
+    val initialMillis = LocalDate.of(initialYear.coerceIn(WalletBirthday.MIN_YEAR, currentYear), 1, 1)
+        .atStartOfDay(ZoneOffset.UTC)
+        .toInstant()
+        .toEpochMilli()
+    val state = rememberDatePickerState(
+        initialSelectedDateMillis = initialMillis,
+        yearRange = WalletBirthday.MIN_YEAR..currentYear,
+    )
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                enabled = state.selectedDateMillis != null,
+                onClick = {
+                    val millis = state.selectedDateMillis ?: return@TextButton
+                    val year = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).year
+                    onYearSelected(year)
+                },
+            ) {
+                Text(stringResource(R.string.confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    ) {
+        DatePicker(
+            state = state,
+            title = {
+                Text(
+                    stringResource(R.string.search_transactions_from_picker_title),
+                    modifier = Modifier.padding(start = 24.dp, end = 12.dp, top = 16.dp),
+                )
+            },
+        )
+    }
+}
+
+@Composable
+private fun BirthdayRestartConfirmDialog(
+    year: Int,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.search_transactions_from_restart_dialog_title)) },
+        text = {
+            Text(stringResource(R.string.search_transactions_from_restart_dialog_body, year))
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(R.string.confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
 }
 
 @Composable
@@ -661,7 +843,7 @@ private fun Preview() {
             ScreenSettings(
                 uiState = SettingsUiState(
                     electrumAddress = Constants.ELECTRUM_ADDRESS,
-                    selectedNetwork = Network.SIGNET.name,
+                    selectedNetwork = Network.BITCOIN.name,
                     descriptors = listOf(
                         "wpkh([d34db33f/84'/0'/0']xpub6CUGRUo...)",
                         "wpkh([d34db33f/84'/0'/1']xpub6CUGRUo...)"
