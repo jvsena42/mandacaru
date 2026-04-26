@@ -6,15 +6,22 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -32,8 +39,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -50,7 +55,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -83,10 +87,7 @@ import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
 import com.github.jvsena42.mandacaru.presentation.utils.WalletBirthday
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
-import java.time.Instant
-import java.time.LocalDate
 import java.time.Year
-import java.time.ZoneOffset
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -719,7 +720,6 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BirthdayYearPickerDialog(
     initialYear: Int,
@@ -727,45 +727,53 @@ private fun BirthdayYearPickerDialog(
     onDismiss: () -> Unit,
 ) {
     val currentYear = Year.now().value
-    val initialMillis = LocalDate.of(initialYear.coerceIn(WalletBirthday.MIN_YEAR, currentYear), 1, 1)
-        .atStartOfDay(ZoneOffset.UTC)
-        .toInstant()
-        .toEpochMilli()
-    val state = rememberDatePickerState(
-        initialSelectedDateMillis = initialMillis,
-        yearRange = WalletBirthday.MIN_YEAR..currentYear,
-    )
+    val years = remember(currentYear) { (currentYear downTo WalletBirthday.MIN_YEAR).toList() }
+    val initialIndex = years.indexOf(initialYear).coerceAtLeast(0)
+    val gridState = rememberLazyGridState(initialFirstVisibleItemIndex = initialIndex)
 
-    DatePickerDialog(
+    AlertDialog(
         onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                enabled = state.selectedDateMillis != null,
-                onClick = {
-                    val millis = state.selectedDateMillis ?: return@TextButton
-                    val year = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).year
-                    onYearSelected(year)
-                },
+        title = { Text(stringResource(R.string.search_transactions_from_picker_title)) },
+        text = {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                state = gridState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 320.dp),
+                contentPadding = PaddingValues(vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(stringResource(R.string.confirm))
+                items(years, key = { it }) { year ->
+                    val isSelected = year == initialYear
+                    Surface(
+                        onClick = { onYearSelected(year) },
+                        shape = RoundedCornerShape(20.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.surfaceVariant,
+                        modifier = Modifier.height(48.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = year.toString(),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
             }
         },
+        confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.cancel))
             }
         },
-    ) {
-        DatePicker(
-            state = state,
-            title = {
-                Text(
-                    stringResource(R.string.search_transactions_from_picker_title),
-                    modifier = Modifier.padding(start = 24.dp, end = 12.dp, top = 16.dp),
-                )
-            },
-        )
-    }
+    )
 }
 
 @Composable
