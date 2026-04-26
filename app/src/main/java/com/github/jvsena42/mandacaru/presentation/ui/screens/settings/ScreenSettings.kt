@@ -1,5 +1,6 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 
+import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -66,7 +67,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import android.content.Intent
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
@@ -111,7 +111,12 @@ fun ScreenSettings(
                         putExtra(Intent.EXTRA_STREAM, event.uri)
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
-                    context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.share_logs)))
+                    context.startActivity(
+                        Intent.createChooser(
+                            shareIntent,
+                            context.getString(R.string.share_logs)
+                        )
+                    )
                 }
             }
         }
@@ -120,7 +125,11 @@ fun ScreenSettings(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) -> Unit, modifier: Modifier = Modifier) {
+private fun ScreenSettings(
+    uiState: SettingsUiState,
+    onAction: (SettingsAction) -> Unit,
+    modifier: Modifier = Modifier
+) {
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val currentOnAction by rememberUpdatedState(onAction)
@@ -356,21 +365,6 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                                     )
                                 }
-                            }
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            Card(
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                                )
-                            ) {
-                                Text(
-                                    stringResource(R.string.search_transactions_from_restart_note),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    modifier = Modifier.padding(12.dp)
-                                )
                             }
 
                             Spacer(modifier = Modifier.height(12.dp))
@@ -656,7 +650,12 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            text = "${stringResource(R.string.app_name)} — ${stringResource(R.string.version, BuildConfig.VERSION_NAME)}",
+                            text = "${stringResource(R.string.app_name)} — ${
+                                stringResource(
+                                    R.string.version,
+                                    BuildConfig.VERSION_NAME
+                                )
+                            }",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
                         )
@@ -705,7 +704,13 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
         if (uiState.isBirthdayPickerOpen) {
             BirthdayYearPickerDialog(
                 initialYear = uiState.walletBirthdayYear,
-                onYearSelected = { year -> currentOnAction(SettingsAction.OnBirthdayYearSelected(year)) },
+                onYearSelected = { year ->
+                    currentOnAction(
+                        SettingsAction.OnBirthdayYearSelected(
+                            year
+                        )
+                    )
+                },
                 onDismiss = { currentOnAction(SettingsAction.OnDismissBirthdayPicker) },
             )
         }
