@@ -4,7 +4,7 @@ import java.time.Year
 
 object WalletBirthday {
     const val MIN_YEAR = 2009
-    const val DEFAULT_YEARS_BACK = 3
+    const val DEFAULT_YEARS_BACK = 2
     private const val BLOCKS_PER_YEAR = 52_560
 
     fun defaultYear(): Int = Year.now().value - DEFAULT_YEARS_BACK
