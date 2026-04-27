@@ -200,27 +200,13 @@ class FlorestaService : Service() {
                     .getBoolean(PreferenceKeys.WALLET_NEEDS_RESCAN, false)
                 if (!needsRescan) return@launch
 
-                val descriptors = florestaRpc.listDescriptors().firstOrNull()
-                    ?.getOrNull()?.result.orEmpty()
-                if (descriptors.isEmpty()) {
-                    Log.d(TAG, "Rescan trigger: no descriptors loaded; clearing flag")
-                    preferencesDataSource.setBoolean(PreferenceKeys.WALLET_NEEDS_RESCAN, false)
-                    return@launch
-                }
-
-                Log.i(TAG, "Re-issuing loaddescriptor for ${descriptors.size} descriptor(s) after wallet-birthday change")
-                var allOk = true
-                for (descriptor in descriptors) {
-                    val result = florestaRpc.loadDescriptor(descriptor).firstOrNull()
-                    val ok = result?.isSuccess == true
-                    if (!ok) {
-                        allOk = false
-                        Log.w(TAG, "loaddescriptor failed for descriptor: ${result?.exceptionOrNull()?.message}")
-                    }
-                }
-                if (allOk) {
+                Log.i(TAG, "Triggering rescanblockchain after wallet-birthday change")
+                val result = florestaRpc.rescan().firstOrNull()
+                if (result?.isSuccess == true) {
                     preferencesDataSource.setBoolean(PreferenceKeys.WALLET_NEEDS_RESCAN, false)
                     Log.i(TAG, "Wallet rescan triggered; flag cleared")
+                } else {
+                    Log.w(TAG, "rescan failed: ${result?.exceptionOrNull()?.message}")
                 }
             } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
                 Log.w(TAG, "Wallet rescan trigger failed: ${e.message}")
