@@ -131,6 +131,11 @@ class SettingsViewModel(
                 PreferenceKeys.WALLET_BIRTHDAY_YEAR,
                 year.toString()
             )
+            // Floresta wipes the compact filter store and re-syncs from the new
+            // height when this changes, but it does not auto-rescan loaded
+            // descriptors against the new store. Without this flag the wallet
+            // stays empty until the user manually re-loads the descriptor.
+            preferencesDataSource.setBoolean(PreferenceKeys.WALLET_NEEDS_RESCAN, true)
             _uiState.update {
                 it.copy(
                     walletBirthdayYear = year,
