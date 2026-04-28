@@ -6,6 +6,7 @@ import com.florestad.Florestad
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
+import com.github.jvsena42.mandacaru.presentation.utils.WalletBirthday
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -30,16 +31,25 @@ class FlorestaDaemonImpl(
                 PreferenceKeys.CURRENT_NETWORK,
                 FlorestaNetwork.BITCOIN.name
             ).toFlorestaNetwork()
+            val filtersStartHeight = if (network == FlorestaNetwork.BITCOIN) {
+                val year = preferencesDataSource
+                    .getString(PreferenceKeys.WALLET_BIRTHDAY_YEAR, "")
+                    .toIntOrNull()
+                    ?: WalletBirthday.defaultYear()
+                WalletBirthday.bitcoinHeightForYear(year)
+            } else null
             Log.i(
                 TAG,
                 "start: pendingSnapshot=${pendingSnapshot?.length ?: 0} chars, " +
-                    "network=$network, datadir=$datadir",
+                    "network=$network, datadir=$datadir, " +
+                    "filtersStartHeight=$filtersStartHeight",
             )
             val config = Config(
                 dataDir = datadir,
                 network = network,
                 assumeUtreexo = true,
                 userUtreexoSnapshotJson = pendingSnapshot,
+                filtersStartHeight = filtersStartHeight,
             )
             daemon = Florestad.fromConfig(config)
             daemon?.start()?.also {

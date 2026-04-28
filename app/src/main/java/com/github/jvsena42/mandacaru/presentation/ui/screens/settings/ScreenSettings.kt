@@ -1,24 +1,33 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 
+import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Favorite
@@ -27,6 +36,7 @@ import androidx.compose.material.icons.outlined.NetworkCheck
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Wallet
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -45,6 +55,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -56,7 +67,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import android.content.Intent
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
@@ -74,8 +84,10 @@ import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.domain.model.Constants
 import com.github.jvsena42.mandacaru.presentation.ui.components.ExpandableHeader
 import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
+import com.github.jvsena42.mandacaru.presentation.utils.WalletBirthday
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import java.time.Year
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -92,13 +104,19 @@ fun ScreenSettings(
         viewModel.eventFlow.collect { event ->
             when (event) {
                 is SettingsEvents.OnNetworkChanged -> currentRestartApplication()
+                is SettingsEvents.OnBirthdayChanged -> currentRestartApplication()
                 is SettingsEvents.OnExportLogs -> {
                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
                         putExtra(Intent.EXTRA_STREAM, event.uri)
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
-                    context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.share_logs)))
+                    context.startActivity(
+                        Intent.createChooser(
+                            shareIntent,
+                            context.getString(R.string.share_logs)
+                        )
+                    )
                 }
             }
         }
@@ -107,7 +125,11 @@ fun ScreenSettings(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) -> Unit, modifier: Modifier = Modifier) {
+private fun ScreenSettings(
+    uiState: SettingsUiState,
+    onAction: (SettingsAction) -> Unit,
+    modifier: Modifier = Modifier
+) {
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val currentOnAction by rememberUpdatedState(onAction)
@@ -296,6 +318,71 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(stringResource(R.string.update_descriptor))
+                        }
+                    }
+                }
+            }
+
+
+            // Search Transactions From Section (Bitcoin mainnet only)
+            if (uiState.selectedNetwork == Network.BITCOIN.name) {
+                item {
+                    SectionCard(
+                        title = stringResource(R.string.search_transactions_from_title),
+                        icon = Icons.Outlined.CalendarMonth,
+                        isExpanded = uiState.isBirthdayExpanded,
+                        onToggle = { onAction(SettingsAction.ToggleBirthdayExpanded) }
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                stringResource(R.string.search_transactions_from_body),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                ) {
+                                    Text(
+                                        stringResource(R.string.search_transactions_from_year_label),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = uiState.walletBirthdayYear.toString(),
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Button(
+                                onClick = { onAction(SettingsAction.OnClickChangeBirthdayYear) },
+                                enabled = !uiState.isLoading,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                            ) {
+                                Icon(
+                                    Icons.Outlined.CalendarMonth,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(modifier = Modifier.size(8.dp))
+                                Text(stringResource(R.string.search_transactions_from_change))
+                            }
                         }
                     }
                 }
@@ -563,7 +650,12 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            text = "${stringResource(R.string.app_name)} — ${stringResource(R.string.version, BuildConfig.VERSION_NAME)}",
+                            text = "${stringResource(R.string.app_name)} — ${
+                                stringResource(
+                                    R.string.version,
+                                    BuildConfig.VERSION_NAME
+                                )
+                            }",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
                         )
@@ -608,7 +700,110 @@ private fun ScreenSettings(uiState: SettingsUiState, onAction: (SettingsAction) 
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
+
+        if (uiState.isBirthdayPickerOpen) {
+            BirthdayYearPickerDialog(
+                initialYear = uiState.walletBirthdayYear,
+                onYearSelected = { year ->
+                    currentOnAction(
+                        SettingsAction.OnBirthdayYearSelected(
+                            year
+                        )
+                    )
+                },
+                onDismiss = { currentOnAction(SettingsAction.OnDismissBirthdayPicker) },
+            )
+        }
+
+        uiState.pendingBirthdayYear?.let { year ->
+            BirthdayRestartConfirmDialog(
+                year = year,
+                onConfirm = { currentOnAction(SettingsAction.OnConfirmBirthdayRestart) },
+                onDismiss = { currentOnAction(SettingsAction.OnCancelBirthdayRestart) },
+            )
+        }
     }
+}
+
+@Composable
+private fun BirthdayYearPickerDialog(
+    initialYear: Int,
+    onYearSelected: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val currentYear = Year.now().value
+    val years = remember(currentYear) { (currentYear downTo WalletBirthday.MIN_YEAR).toList() }
+    val initialIndex = years.indexOf(initialYear).coerceAtLeast(0)
+    val gridState = rememberLazyGridState(initialFirstVisibleItemIndex = initialIndex)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.search_transactions_from_picker_title)) },
+        text = {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                state = gridState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 320.dp),
+                contentPadding = PaddingValues(vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(years, key = { it }) { year ->
+                    val isSelected = year == initialYear
+                    Surface(
+                        onClick = { onYearSelected(year) },
+                        shape = RoundedCornerShape(20.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.surfaceVariant,
+                        modifier = Modifier.height(48.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = year.toString(),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
+}
+
+@Composable
+private fun BirthdayRestartConfirmDialog(
+    year: Int,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.search_transactions_from_restart_dialog_title)) },
+        text = {
+            Text(stringResource(R.string.search_transactions_from_restart_dialog_body, year))
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(R.string.confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
 }
 
 @Composable
@@ -661,7 +856,7 @@ private fun Preview() {
             ScreenSettings(
                 uiState = SettingsUiState(
                     electrumAddress = Constants.ELECTRUM_ADDRESS,
-                    selectedNetwork = Network.SIGNET.name,
+                    selectedNetwork = Network.BITCOIN.name,
                     descriptors = listOf(
                         "wpkh([d34db33f/84'/0'/0']xpub6CUGRUo...)",
                         "wpkh([d34db33f/84'/0'/1']xpub6CUGRUo...)"

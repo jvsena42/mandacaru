@@ -123,4 +123,15 @@
     <string name="utreexo_error_not_synced">This node hasn\'t finished syncing yet.</string>
     <string name="utreexo_error_too_large_for_qr">This snapshot is too large for a QR code. Use Copy or Share instead.</string>
     <string name="utreexo_scan_camera_denied">Camera permission is required to scan a QR.</string>
+
+    <string name="search_transactions_from_title">Search transactions from</string>
+    <string name="search_transactions_from_body">Floresta will skip blocks before this year when looking for your wallet\'s transactions. Pick the year your wallet was created (or earlier) so no transactions are missed.</string>
+    <string name="search_transactions_from_year_label">Starting year</string>
+    <string name="search_transactions_from_change">Change year</string>
+    <string name="search_transactions_from_restart_note">The application will be restarted to apply this change</string>
+    <string name="search_transactions_from_mainnet_only">Available on Bitcoin mainnet only</string>
+    <string name="search_transactions_from_picker_title">Pick a starting year</string>
+    <string name="search_transactions_from_restart_dialog_title">Apply new starting year?</string>
+    <string name="search_transactions_from_restart_dialog_body">The app will restart to apply %1$d as the starting year for transaction search.</string>
+    <string name="confirm">Confirm</string>
 </resources>

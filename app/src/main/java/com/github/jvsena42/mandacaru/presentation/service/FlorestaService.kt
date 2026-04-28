@@ -12,6 +12,8 @@ import androidx.core.app.NotificationCompat
 import androidx.core.graphics.toColorInt
 import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.data.FlorestaRpc
+import com.github.jvsena42.mandacaru.data.PreferenceKeys
+import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.floresta.UtreexoBridgeAutoConnect
 import com.github.jvsena42.mandacaru.presentation.ui.screens.main.MainActivity
@@ -21,6 +23,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
@@ -33,9 +36,12 @@ class FlorestaService : Service() {
     private val florestaDaemon: FlorestaDaemon by inject()
     private val florestaRpc: FlorestaRpc by inject()
     private val utreexoBridgeAutoConnect: UtreexoBridgeAutoConnect by inject()
+    private val preferencesDataSource: PreferencesDataSource by inject()
     private val isStopping = AtomicBoolean(false)
     private var notificationPollingJob: Job? = null
     private var startupSeedDone = false
+    private var fullySyncedSinceMs: Long? = null
+    private val rescanInFlight = AtomicBoolean(false)
 
     companion object {
         private const val TAG = "FlorestaService"
@@ -51,6 +57,10 @@ class FlorestaService : Service() {
         private const val COLOR_SYNCED = "#006D37"
         private const val FULL_SYNC_THRESHOLD = 1.0f
         private const val PERCENTAGE_MULTIPLIER = 100
+        // Filter sync usually catches up to chain sync within seconds, but
+        // matched-block downloads add tail latency. Wait this long after the
+        // chain reports fully synced before triggering the descriptor rescan.
+        private const val FULL_SYNC_GRACE_MS = 60_000L
     }
 
     override fun onCreate() {
@@ -157,11 +167,51 @@ class FlorestaService : Service() {
                             } else {
                                 launch { utreexoBridgeAutoConnect.ensureUtreexoPeers() }
                             }
+                            maybeTriggerWalletRescan(data.result.progress, data.result.ibd)
                         }
                     }
                 } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
                     Log.d(TAG, "Notification poll failed: ${e.message}")
                 }
+            }
+        }
+    }
+
+    /**
+     * After a wallet-birthday change, Floresta wipes the compact filter store
+     * and re-syncs from the new height — but the wallet's cached descriptors
+     * are not auto-rescanned against the new store. Trigger a rescan once the
+     * chain looks fully synced (with a grace window so filter downloads can
+     * catch up too), then clear the flag.
+     */
+    private fun maybeTriggerWalletRescan(progress: Float, ibd: Boolean) {
+        if (ibd || progress < FULL_SYNC_THRESHOLD) {
+            fullySyncedSinceMs = null
+            return
+        }
+        val now = System.currentTimeMillis()
+        val syncedSince = fullySyncedSinceMs ?: now.also { fullySyncedSinceMs = it }
+        if (now - syncedSince < FULL_SYNC_GRACE_MS) return
+        if (!rescanInFlight.compareAndSet(false, true)) return
+
+        ioScope.launch {
+            try {
+                val needsRescan = preferencesDataSource
+                    .getBoolean(PreferenceKeys.WALLET_NEEDS_RESCAN, false)
+                if (!needsRescan) return@launch
+
+                Log.i(TAG, "Triggering rescanblockchain after wallet-birthday change")
+                val result = florestaRpc.rescan().firstOrNull()
+                if (result?.isSuccess == true) {
+                    preferencesDataSource.setBoolean(PreferenceKeys.WALLET_NEEDS_RESCAN, false)
+                    Log.i(TAG, "Wallet rescan triggered; flag cleared")
+                } else {
+                    Log.w(TAG, "rescan failed: ${result?.exceptionOrNull()?.message}")
+                }
+            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                Log.w(TAG, "Wallet rescan trigger failed: ${e.message}")
+            } finally {
+                rescanInFlight.set(false)
             }
         }
     }
