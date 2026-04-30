@@ -40,14 +40,14 @@ class FlorestaDaemonImpl(
                     ?: WalletBirthday.defaultYear()
                 WalletBirthday.bitcoinHeightForYear(year)
             } else null
+            val userAgent =
+                "/Floresta:${Constants.FLORESTA_VERSION}/mandacaru:${BuildConfig.VERSION_NAME}/"
             Log.i(
                 TAG,
                 "start: pendingSnapshot=${pendingSnapshot?.length ?: 0} chars, " +
                     "network=$network, datadir=$datadir, " +
-                    "filtersStartHeight=$filtersStartHeight",
+                    "filtersStartHeight=$filtersStartHeight, userAgent=$userAgent",
             )
-            val userAgent =
-                "/Floresta:${Constants.FLORESTA_VERSION}/mandacaru:${BuildConfig.VERSION_NAME}/"
             val config = Config(
                 dataDir = datadir,
                 network = network,
