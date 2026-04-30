@@ -1058,6 +1058,7 @@ data class Config (
     var `walletDescriptor`: String? = null, 
     var `filtersStartHeight`: Int? = null, 
     var `assumeUtreexo`: Boolean = false, 
+    var `userAgent`: String? = null, 
     var `userUtreexoSnapshotJson`: String? = null
 ) {
     
@@ -1076,6 +1077,7 @@ public object FfiConverterTypeConfig: FfiConverterRustBuffer<Config> {
             FfiConverterOptionalInt.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
         )
     }
 
@@ -1088,6 +1090,7 @@ public object FfiConverterTypeConfig: FfiConverterRustBuffer<Config> {
             FfiConverterOptionalString.allocationSize(value.`walletDescriptor`) +
             FfiConverterOptionalInt.allocationSize(value.`filtersStartHeight`) +
             FfiConverterBoolean.allocationSize(value.`assumeUtreexo`) +
+            FfiConverterOptionalString.allocationSize(value.`userAgent`) +
             FfiConverterOptionalString.allocationSize(value.`userUtreexoSnapshotJson`)
     )
 
@@ -1100,6 +1103,7 @@ public object FfiConverterTypeConfig: FfiConverterRustBuffer<Config> {
             FfiConverterOptionalString.write(value.`walletDescriptor`, buf)
             FfiConverterOptionalInt.write(value.`filtersStartHeight`, buf)
             FfiConverterBoolean.write(value.`assumeUtreexo`, buf)
+            FfiConverterOptionalString.write(value.`userAgent`, buf)
             FfiConverterOptionalString.write(value.`userUtreexoSnapshotJson`, buf)
     }
 }

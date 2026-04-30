@@ -1,6 +1,7 @@
 package com.github.jvsena42.mandacaru.domain.model
 
 object Constants {
+    const val FLORESTA_VERSION = "0.9.1"
     const val ELECTRUM_ADDRESS = "127.0.0.1:50001"
     const val RPC_PORT_MAINNET = "8332"
     const val RPC_PORT_TESTNET = "18332"

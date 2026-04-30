@@ -3,9 +3,11 @@ package com.github.jvsena42.mandacaru.data.floresta
 import android.util.Log
 import com.florestad.Config
 import com.florestad.Florestad
+import com.github.jvsena42.mandacaru.BuildConfig
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
+import com.github.jvsena42.mandacaru.domain.model.Constants
 import com.github.jvsena42.mandacaru.presentation.utils.WalletBirthday
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -38,11 +40,13 @@ class FlorestaDaemonImpl(
                     ?: WalletBirthday.defaultYear()
                 WalletBirthday.bitcoinHeightForYear(year)
             } else null
+            val userAgent =
+                "/Floresta:${Constants.FLORESTA_VERSION}/mandacaru:${BuildConfig.VERSION_NAME}/"
             Log.i(
                 TAG,
                 "start: pendingSnapshot=${pendingSnapshot?.length ?: 0} chars, " +
                     "network=$network, datadir=$datadir, " +
-                    "filtersStartHeight=$filtersStartHeight",
+                    "filtersStartHeight=$filtersStartHeight, userAgent=$userAgent",
             )
             val config = Config(
                 dataDir = datadir,
@@ -50,6 +54,7 @@ class FlorestaDaemonImpl(
                 assumeUtreexo = true,
                 userUtreexoSnapshotJson = pendingSnapshot,
                 filtersStartHeight = filtersStartHeight,
+                userAgent = userAgent,
             )
             daemon = Florestad.fromConfig(config)
             daemon?.start()?.also {
