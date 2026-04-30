@@ -88,6 +88,8 @@ class UtreexoBridgeAutoConnectTest {
                 "45.77.242.77:8333" to AddNodeCommand.ADD,
                 "195.26.240.213:8433" to AddNodeCommand.ONETRY,
                 "195.26.240.213:8433" to AddNodeCommand.ADD,
+                "1.228.21.110:8333" to AddNodeCommand.ONETRY,
+                "1.228.21.110:8333" to AddNodeCommand.ADD,
             ),
             rpc.addNodeCalls,
         )
