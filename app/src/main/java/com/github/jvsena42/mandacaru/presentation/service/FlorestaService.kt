@@ -16,6 +16,8 @@ import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.floresta.UtreexoBridgeAutoConnect
+import com.github.jvsena42.mandacaru.domain.floresta.computeHeaderSyncProgress
+import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.PeerInfoResult
 import com.github.jvsena42.mandacaru.presentation.ui.screens.main.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -160,7 +162,14 @@ class FlorestaService : Service() {
                 try {
                     florestaRpc.getBlockchainInfo().collect { result ->
                         result.onSuccess { data ->
-                            updateSyncNotification(data.result.progress, data.result.height)
+                            val peers = florestaRpc.getPeerInfo().firstOrNull()
+                                ?.getOrNull()?.result.orEmpty()
+                            updateSyncNotification(
+                                progress = data.result.progress,
+                                height = data.result.height,
+                                ibd = data.result.ibd,
+                                peers = peers,
+                            )
                             if (!startupSeedDone) {
                                 startupSeedDone = true
                                 launch { utreexoBridgeAutoConnect.seedOnStartup() }
@@ -216,7 +225,12 @@ class FlorestaService : Service() {
         }
     }
 
-    private fun updateSyncNotification(progress: Float, height: Int) {
+    private fun updateSyncNotification(
+        progress: Float,
+        height: Int,
+        ibd: Boolean,
+        peers: List<PeerInfoResult>,
+    ) {
         val notificationManager = getSystemService(NotificationManager::class.java) ?: return
 
         val openAppIntent = Intent(this, MainActivity::class.java).apply {
@@ -245,19 +259,44 @@ class FlorestaService : Service() {
             .setContentIntent(openAppPendingIntent)
             .addAction(R.drawable.ic_x, "Stop", stopPendingIntent)
 
-        if (progress < FULL_SYNC_THRESHOLD) {
-            val percentage = progress * PERCENTAGE_MULTIPLIER
-            builder.setContentText("Syncing: ${"%.2f".format(percentage)}%")
-                .setSubText("${"%.2f".format(percentage)}% complete")
-                .setProgress(PERCENTAGE_MULTIPLIER, percentage.toInt(), false)
-                .setColor(COLOR_PRIMARY.toColorInt())
-                .setColorized(true)
+        val isHeaderSync = ibd && progress == 0f
+        val headerDecimal = if (isHeaderSync) {
+            computeHeaderSyncProgress(height, peers)
         } else {
-            val formattedHeight = NumberFormat.getNumberInstance().format(height)
-            builder.setContentText("Synced - Block #$formattedHeight")
-                .setSubText("Fully synced")
-                .setColor(COLOR_SYNCED.toColorInt())
-                .setColorized(true)
+            null
+        }
+
+        when {
+            headerDecimal != null -> {
+                val pct = headerDecimal * PERCENTAGE_MULTIPLIER
+                builder.setContentText("Syncing headers: ${"%.2f".format(pct)}%")
+                    .setSubText("${"%.2f".format(pct)}% headers")
+                    .setProgress(PERCENTAGE_MULTIPLIER, pct.toInt(), false)
+                    .setColor(COLOR_PRIMARY.toColorInt())
+                    .setColorized(true)
+            }
+            isHeaderSync -> {
+                builder.setContentText("Syncing headers…")
+                    .setSubText("Connecting to peers")
+                    .setProgress(0, 0, true)
+                    .setColor(COLOR_PRIMARY.toColorInt())
+                    .setColorized(true)
+            }
+            progress < FULL_SYNC_THRESHOLD -> {
+                val pct = progress * PERCENTAGE_MULTIPLIER
+                builder.setContentText("Syncing blocks: ${"%.2f".format(pct)}%")
+                    .setSubText("${"%.2f".format(pct)}% blocks")
+                    .setProgress(PERCENTAGE_MULTIPLIER, pct.toInt(), false)
+                    .setColor(COLOR_PRIMARY.toColorInt())
+                    .setColorized(true)
+            }
+            else -> {
+                val formattedHeight = NumberFormat.getNumberInstance().format(height)
+                builder.setContentText("Synced - Block #$formattedHeight")
+                    .setSubText("Fully synced")
+                    .setColor(COLOR_SYNCED.toColorInt())
+                    .setColorized(true)
+            }
         }
 
         notificationManager.notify(FLORESTA_NOTIFICATION_ID, builder.build())

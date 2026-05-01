@@ -161,6 +161,12 @@ fun ScreenNode(
     var showPingConfirmation by remember { mutableStateOf(false) }
 
     val isHeaderSync = uiState.ibd && uiState.syncDecimal == 0f
+    val headerSyncDecimal = uiState.headerSyncDecimal
+    val syncTitleRes = when {
+        isHeaderSync -> R.string.syncing_headers_title
+        uiState.ibd -> R.string.syncing_blocks_title
+        else -> R.string.sync
+    }
 
     peerToDisconnect?.let { address ->
         AlertDialog(
@@ -281,47 +287,72 @@ fun ScreenNode(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            stringResource(R.string.sync),
+                            stringResource(syncTitleRes),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
-                        if (isHeaderSync) {
-                            Text(
-                                stringResource(R.string.syncing_headers),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        } else {
-                            Text(
-                                "${uiState.syncPercentage}%",
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                        when {
+                            isHeaderSync && headerSyncDecimal != null -> {
+                                Text(
+                                    "${uiState.headerSyncPercentage}%",
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                            isHeaderSync -> {
+                                Text(
+                                    stringResource(R.string.syncing_headers),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                            else -> {
+                                Text(
+                                    "${uiState.syncPercentage}%",
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
                         }
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    if (isHeaderSync) {
-                        LinearProgressIndicator(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp)),
-                            color = MaterialTheme.colorScheme.primary,
-                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                        )
-                    } else {
-                        LinearProgressIndicator(
-                            progress = { uiState.syncDecimal },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp)),
-                            color = MaterialTheme.colorScheme.primary,
-                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                        )
+                    when {
+                        isHeaderSync && headerSyncDecimal != null -> {
+                            LinearProgressIndicator(
+                                progress = { headerSyncDecimal },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(8.dp)
+                                    .clip(RoundedCornerShape(4.dp)),
+                                color = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            )
+                        }
+                        isHeaderSync -> {
+                            LinearProgressIndicator(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(8.dp)
+                                    .clip(RoundedCornerShape(4.dp)),
+                                color = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            )
+                        }
+                        else -> {
+                            LinearProgressIndicator(
+                                progress = { uiState.syncDecimal },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(8.dp)
+                                    .clip(RoundedCornerShape(4.dp)),
+                                color = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            )
+                        }
                     }
                 }
             }

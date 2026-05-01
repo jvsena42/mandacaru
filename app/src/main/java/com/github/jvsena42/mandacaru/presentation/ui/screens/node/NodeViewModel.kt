@@ -10,6 +10,7 @@ import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.data.floresta.toFlorestaNetwork
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.floresta.UtreexoSnapshotService
+import com.github.jvsena42.mandacaru.domain.floresta.computeHeaderSyncProgress
 import com.github.jvsena42.mandacaru.domain.floresta.hasUtreexoServiceFlag
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlowImpl
@@ -54,6 +55,7 @@ class NodeViewModel(
                     _uiState.update {
                         it.copy(
                             blockHeight = NumberFormat.getNumberInstance().format(data.result.height),
+                            headerHeightRaw = data.result.height,
                             difficulty = data.result.difficulty.toHumanReadableDifficulty(),
                             network = data.result.chain.uppercase(),
                             blockHash = data.result.bestBlock,
@@ -125,11 +127,21 @@ class NodeViewModel(
         florestaRpc.getPeerInfo().collect { result ->
             result.onSuccess { data ->
                 val peers = data.result.orEmpty()
-                _uiState.update {
-                    it.copy(
+                _uiState.update { current ->
+                    val isHeaderSync = current.ibd && current.syncDecimal == 0f
+                    val decimal = if (isHeaderSync) {
+                        computeHeaderSyncProgress(current.headerHeightRaw, peers)
+                    } else {
+                        null
+                    }
+                    current.copy(
                         numberOfPeers = peers.size.toString(),
                         peers = peers,
                         utreexoPeerCount = peers.count { p -> p.services.hasUtreexoServiceFlag() },
+                        headerSyncDecimal = decimal,
+                        headerSyncPercentage = decimal?.let {
+                            "%.2f".format(it * PERCENTAGE_MULTIPLIER)
+                        } ?: "0.00",
                     )
                 }
             }
