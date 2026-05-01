@@ -251,6 +251,12 @@ Key libraries (see `gradle/libs.versions.toml`):
 - **Gson**: 2.11.0 (JSON serialization)
 - **JNA**: 5.14.0 (FFI bridge)
 
+## Pull request policy
+
+When publishing changes that touch the Mandacaru build chain — `Floresta-mandacaru`, `floresta-mandacaru-ffi`, or `mandacaru` — open PRs **against the fork's own default branch** (`jvsena42/<repo>:master` or `:main`). Never open PRs against an upstream maintainer repo (e.g. `vinteumorg/Floresta`) without explicit per-task authorization from the user — "if necessary" or similar conditional phrasing does not count as authorization.
+
+The personal forks carry Mandacaru-specific patches and the user reviews/lands changes there first; upstream PRs are a separate, deliberate decision.
+
 ## Related Resources
 
 - [Floresta Core](https://github.com/vinteumorg/Floresta) - Underlying Rust implementation
