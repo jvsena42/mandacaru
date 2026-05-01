@@ -8,6 +8,7 @@ import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.model.Constants
+import com.github.jvsena42.mandacaru.presentation.utils.SnapshotCodec
 import com.github.jvsena42.mandacaru.presentation.utils.WalletBirthday
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -42,9 +43,21 @@ class FlorestaDaemonImpl(
             } else null
             val userAgent =
                 "/Floresta:${Constants.FLORESTA_VERSION}/mandacaru:${BuildConfig.VERSION_NAME}/"
+            val builtinSnapshotJson: String? = runCatching {
+                SnapshotCodec.normalizeToJson(Constants.BUILTIN_UTREEXO_SNAPSHOT_COMPACT)
+            }.onFailure {
+                Log.w(TAG, "builtin snapshot decode failed; falling back to Floresta default", it)
+            }.getOrNull()
+            val startupSnapshotJson: String? = pendingSnapshot ?: builtinSnapshotJson
+            val snapshotSource = when {
+                pendingSnapshot != null -> "pending"
+                builtinSnapshotJson != null -> "builtin"
+                else -> "floresta-default"
+            }
             Log.i(
                 TAG,
-                "start: pendingSnapshot=${pendingSnapshot?.length ?: 0} chars, " +
+                "start: snapshotSource=$snapshotSource, " +
+                    "snapshotLen=${startupSnapshotJson?.length ?: 0}, " +
                     "network=$network, datadir=$datadir, " +
                     "filtersStartHeight=$filtersStartHeight, userAgent=$userAgent",
             )
@@ -52,7 +65,7 @@ class FlorestaDaemonImpl(
                 dataDir = datadir,
                 network = network,
                 assumeUtreexo = true,
-                userUtreexoSnapshotJson = pendingSnapshot,
+                userUtreexoSnapshotJson = startupSnapshotJson,
                 filtersStartHeight = filtersStartHeight,
                 userAgent = userAgent,
             )
@@ -60,7 +73,7 @@ class FlorestaDaemonImpl(
             daemon?.start()?.also {
                 Log.i(
                     TAG,
-                    "start: Floresta running (pendingSnapshot=${pendingSnapshot != null})",
+                    "start: Floresta running (snapshotSource=$snapshotSource)",
                 )
                 isRunning = true
             }
