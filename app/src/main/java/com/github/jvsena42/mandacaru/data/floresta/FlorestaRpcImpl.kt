@@ -176,7 +176,9 @@ class FlorestaRpcImpl(
             .build()
 
         client.newCall(request).execute().use { response ->
-            val json = JSONObject(response.body.string())
+            val body = response.body.string()
+            Log.d(TAG, "Response ($method): $body")
+            val json = JSONObject(body)
 
             if (json.has("error")) {
                 @Suppress("TooGenericExceptionThrown")
