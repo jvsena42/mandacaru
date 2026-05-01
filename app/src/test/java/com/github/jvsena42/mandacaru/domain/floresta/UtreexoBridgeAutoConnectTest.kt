@@ -9,7 +9,6 @@ import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetBlockC
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetBlockHashResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetBlockHeaderResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetBlockchainInfoResponse
-import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetMemoryInfoResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetPeerInfoResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetTransactionResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.ListDescriptorsResponse
@@ -200,7 +199,6 @@ private class FakeFlorestaRpc(
     override fun listDescriptors(): Flow<Result<ListDescriptorsResponse>> = TODO("not used")
     override fun getBlockchainInfo(): Flow<Result<GetBlockchainInfoResponse>> = TODO("not used")
     override fun getUptime(): Flow<Result<UptimeResponse>> = TODO("not used")
-    override fun getMemoryInfo(): Flow<Result<GetMemoryInfoResponse>> = TODO("not used")
     override fun getBlockHash(height: Int): Flow<Result<GetBlockHashResponse>> = TODO("not used")
     override fun getBlockHeader(blockHash: String): Flow<Result<GetBlockHeaderResponse>> = TODO("not used")
     override fun getBestBlockHash(): Flow<Result<GetBlockHashResponse>> = TODO("not used")

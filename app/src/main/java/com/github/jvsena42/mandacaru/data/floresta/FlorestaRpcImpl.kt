@@ -12,7 +12,6 @@ import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetBlockC
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetBlockHashResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetBlockHeaderResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetBlockchainInfoResponse
-import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetMemoryInfoResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetPeerInfoResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.SendRawTransactionResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetTransactionResponse
@@ -93,9 +92,6 @@ class FlorestaRpcImpl(
 
     override fun getUptime(): Flow<Result<UptimeResponse>> =
         executeRpcCall(RpcMethods.UPTIME)
-
-    override fun getMemoryInfo(): Flow<Result<GetMemoryInfoResponse>> =
-        executeRpcCall(RpcMethods.GET_MEMORY_INFO, "stats")
 
     override fun getBlockHash(height: Int): Flow<Result<GetBlockHashResponse>> =
         executeRpcCall(RpcMethods.GET_BLOCK_HASH, height)

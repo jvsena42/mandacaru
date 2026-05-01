@@ -87,18 +87,6 @@ class NodeViewModel(
                 _uiState.update { it.copy(uptime = formatUptime(data.result)) }
             }
         }
-        florestaRpc.getMemoryInfo().collect { result ->
-            result.onSuccess { data ->
-                val locked = data.result.locked
-                _uiState.update {
-                    it.copy(
-                        memoryUsed = formatBytes(locked.used),
-                        memoryFree = formatBytes(locked.free),
-                        memoryTotal = formatBytes(locked.total),
-                    )
-                }
-            }
-        }
     }
 
     private fun formatUptime(seconds: Long): String {
@@ -111,14 +99,6 @@ class NodeViewModel(
             if (hours > 0 || days > 0) append("${hours}h ")
             if (minutes > 0 || hours > 0 || days > 0) append("${minutes}m ")
             append("${secs}s")
-        }
-    }
-
-    private fun formatBytes(bytes: Long): String {
-        return when {
-            bytes >= BYTES_PER_MB -> "%.1f MB".format(bytes / BYTES_PER_MB.toDouble())
-            bytes >= BYTES_PER_KB -> "%.1f KB".format(bytes / BYTES_PER_KB.toDouble())
-            else -> "$bytes B"
         }
     }
 
@@ -376,8 +356,6 @@ class NodeViewModel(
         const val SECONDS_PER_DAY = 86400L
         const val SECONDS_PER_HOUR = 3600L
         const val SECONDS_PER_MINUTE = 60L
-        const val BYTES_PER_KB = 1_024L
-        const val BYTES_PER_MB = 1_048_576L
         const val COPIED_MESSAGE = "Copied to clipboard"
     }
 }

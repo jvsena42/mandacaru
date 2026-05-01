@@ -515,24 +515,6 @@ fun ScreenNode(
                                 value = uiState.uptime,
                                 isLoading = uiState.uptime.isEmpty()
                             )
-
-                            InfoRow(
-                                label = stringResource(R.string.memory_used),
-                                value = uiState.memoryUsed,
-                                isLoading = uiState.memoryUsed.isEmpty()
-                            )
-
-                            InfoRow(
-                                label = stringResource(R.string.memory_free),
-                                value = uiState.memoryFree,
-                                isLoading = uiState.memoryFree.isEmpty()
-                            )
-
-                            InfoRow(
-                                label = stringResource(R.string.memory_total),
-                                value = uiState.memoryTotal,
-                                isLoading = uiState.memoryTotal.isEmpty()
-                            )
                         }
                     }
                 }
@@ -744,9 +726,6 @@ private fun Preview() {
                     utreexoPeerCount = 0,
                     isPeersExpanded = true,
                     uptime = "2d 5h 32m 10s",
-                    memoryUsed = "12.4 MB",
-                    memoryFree = "3.2 MB",
-                    memoryTotal = "15.6 MB",
                     isDiagnosticsExpanded = true,
                     peers = listOf(
                         PeerInfoResult(

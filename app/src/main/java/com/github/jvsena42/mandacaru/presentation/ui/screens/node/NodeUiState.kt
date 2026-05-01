@@ -19,9 +19,6 @@ data class NodeUiState(
     val utreexoPeerCount: Int = 0,
     val isPeersExpanded: Boolean = false,
     val uptime: String = "",
-    val memoryUsed: String = "",
-    val memoryFree: String = "",
-    val memoryTotal: String = "",
     val isDiagnosticsExpanded: Boolean = false,
 
     val isScanSheetOpen: Boolean = false,

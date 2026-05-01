@@ -6,7 +6,6 @@ import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetBlockC
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetBlockHashResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetBlockHeaderResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetBlockchainInfoResponse
-import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetMemoryInfoResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetPeerInfoResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.ListDescriptorsResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.SendRawTransactionResponse
@@ -92,12 +91,6 @@ interface FlorestaRpc {
      * @return A `Result` containing `UptimeResponse` with the uptime in seconds
      */
     fun getUptime(): Flow<Result<UptimeResponse>>
-
-    /**
-     * Returns memory usage information from the daemon.
-     * @return A `Result` containing `GetMemoryInfoResponse` with memory stats
-     */
-    fun getMemoryInfo(): Flow<Result<GetMemoryInfoResponse>>
 
     /**
      * Returns the block hash at the given height.

@@ -65,9 +65,6 @@
     <string name="nonce">Nonce</string>
     <string name="bits">Bits</string>
     <string name="uptime">Uptime</string>
-    <string name="memory_used">Memory Used</string>
-    <string name="memory_free">Memory Free</string>
-    <string name="memory_total">Memory Total</string>
     <string name="transaction_lookup">Transaction Lookup</string>
     <string name="transaction_lookup_hint">Only transactions from your loaded wallet descriptors can be found</string>
     <string name="descriptor_hint">Accepts public keys (xpub, zpub, ypub) or full descriptors. Private keys are not supported.</string>
