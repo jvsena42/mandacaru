@@ -17,10 +17,8 @@
     <string name="best_block">Best Block</string>
     <string name="average_block_time">Average block time</string>
     <string name="sync">Sync</string>
-    <string name="syncing_headers">Syncing headers…</string>
     <string name="syncing_headers_title">Syncing headers</string>
     <string name="syncing_blocks_title">Syncing blocks</string>
-    <string name="syncing_filters">Syncing filters…</string>
     <string name="syncing_filters_title">Syncing filters</string>
     <string name="sync_step_headers">Headers</string>
     <string name="sync_step_blocks">Blocks</string>

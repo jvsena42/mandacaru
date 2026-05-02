@@ -604,12 +604,6 @@ private fun SyncProgressCard(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
-                    } else if (isHeaderSync) {
-                        Text(
-                            stringResource(R.string.syncing_headers),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
                     }
                 }
             }
