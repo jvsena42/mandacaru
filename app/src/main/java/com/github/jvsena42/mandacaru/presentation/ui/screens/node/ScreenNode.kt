@@ -545,6 +545,7 @@ private fun SyncProgressCard(
     val headersDone = !isHeaderSync
     val blocksDone = syncDecimal >= 1f
     val filtersDone = filterSyncDecimal == null || filterSyncDecimal >= 1f
+    val allStepsDone = headersDone && blocksDone && filtersDone
     val headersState = if (headersDone) StepState.Done else StepState.Current
     val blocksState = when {
         blocksDone -> StepState.Done
@@ -570,13 +571,21 @@ private fun SyncProgressCard(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            if (!isStalled) {
-                SyncStepper(
-                    headersState = headersState,
-                    blocksState = blocksState,
-                    filtersState = filtersState,
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+            AnimatedVisibility(
+                visible = !isStalled && !allStepsDone,
+                enter = fadeIn(animationSpec = tween(300)) +
+                    expandVertically(animationSpec = tween(300)),
+                exit = fadeOut(animationSpec = tween(300)) +
+                    shrinkVertically(animationSpec = tween(300)),
+            ) {
+                Column {
+                    SyncStepper(
+                        headersState = headersState,
+                        blocksState = blocksState,
+                        filtersState = filtersState,
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
             }
 
             AnimatedContent(
