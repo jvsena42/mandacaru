@@ -12,6 +12,7 @@ import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.floresta.UtreexoSnapshotService
 import com.github.jvsena42.mandacaru.domain.floresta.computeHeaderSyncProgress
 import com.github.jvsena42.mandacaru.domain.floresta.hasUtreexoServiceFlag
+import com.github.jvsena42.mandacaru.domain.floresta.isLikelyStalled
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlowImpl
 import com.github.jvsena42.mandacaru.presentation.utils.SnapshotCodec
@@ -133,12 +134,19 @@ class NodeViewModel(
                     } else {
                         null
                     }
+                    val stalled = isLikelyStalled(
+                        progress = current.syncDecimal,
+                        ibd = current.ibd,
+                        ourHeight = current.headerHeightRaw,
+                        peers = peers,
+                    )
                     current.copy(
                         numberOfPeers = peers.size.toString(),
                         peers = peers,
                         utreexoPeerCount = peers.count { p -> p.services.hasUtreexoServiceFlag() },
                         headerSyncDecimal = decimal,
                         headerSyncPercentage = decimal?.toSyncPercentageString() ?: "0.00",
+                        isStalled = stalled,
                     )
                 }
             }

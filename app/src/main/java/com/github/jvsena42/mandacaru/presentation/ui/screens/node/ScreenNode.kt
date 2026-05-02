@@ -161,9 +161,11 @@ fun ScreenNode(
     var showPingConfirmation by remember { mutableStateOf(false) }
 
     val isHeaderSync = uiState.ibd && uiState.syncDecimal == 0f
+    val isStalled = uiState.isStalled
     val headerSyncDecimal = uiState.headerSyncDecimal
     val syncTitleRes = when {
         isHeaderSync -> R.string.syncing_headers_title
+        isStalled -> R.string.sync_stalled_title
         uiState.ibd -> R.string.syncing_blocks_title
         else -> R.string.sync
     }
@@ -267,10 +269,14 @@ fun ScreenNode(
         if (uiState.ibd && uiState.utreexoPeerCount == 0) {
             item { UtreexoWarningCard() }
         }
+        if (isStalled) {
+            item { SyncStalledWarningCard() }
+        }
         item {
             SyncProgressCard(
                 titleRes = syncTitleRes,
                 isHeaderSync = isHeaderSync,
+                isStalled = isStalled,
                 headerSyncDecimal = headerSyncDecimal,
                 headerSyncPercentage = uiState.headerSyncPercentage,
                 syncPercentage = uiState.syncPercentage,
@@ -476,6 +482,7 @@ fun ScreenNode(
 private fun SyncProgressCard(
     titleRes: Int,
     isHeaderSync: Boolean,
+    isStalled: Boolean,
     headerSyncDecimal: Float?,
     headerSyncPercentage: String,
     syncPercentage: String,
@@ -504,6 +511,7 @@ private fun SyncProgressCard(
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 when {
+                    isStalled -> Unit
                     isHeaderSync && headerSyncDecimal != null -> {
                         Text(
                             "$headerSyncPercentage%",
@@ -533,6 +541,17 @@ private fun SyncProgressCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             when {
+                isStalled -> {
+                    LinearProgressIndicator(
+                        progress = { 0f },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        color = MaterialTheme.colorScheme.error,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    )
+                }
                 isHeaderSync && headerSyncDecimal != null -> {
                     LinearProgressIndicator(
                         progress = { headerSyncDecimal },
@@ -565,6 +584,45 @@ private fun SyncProgressCard(
                         trackColor = MaterialTheme.colorScheme.surfaceVariant,
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SyncStalledWarningCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Icon(
+                Icons.Outlined.Warning,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    stringResource(R.string.sync_stalled_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+                Text(
+                    stringResource(R.string.sync_stalled_message),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
             }
         }
     }
@@ -784,6 +842,41 @@ private fun Preview() {
                             state = "Ready",
                             userAgent = "/Satoshi:28.1.0/"
                         )
+                    )
+                )
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun StalledPreview() {
+    MandacaruTheme {
+        Surface {
+            ScreenNode(
+                NodeUiState(
+                    numberOfPeers = "10",
+                    blockHeight = "17,904",
+                    headerHeightRaw = 17_904,
+                    blockHash = "0000000000000ed5f3f1d61f1bbf73c89c2cc01dec02e2fa7eaa9f6cabf2a7df",
+                    network = "BITCOIN",
+                    difficulty = "1.00",
+                    syncPercentage = "100.00",
+                    syncDecimal = 1f,
+                    ibd = false,
+                    isStalled = true,
+                    utreexoPeerCount = 1,
+                    uptime = "14h 02m",
+                    peers = listOf(
+                        PeerInfoResult(
+                            address = "194.145.199.26:8333",
+                            initialHeight = 947_390,
+                            kind = "regular",
+                            services = "ServiceFlags(NETWORK|WITNESS|COMPACT_FILTERS|UTREEXO)",
+                            state = "Ready",
+                            userAgent = "/Satoshi:30.0.0/"
+                        ),
                     )
                 )
             )
