@@ -17,6 +17,7 @@ import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.floresta.UtreexoBridgeAutoConnect
 import com.github.jvsena42.mandacaru.domain.floresta.computeHeaderSyncProgress
+import com.github.jvsena42.mandacaru.domain.floresta.isLikelyStalled
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.PeerInfoResult
 import com.github.jvsena42.mandacaru.presentation.ui.screens.main.MainActivity
 import com.github.jvsena42.mandacaru.presentation.utils.toSyncPercentageString
@@ -177,7 +178,17 @@ class FlorestaService : Service() {
                             } else {
                                 launch { utreexoBridgeAutoConnect.ensureUtreexoPeers() }
                             }
-                            maybeTriggerWalletRescan(data.result.progress, data.result.ibd)
+                            val stalled = isLikelyStalled(
+                                progress = data.result.progress,
+                                ibd = data.result.ibd,
+                                ourHeight = data.result.height,
+                                peers = peers,
+                            )
+                            maybeTriggerWalletRescan(
+                                progress = data.result.progress,
+                                ibd = data.result.ibd,
+                                stalled = stalled,
+                            )
                         }
                     }
                 } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
@@ -194,8 +205,8 @@ class FlorestaService : Service() {
      * chain looks fully synced (with a grace window so filter downloads can
      * catch up too), then clear the flag.
      */
-    private fun maybeTriggerWalletRescan(progress: Float, ibd: Boolean) {
-        if (ibd || progress < FULL_SYNC_THRESHOLD) {
+    private fun maybeTriggerWalletRescan(progress: Float, ibd: Boolean, stalled: Boolean) {
+        if (ibd || progress < FULL_SYNC_THRESHOLD || stalled) {
             fullySyncedSinceMs = null
             return
         }
@@ -266,6 +277,12 @@ class FlorestaService : Service() {
         } else {
             null
         }
+        val stalled = isLikelyStalled(
+            progress = progress,
+            ibd = ibd,
+            ourHeight = height,
+            peers = peers,
+        )
 
         when {
             headerDecimal != null -> {
@@ -281,6 +298,13 @@ class FlorestaService : Service() {
                 builder.setContentText("Syncing headers…")
                     .setSubText("Connecting to peers")
                     .setProgress(0, 0, true)
+                    .setColor(COLOR_PRIMARY.toColorInt())
+                    .setColorized(true)
+            }
+            stalled -> {
+                val formattedHeight = NumberFormat.getNumberInstance().format(height)
+                builder.setContentText("Sync stalled at block #$formattedHeight")
+                    .setSubText("Storage may be unhealthy")
                     .setColor(COLOR_PRIMARY.toColorInt())
                     .setColorized(true)
             }

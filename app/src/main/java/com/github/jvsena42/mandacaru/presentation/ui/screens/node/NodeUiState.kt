@@ -16,6 +16,7 @@ data class NodeUiState(
     val headerHeightRaw: Int = 0,
     val headerSyncDecimal: Float? = null,
     val headerSyncPercentage: String = "0.00",
+    val isStalled: Boolean = false,
     val ibd: Boolean = false,
     val validatedBLocks: Int = 0,
     val peers: List<PeerInfoResult> = emptyList(),
