@@ -1,10 +1,24 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.node
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,6 +30,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
@@ -27,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import android.content.Intent
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.Info
@@ -54,7 +70,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -501,6 +520,44 @@ private fun SyncProgressCard(
     syncPercentage: String,
     syncDecimal: Float,
 ) {
+    val rawDecimal: Float? = when {
+        isStalled -> 0f
+        isHeaderSync && headerSyncDecimal != null -> headerSyncDecimal
+        isHeaderSync -> null
+        isFilterSync && filterSyncDecimal != null -> filterSyncDecimal
+        else -> syncDecimal
+    }
+    val animatedDecimal by animateFloatAsState(
+        targetValue = rawDecimal ?: 0f,
+        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        label = "syncProgress",
+    )
+
+    val percentageText: String? = when {
+        isStalled -> null
+        isHeaderSync && headerSyncDecimal != null -> "$headerSyncPercentage%"
+        isHeaderSync -> null
+        isFilterSync && filterSyncDecimal != null -> "$filterSyncPercentage%"
+        else -> "$syncPercentage%"
+    }
+
+    val hasFiltersStep = filterSyncDecimal != null
+    val headersDone = !isHeaderSync
+    val blocksDone = syncDecimal >= 1f
+    val filtersDone = filterSyncDecimal == null || filterSyncDecimal >= 1f
+    val headersState = if (headersDone) StepState.Done else StepState.Current
+    val blocksState = when {
+        blocksDone -> StepState.Done
+        headersDone -> StepState.Current
+        else -> StepState.Pending
+    }
+    val filtersState: StepState? = when {
+        !hasFiltersStep -> null
+        filtersDone && blocksDone -> StepState.Done
+        blocksDone -> StepState.Current
+        else -> StepState.Pending
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -513,46 +570,44 @@ private fun SyncProgressCard(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    stringResource(titleRes),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+            if (!isStalled) {
+                SyncStepper(
+                    headersState = headersState,
+                    blocksState = blocksState,
+                    filtersState = filtersState,
                 )
-                when {
-                    isStalled -> Unit
-                    isHeaderSync && headerSyncDecimal != null -> {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            AnimatedContent(
+                targetState = titleRes,
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(300)) togetherWith
+                        fadeOut(animationSpec = tween(300))
+                },
+                label = "syncTitle",
+            ) { currentTitleRes ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        stringResource(currentTitleRes),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    if (percentageText != null) {
                         Text(
-                            "$headerSyncPercentage%",
+                            percentageText,
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
-                    }
-                    isHeaderSync -> {
+                    } else if (isHeaderSync) {
                         Text(
                             stringResource(R.string.syncing_headers),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                    isFilterSync && filterSyncDecimal != null -> {
-                        Text(
-                            "$filterSyncPercentage%",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                    else -> {
-                        Text(
-                            "$syncPercentage%",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
@@ -561,64 +616,170 @@ private fun SyncProgressCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            val barModifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(RoundedCornerShape(4.dp))
             when {
-                isStalled -> {
-                    LinearProgressIndicator(
-                        progress = { 0f },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = MaterialTheme.colorScheme.error,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                    )
-                }
-                isHeaderSync && headerSyncDecimal != null -> {
-                    LinearProgressIndicator(
-                        progress = { headerSyncDecimal },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                    )
-                }
-                isHeaderSync -> {
-                    LinearProgressIndicator(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                    )
-                }
-                isFilterSync && filterSyncDecimal != null -> {
-                    LinearProgressIndicator(
-                        progress = { filterSyncDecimal },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                    )
-                }
-                else -> {
-                    LinearProgressIndicator(
-                        progress = { syncDecimal },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                    )
-                }
+                isStalled -> LinearProgressIndicator(
+                    progress = { 0f },
+                    modifier = barModifier,
+                    color = MaterialTheme.colorScheme.error,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
+                rawDecimal == null -> LinearProgressIndicator(
+                    modifier = barModifier,
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
+                else -> LinearProgressIndicator(
+                    progress = { animatedDecimal },
+                    modifier = barModifier,
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
             }
         }
     }
+}
+
+private enum class StepState { Done, Current, Pending }
+
+@Composable
+private fun SyncStepper(
+    headersState: StepState,
+    blocksState: StepState,
+    filtersState: StepState?,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top,
+    ) {
+        SyncStepNode(
+            label = stringResource(R.string.sync_step_headers),
+            state = headersState,
+        )
+        SyncStepConnector(
+            filled = headersState == StepState.Done,
+            modifier = Modifier
+                .weight(1f)
+                .padding(top = 9.dp, start = 4.dp, end = 4.dp),
+        )
+        SyncStepNode(
+            label = stringResource(R.string.sync_step_blocks),
+            state = blocksState,
+        )
+        if (filtersState != null) {
+            SyncStepConnector(
+                filled = blocksState == StepState.Done,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(top = 9.dp, start = 4.dp, end = 4.dp),
+            )
+            SyncStepNode(
+                label = stringResource(R.string.sync_step_filters),
+                state = filtersState,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SyncStepNode(label: String, state: StepState) {
+    val activeColor = MaterialTheme.colorScheme.onPrimaryContainer
+    val containerColor = MaterialTheme.colorScheme.primaryContainer
+    val pendingColor = activeColor.copy(alpha = 0.35f)
+
+    val dotFillColor by animateColorAsState(
+        targetValue = when (state) {
+            StepState.Done, StepState.Current -> activeColor
+            StepState.Pending -> Color.Transparent
+        },
+        animationSpec = tween(300),
+        label = "stepDotFill",
+    )
+    val borderColor by animateColorAsState(
+        targetValue = when (state) {
+            StepState.Done, StepState.Current -> activeColor
+            StepState.Pending -> pendingColor
+        },
+        animationSpec = tween(300),
+        label = "stepBorder",
+    )
+    val labelColor by animateColorAsState(
+        targetValue = when (state) {
+            StepState.Done, StepState.Current -> activeColor
+            StepState.Pending -> pendingColor
+        },
+        animationSpec = tween(300),
+        label = "stepLabel",
+    )
+
+    val pulseScale = if (state == StepState.Current) {
+        val transition = rememberInfiniteTransition(label = "stepPulse")
+        val scale by transition.animateFloat(
+            initialValue = 1f,
+            targetValue = 1.06f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(900, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "stepPulseScale",
+        )
+        scale
+    } else {
+        1f
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        val checkAlpha by animateFloatAsState(
+            targetValue = if (state == StepState.Done) 1f else 0f,
+            animationSpec = tween(200),
+            label = "stepCheckAlpha",
+        )
+        Box(
+            modifier = Modifier
+                .scale(pulseScale)
+                .size(20.dp)
+                .clip(CircleShape)
+                .background(dotFillColor)
+                .border(width = 1.5.dp, color = borderColor, shape = CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = null,
+                tint = containerColor,
+                modifier = Modifier
+                    .size(14.dp)
+                    .alpha(checkAlpha),
+            )
+        }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = labelColor,
+        )
+    }
+}
+
+@Composable
+private fun SyncStepConnector(filled: Boolean, modifier: Modifier = Modifier) {
+    val activeColor = MaterialTheme.colorScheme.onPrimaryContainer
+    val inactiveColor = activeColor.copy(alpha = 0.25f)
+    val color by animateColorAsState(
+        targetValue = if (filled) activeColor else inactiveColor,
+        animationSpec = tween(300),
+        label = "stepConnector",
+    )
+    Box(
+        modifier = modifier
+            .height(2.dp)
+            .background(color),
+    )
 }
 
 @Composable

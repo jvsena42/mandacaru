@@ -20,7 +20,7 @@ data class NodeUiState(
     val filterSyncDecimal: Float? = null,
     val filterSyncPercentage: String = "0.00",
     val isStalled: Boolean = false,
-    val ibd: Boolean = false,
+    val ibd: Boolean = true,
     val validatedBLocks: Int = 0,
     val peers: List<PeerInfoResult> = emptyList(),
     val utreexoPeerCount: Int = 0,
