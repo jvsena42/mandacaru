@@ -96,12 +96,10 @@ class NodeViewModel(
         val days = seconds / SECONDS_PER_DAY
         val hours = (seconds % SECONDS_PER_DAY) / SECONDS_PER_HOUR
         val minutes = (seconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE
-        val secs = seconds % SECONDS_PER_MINUTE
         return buildString {
             if (days > 0) append("${days}d ")
             if (hours > 0 || days > 0) append("${hours}h ")
-            if (minutes > 0 || hours > 0 || days > 0) append("${minutes}m ")
-            append("${secs}s")
+            append("${minutes}m")
         }
     }
 
