@@ -16,6 +16,7 @@ import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlowImpl
 import com.github.jvsena42.mandacaru.presentation.utils.SnapshotCodec
 import com.github.jvsena42.mandacaru.presentation.utils.toHumanReadableDifficulty
+import com.github.jvsena42.mandacaru.presentation.utils.toSyncPercentageString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,7 +60,7 @@ class NodeViewModel(
                             difficulty = data.result.difficulty.toHumanReadableDifficulty(),
                             network = data.result.chain.uppercase(),
                             blockHash = data.result.bestBlock,
-                            syncPercentage = "%.2f".format(data.result.progress * PERCENTAGE_MULTIPLIER),
+                            syncPercentage = data.result.progress.toSyncPercentageString(),
                             syncDecimal = data.result.progress,
                             validatedBLocks = data.result.validated,
                             ibd = data.result.ibd
@@ -139,9 +140,7 @@ class NodeViewModel(
                         peers = peers,
                         utreexoPeerCount = peers.count { p -> p.services.hasUtreexoServiceFlag() },
                         headerSyncDecimal = decimal,
-                        headerSyncPercentage = decimal?.let {
-                            "%.2f".format(it * PERCENTAGE_MULTIPLIER)
-                        } ?: "0.00",
+                        headerSyncPercentage = decimal?.toSyncPercentageString() ?: "0.00",
                     )
                 }
             }
@@ -364,7 +363,6 @@ class NodeViewModel(
 
     private companion object {
         const val TAG = "NodeViewModel"
-        const val PERCENTAGE_MULTIPLIER = 100
         const val SECONDS_PER_DAY = 86400L
         const val SECONDS_PER_HOUR = 3600L
         const val SECONDS_PER_MINUTE = 60L

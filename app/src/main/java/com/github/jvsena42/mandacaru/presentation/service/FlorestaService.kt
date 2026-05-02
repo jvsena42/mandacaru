@@ -19,6 +19,7 @@ import com.github.jvsena42.mandacaru.domain.floresta.UtreexoBridgeAutoConnect
 import com.github.jvsena42.mandacaru.domain.floresta.computeHeaderSyncProgress
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.PeerInfoResult
 import com.github.jvsena42.mandacaru.presentation.ui.screens.main.MainActivity
+import com.github.jvsena42.mandacaru.presentation.utils.toSyncPercentageString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -268,10 +269,11 @@ class FlorestaService : Service() {
 
         when {
             headerDecimal != null -> {
-                val pct = headerDecimal * PERCENTAGE_MULTIPLIER
-                builder.setContentText("Syncing headers: ${"%.2f".format(pct)}%")
-                    .setSubText("${"%.2f".format(pct)}% headers")
-                    .setProgress(PERCENTAGE_MULTIPLIER, pct.toInt(), false)
+                val label = headerDecimal.toSyncPercentageString()
+                val barProgress = (headerDecimal * PERCENTAGE_MULTIPLIER).toInt()
+                builder.setContentText("Syncing headers: $label%")
+                    .setSubText("$label% headers")
+                    .setProgress(PERCENTAGE_MULTIPLIER, barProgress, false)
                     .setColor(COLOR_PRIMARY.toColorInt())
                     .setColorized(true)
             }
@@ -283,10 +285,11 @@ class FlorestaService : Service() {
                     .setColorized(true)
             }
             progress < FULL_SYNC_THRESHOLD -> {
-                val pct = progress * PERCENTAGE_MULTIPLIER
-                builder.setContentText("Syncing blocks: ${"%.2f".format(pct)}%")
-                    .setSubText("${"%.2f".format(pct)}% blocks")
-                    .setProgress(PERCENTAGE_MULTIPLIER, pct.toInt(), false)
+                val label = progress.toSyncPercentageString()
+                val barProgress = (progress * PERCENTAGE_MULTIPLIER).toInt()
+                builder.setContentText("Syncing blocks: $label%")
+                    .setSubText("$label% blocks")
+                    .setProgress(PERCENTAGE_MULTIPLIER, barProgress, false)
                     .setColor(COLOR_PRIMARY.toColorInt())
                     .setColorized(true)
             }

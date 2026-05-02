@@ -2,6 +2,7 @@ package com.github.jvsena42.mandacaru.presentation.utils
 
 import com.florestad.Network
 import com.github.jvsena42.mandacaru.domain.model.Constants
+import kotlin.math.floor
 
 private const val SUPERSCRIPT_THREE_EXPONENT = 3
 private const val EXPECTED_PARTS_COUNT = 2
@@ -9,6 +10,8 @@ private const val TRILLION = 1e12f
 private const val BILLION = 1e9f
 private const val MILLION = 1e6f
 private const val THOUSAND = 1e3f
+private const val PERCENT_MULTIPLIER = 100f
+private const val TWO_DECIMAL_FACTOR = 100f
 
 fun String.removeSpaces() = this.replace(" ", "")
 
@@ -65,6 +68,21 @@ private fun Int.toSuperscript(): String {
     )
 
     return this.toString().map { superscripts[it] ?: it }.joinToString("")
+}
+
+/**
+ * Formats a sync progress decimal (0f..1f) as a percentage string with two
+ * decimal places, flooring sub-100% values so values like 0.99998 render as
+ * "99.99" rather than rounding up to "100.00".
+ */
+fun Float.toSyncPercentageString(): String {
+    val pct = this * PERCENT_MULTIPLIER
+    val displayed = if (pct >= PERCENT_MULTIPLIER) {
+        PERCENT_MULTIPLIER
+    } else {
+        floor(pct * TWO_DECIMAL_FACTOR) / TWO_DECIMAL_FACTOR
+    }
+    return "%.2f".format(displayed)
 }
 
 fun Float.toHumanReadableDifficulty(): String {
