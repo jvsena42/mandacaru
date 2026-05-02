@@ -57,15 +57,11 @@ class NodeViewModel(
                     val filterHeight = data.result.filters
                     val filterStart = data.result.filtersStart ?: 0
                     val filterDecimal = filterHeight?.let { fh ->
-                        if (fh < filterStart) {
-                            null
-                        } else {
-                            val numerator = (fh - filterStart).toFloat()
-                            val denominator = (data.result.height - filterStart)
-                                .coerceAtLeast(1)
-                                .toFloat()
-                            (numerator / denominator).coerceIn(0f, 1f)
-                        }
+                        val numerator = (fh - filterStart).coerceAtLeast(0).toFloat()
+                        val denominator = (data.result.height - filterStart)
+                            .coerceAtLeast(1)
+                            .toFloat()
+                        (numerator / denominator).coerceIn(0f, 1f)
                     }
                     _uiState.update {
                         it.copy(
@@ -82,7 +78,6 @@ class NodeViewModel(
                             filterSyncDecimal = filterDecimal,
                             filterSyncPercentage = filterDecimal
                                 ?.toSyncPercentageString() ?: "0.00",
-                            filtersConfigured = filterHeight != null,
                         )
                     }
                     if (!data.result.ibd) {

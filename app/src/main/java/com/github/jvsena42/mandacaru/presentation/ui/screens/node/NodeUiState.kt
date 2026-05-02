@@ -19,7 +19,6 @@ data class NodeUiState(
     val filterHeightRaw: Int = 0,
     val filterSyncDecimal: Float? = null,
     val filterSyncPercentage: String = "0.00",
-    val filtersConfigured: Boolean = false,
     val isStalled: Boolean = false,
     val ibd: Boolean = true,
     val validatedBLocks: Int = 0,
