@@ -55,5 +55,9 @@ data class Result(
     @SerializedName("root_hashes")
     val rootHashes: List<String>,
     @SerializedName("validated")
-    val validated: Int
+    val validated: Int,
+    @SerializedName("filters")
+    val filters: Int? = null,
+    @SerializedName("filters_start")
+    val filtersStart: Int? = null,
 )

@@ -54,6 +54,15 @@ class NodeViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             florestaRpc.getBlockchainInfo().collect { result ->
                 result.onSuccess { data ->
+                    val filterHeight = data.result.filters
+                    val filterStart = data.result.filtersStart ?: 0
+                    val filterDecimal = filterHeight?.let { fh ->
+                        val numerator = (fh - filterStart).coerceAtLeast(0).toFloat()
+                        val denominator = (data.result.height - filterStart)
+                            .coerceAtLeast(1)
+                            .toFloat()
+                        (numerator / denominator).coerceIn(0f, 1f)
+                    }
                     _uiState.update {
                         it.copy(
                             blockHeight = NumberFormat.getNumberInstance().format(data.result.height),
@@ -64,7 +73,11 @@ class NodeViewModel(
                             syncPercentage = data.result.progress.toSyncPercentageString(),
                             syncDecimal = data.result.progress,
                             validatedBLocks = data.result.validated,
-                            ibd = data.result.ibd
+                            ibd = data.result.ibd,
+                            filterHeightRaw = filterHeight ?: 0,
+                            filterSyncDecimal = filterDecimal,
+                            filterSyncPercentage = filterDecimal
+                                ?.toSyncPercentageString() ?: "0.00",
                         )
                     }
                     if (!data.result.ibd) {
