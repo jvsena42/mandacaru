@@ -20,6 +20,8 @@
     <string name="syncing_headers">Syncing headers…</string>
     <string name="syncing_headers_title">Syncing headers</string>
     <string name="syncing_blocks_title">Syncing blocks</string>
+    <string name="syncing_filters">Syncing filters…</string>
+    <string name="syncing_filters_title">Syncing filters</string>
     <string name="sync_stalled_title">Sync stalled</string>
     <string name="sync_stalled_message">The node is stuck far behind the chain tip. This usually means a storage problem. Reinstall Mandacaru on internal storage.</string>
     <string name="receive_bitcoin">Receive Bitcoin</string>

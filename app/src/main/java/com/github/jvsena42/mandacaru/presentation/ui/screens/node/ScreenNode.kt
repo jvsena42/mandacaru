@@ -163,9 +163,16 @@ fun ScreenNode(
     val isHeaderSync = uiState.ibd && uiState.syncDecimal == 0f
     val isStalled = uiState.isStalled
     val headerSyncDecimal = uiState.headerSyncDecimal
+    val filterSyncDecimal = uiState.filterSyncDecimal
+    val isFilterSync = !isHeaderSync
+        && !isStalled
+        && uiState.syncDecimal >= 1f
+        && filterSyncDecimal != null
+        && filterSyncDecimal < 1f
     val syncTitleRes = when {
         isHeaderSync -> R.string.syncing_headers_title
         isStalled -> R.string.sync_stalled_title
+        isFilterSync -> R.string.syncing_filters_title
         uiState.ibd -> R.string.syncing_blocks_title
         else -> R.string.sync
     }
@@ -276,9 +283,12 @@ fun ScreenNode(
             SyncProgressCard(
                 titleRes = syncTitleRes,
                 isHeaderSync = isHeaderSync,
+                isFilterSync = isFilterSync,
                 isStalled = isStalled,
                 headerSyncDecimal = headerSyncDecimal,
                 headerSyncPercentage = uiState.headerSyncPercentage,
+                filterSyncDecimal = filterSyncDecimal,
+                filterSyncPercentage = uiState.filterSyncPercentage,
                 syncPercentage = uiState.syncPercentage,
                 syncDecimal = uiState.syncDecimal,
             )
@@ -482,9 +492,12 @@ fun ScreenNode(
 private fun SyncProgressCard(
     titleRes: Int,
     isHeaderSync: Boolean,
+    isFilterSync: Boolean,
     isStalled: Boolean,
     headerSyncDecimal: Float?,
     headerSyncPercentage: String,
+    filterSyncDecimal: Float?,
+    filterSyncPercentage: String,
     syncPercentage: String,
     syncDecimal: Float,
 ) {
@@ -527,6 +540,14 @@ private fun SyncProgressCard(
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
+                    isFilterSync && filterSyncDecimal != null -> {
+                        Text(
+                            "$filterSyncPercentage%",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
                     else -> {
                         Text(
                             "$syncPercentage%",
@@ -565,6 +586,17 @@ private fun SyncProgressCard(
                 }
                 isHeaderSync -> {
                     LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    )
+                }
+                isFilterSync && filterSyncDecimal != null -> {
+                    LinearProgressIndicator(
+                        progress = { filterSyncDecimal },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(8.dp)
