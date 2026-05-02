@@ -267,95 +267,15 @@ fun ScreenNode(
         if (uiState.ibd && uiState.utreexoPeerCount == 0) {
             item { UtreexoWarningCard() }
         }
-        // Sync Progress Card
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            stringResource(syncTitleRes),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        when {
-                            isHeaderSync && headerSyncDecimal != null -> {
-                                Text(
-                                    "${uiState.headerSyncPercentage}%",
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
-                            isHeaderSync -> {
-                                Text(
-                                    stringResource(R.string.syncing_headers),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
-                            else -> {
-                                Text(
-                                    "${uiState.syncPercentage}%",
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    when {
-                        isHeaderSync && headerSyncDecimal != null -> {
-                            LinearProgressIndicator(
-                                progress = { headerSyncDecimal },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(8.dp)
-                                    .clip(RoundedCornerShape(4.dp)),
-                                color = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                            )
-                        }
-                        isHeaderSync -> {
-                            LinearProgressIndicator(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(8.dp)
-                                    .clip(RoundedCornerShape(4.dp)),
-                                color = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                            )
-                        }
-                        else -> {
-                            LinearProgressIndicator(
-                                progress = { uiState.syncDecimal },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(8.dp)
-                                    .clip(RoundedCornerShape(4.dp)),
-                                color = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                            )
-                        }
-                    }
-                }
-            }
+            SyncProgressCard(
+                titleRes = syncTitleRes,
+                isHeaderSync = isHeaderSync,
+                headerSyncDecimal = headerSyncDecimal,
+                headerSyncPercentage = uiState.headerSyncPercentage,
+                syncPercentage = uiState.syncPercentage,
+                syncDecimal = uiState.syncDecimal,
+            )
         }
 
         // Network Info Card
@@ -404,7 +324,6 @@ fun ScreenNode(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         },
-                        isLoading = uiState.numberOfPeers.isEmpty()
                     )
 
                     InfoRow(
@@ -544,10 +463,107 @@ fun ScreenNode(
                             InfoRow(
                                 label = stringResource(R.string.uptime),
                                 value = uiState.uptime,
-                                isLoading = uiState.uptime.isEmpty()
                             )
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SyncProgressCard(
+    titleRes: Int,
+    isHeaderSync: Boolean,
+    headerSyncDecimal: Float?,
+    headerSyncPercentage: String,
+    syncPercentage: String,
+    syncDecimal: Float,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    stringResource(titleRes),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                when {
+                    isHeaderSync && headerSyncDecimal != null -> {
+                        Text(
+                            "$headerSyncPercentage%",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                    isHeaderSync -> {
+                        Text(
+                            stringResource(R.string.syncing_headers),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                    else -> {
+                        Text(
+                            "$syncPercentage%",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            when {
+                isHeaderSync && headerSyncDecimal != null -> {
+                    LinearProgressIndicator(
+                        progress = { headerSyncDecimal },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    )
+                }
+                isHeaderSync -> {
+                    LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    )
+                }
+                else -> {
+                    LinearProgressIndicator(
+                        progress = { syncDecimal },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    )
                 }
             }
         }
@@ -704,7 +720,6 @@ private fun InfoRow(
     value: String,
     modifier: Modifier = Modifier,
     icon: @Composable (() -> Unit)? = null,
-    isLoading: Boolean = false,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -724,18 +739,12 @@ private fun InfoRow(
             )
         }
 
-        if (isLoading) {
-            LinearProgressIndicator(
-                modifier = Modifier.width(60.dp)
-            )
-        } else {
-            Text(
-                value,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
+        Text(
+            value.ifEmpty { "—" },
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
