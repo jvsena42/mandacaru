@@ -23,13 +23,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -62,6 +66,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -78,10 +83,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.window.core.layout.WindowSizeClass
 import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.PeerInfoResult
 import com.github.jvsena42.mandacaru.presentation.ui.components.ExpandableHeader
@@ -278,238 +285,291 @@ fun ScreenNode(
         ApplyingSnapshotOverlay()
     }
 
-    LazyColumn(
+    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+    val isMediumOrWider = windowSizeClass.isWidthAtLeastBreakpoint(
+        WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND
+    )
+    val isExpandedWidth = windowSizeClass.isWidthAtLeastBreakpoint(
+        WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND
+    )
+    val horizontalPadding = when {
+        isExpandedWidth -> 32.dp
+        isMediumOrWider -> 24.dp
+        else -> 16.dp
+    }
+    val maxContentWidth = if (isMediumOrWider) 1200.dp else 600.dp
+    val columns = if (isMediumOrWider) {
+        StaggeredGridCells.Adaptive(minSize = 360.dp)
+    } else {
+        StaggeredGridCells.Fixed(1)
+    }
+    val heroSpan = StaggeredGridItemSpan.FullLine
+
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(
-            start = 16.dp,
-            top = 16.dp,
-            end = 16.dp,
-            bottom = 16.dp + bottomContentPadding,
-        ),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentAlignment = Alignment.TopCenter,
     ) {
-        item {
-            Text(
-                stringResource(R.string.node),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                textAlign = TextAlign.Center
-            )
+        LazyVerticalStaggeredGrid(
+            columns = columns,
+            modifier = Modifier
+                .fillMaxHeight()
+                .widthIn(max = maxContentWidth),
+            contentPadding = PaddingValues(
+                start = horizontalPadding,
+                top = 16.dp,
+                end = horizontalPadding,
+                bottom = 16.dp + bottomContentPadding,
+            ),
+            verticalItemSpacing = 12.dp,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            item(span = heroSpan) { NodeTitle() }
+            if (uiState.ibd && uiState.utreexoPeerCount == 0) {
+                item(span = heroSpan) { UtreexoWarningCard() }
+            }
+            if (isStalled) {
+                item(span = heroSpan) { SyncStalledWarningCard() }
+            }
+            item(span = heroSpan) {
+                SyncProgressCard(
+                    titleRes = syncTitleRes,
+                    isHeaderSync = isHeaderSync,
+                    isFilterSync = isFilterSync,
+                    isStalled = isStalled,
+                    headerSyncDecimal = headerSyncDecimal,
+                    headerSyncPercentage = uiState.headerSyncPercentage,
+                    filterSyncDecimal = filterSyncDecimal,
+                    filterSyncPercentage = uiState.filterSyncPercentage,
+                    syncPercentage = uiState.syncPercentage,
+                    syncDecimal = uiState.syncDecimal,
+                )
+            }
+            item { NetworkInfoCard(uiState = uiState) }
+            if (uiState.ibd && !isHeaderSync && uiState.utreexoPeerCount > 0) {
+                item {
+                    UtreexoImportCard(
+                        isExpanded = uiState.isImportCardExpanded,
+                        onToggle = onToggleImportCard,
+                        onScanClick = onClickScan,
+                        onPasteClick = onClickPaste,
+                    )
+                }
+            }
+            item {
+                PeersCard(
+                    uiState = uiState,
+                    onTogglePeers = onTogglePeers,
+                    onPingClick = { showPingConfirmation = true },
+                    onRequestDisconnect = { peerToDisconnect = it },
+                )
+            }
+            if (!uiState.ibd && uiState.syncDecimal >= 1f && uiState.utreexoPeerCount > 0) {
+                item {
+                    UtreexoExportCard(
+                        isExpanded = uiState.isExportCardExpanded,
+                        onToggle = onToggleExportCard,
+                        onShowQrClick = onClickShowExportQr,
+                        onCopyClick = onClickCopyExport,
+                        onShareClick = onClickShareExport,
+                    )
+                }
+            }
+            item {
+                DiagnosticsCard(
+                    uiState = uiState,
+                    onToggle = onToggleDiagnostics,
+                )
+            }
         }
-        if (uiState.ibd && uiState.utreexoPeerCount == 0) {
-            item { UtreexoWarningCard() }
-        }
-        if (isStalled) {
-            item { SyncStalledWarningCard() }
-        }
-        item {
-            SyncProgressCard(
-                titleRes = syncTitleRes,
-                isHeaderSync = isHeaderSync,
-                isFilterSync = isFilterSync,
-                isStalled = isStalled,
-                headerSyncDecimal = headerSyncDecimal,
-                headerSyncPercentage = uiState.headerSyncPercentage,
-                filterSyncDecimal = filterSyncDecimal,
-                filterSyncPercentage = uiState.filterSyncPercentage,
-                syncPercentage = uiState.syncPercentage,
-                syncDecimal = uiState.syncDecimal,
-            )
-        }
+    }
+}
 
-        // Network Info Card
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+@Composable
+private fun NodeTitle() {
+    Text(
+        stringResource(R.string.node),
+        style = MaterialTheme.typography.headlineSmall,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        textAlign = TextAlign.Center
+    )
+}
+
+@Composable
+private fun NetworkInfoCard(uiState: NodeUiState) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                "Network Information",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            InfoRow(
+                label = stringResource(R.string.network),
+                value = uiState.network,
+                icon = {
+                    Icon(
+                        Icons.Outlined.Cloud,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            )
+
+            InfoRow(
+                label = stringResource(R.string.number_of_peers),
+                value = uiState.numberOfPeers,
+                icon = {
+                    Icon(
+                        Icons.Outlined.Person,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+            )
+
+            InfoRow(
+                label = stringResource(R.string.difficulty),
+                value = uiState.difficulty,
+                icon = {
+                    Icon(
+                        Icons.Outlined.Speed,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun PeersCard(
+    uiState: NodeUiState,
+    onTogglePeers: () -> Unit,
+    onPingClick: () -> Unit,
+    onRequestDisconnect: (String) -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            ExpandableHeader(
+                title = "Peers (${uiState.numberOfPeers.ifEmpty { "0" }})",
+                icon = Icons.Outlined.Hub,
+                isExpanded = uiState.isPeersExpanded,
+                onToggle = onTogglePeers
+            )
+
+            AnimatedVisibility(
+                visible = uiState.isPeersExpanded,
+                enter = expandVertically(),
+                exit = shrinkVertically()
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp),
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    if (uiState.peers.isNotEmpty()) {
+                        TextButton(onClick = onPingClick) {
+                            Icon(
+                                Icons.Outlined.NetworkPing,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Ping All")
+                        }
+                    }
+
+                    if (uiState.peers.isEmpty()) {
+                        Text(
+                            "No peers connected",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        uiState.peers.forEachIndexed { index, peer ->
+                            PeerItem(
+                                peer = peer,
+                                onDisconnect = { onRequestDisconnect(peer.address) }
+                            )
+                            if (index < uiState.peers.lastIndex) {
+                                HorizontalDivider(
+                                    color = MaterialTheme.colorScheme.outlineVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DiagnosticsCard(
+    uiState: NodeUiState,
+    onToggle: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            ExpandableHeader(
+                title = stringResource(R.string.diagnostics),
+                icon = Icons.Outlined.Info,
+                isExpanded = uiState.isDiagnosticsExpanded,
+                onToggle = onToggle
+            )
+
+            AnimatedVisibility(
+                visible = uiState.isDiagnosticsExpanded,
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text(
-                        "Network Information",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
                     InfoRow(
-                        label = stringResource(R.string.network),
-                        value = uiState.network,
-                        icon = {
-                            Icon(
-                                Icons.Outlined.Cloud,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                        label = stringResource(R.string.uptime),
+                        value = uiState.uptime,
                     )
-
-                    InfoRow(
-                        label = stringResource(R.string.number_of_peers),
-                        value = uiState.numberOfPeers,
-                        icon = {
-                            Icon(
-                                Icons.Outlined.Person,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                    )
-
-                    InfoRow(
-                        label = stringResource(R.string.difficulty),
-                        value = uiState.difficulty,
-                        icon = {
-                            Icon(
-                                Icons.Outlined.Speed,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    )
-                }
-            }
-        }
-
-        if (uiState.ibd && !isHeaderSync && uiState.utreexoPeerCount > 0) {
-            item {
-                UtreexoImportCard(
-                    isExpanded = uiState.isImportCardExpanded,
-                    onToggle = onToggleImportCard,
-                    onScanClick = onClickScan,
-                    onPasteClick = onClickPaste,
-                )
-            }
-        }
-
-        // Peers Info Card
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-            ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    ExpandableHeader(
-                        title = "Peers (${uiState.numberOfPeers.ifEmpty { "0" }})",
-                        icon = Icons.Outlined.Hub,
-                        isExpanded = uiState.isPeersExpanded,
-                        onToggle = onTogglePeers
-                    )
-
-                    AnimatedVisibility(
-                        visible = uiState.isPeersExpanded,
-                        enter = expandVertically(),
-                        exit = shrinkVertically()
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp)
-                                .padding(bottom = 20.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            if (uiState.peers.isNotEmpty()) {
-                                TextButton(onClick = { showPingConfirmation = true }) {
-                                    Icon(
-                                        Icons.Outlined.NetworkPing,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Ping All")
-                                }
-                            }
-
-                            if (uiState.peers.isEmpty()) {
-                                Text(
-                                    "No peers connected",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            } else {
-                                uiState.peers.forEachIndexed { index, peer ->
-                                    PeerItem(
-                                        peer = peer,
-                                        onDisconnect = { peerToDisconnect = peer.address }
-                                    )
-                                    if (index < uiState.peers.lastIndex) {
-                                        HorizontalDivider(
-                                            color = MaterialTheme.colorScheme.outlineVariant
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (!uiState.ibd && uiState.syncDecimal >= 1f && uiState.utreexoPeerCount > 0) {
-            item {
-                UtreexoExportCard(
-                    isExpanded = uiState.isExportCardExpanded,
-                    onToggle = onToggleExportCard,
-                    onShowQrClick = onClickShowExportQr,
-                    onCopyClick = onClickCopyExport,
-                    onShareClick = onClickShareExport,
-                )
-            }
-        }
-
-        // Diagnostics Card
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-            ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    ExpandableHeader(
-                        title = stringResource(R.string.diagnostics),
-                        icon = Icons.Outlined.Info,
-                        isExpanded = uiState.isDiagnosticsExpanded,
-                        onToggle = onToggleDiagnostics
-                    )
-
-                    AnimatedVisibility(
-                        visible = uiState.isDiagnosticsExpanded,
-                        enter = expandVertically(),
-                        exit = shrinkVertically()
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp)
-                                .padding(bottom = 20.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            InfoRow(
-                                label = stringResource(R.string.uptime),
-                                value = uiState.uptime,
-                            )
-                        }
-                    }
                 }
             }
         }
@@ -1082,6 +1142,50 @@ private fun StalledPreview() {
                             state = "Ready",
                             userAgent = "/Satoshi:30.0.0/"
                         ),
+                    )
+                )
+            )
+        }
+    }
+}
+
+@Preview(name = "Tablet", widthDp = 840, heightDp = 1280)
+@Preview(name = "Tablet landscape", widthDp = 1280, heightDp = 840)
+@Composable
+private fun TabletPreview() {
+    MandacaruTheme {
+        Surface {
+            ScreenNode(
+                NodeUiState(
+                    numberOfPeers = "8",
+                    blockHeight = "1,235,334",
+                    blockHash = "00000cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
+                    network = "Signet",
+                    difficulty = "138.97 T",
+                    syncPercentage = "78.00",
+                    syncDecimal = 0.78f,
+                    ibd = true,
+                    utreexoPeerCount = 2,
+                    isPeersExpanded = true,
+                    uptime = "2d 5h 32m 10s",
+                    isDiagnosticsExpanded = true,
+                    peers = listOf(
+                        PeerInfoResult(
+                            address = "194.145.199.26:8333",
+                            initialHeight = 943609,
+                            kind = "regular",
+                            services = "ServiceFlags(NETWORK|WITNESS|COMPACT_FILTERS|NETWORK_LIMITED|P2P_V2)",
+                            state = "Ready",
+                            userAgent = "/Satoshi:30.0.0/"
+                        ),
+                        PeerInfoResult(
+                            address = "59.3.9.212:8333",
+                            initialHeight = 943609,
+                            kind = "regular",
+                            services = "ServiceFlags(NETWORK|WITNESS|COMPACT_FILTERS|NETWORK_LIMITED|P2P_V2)",
+                            state = "Ready",
+                            userAgent = "/Satoshi:28.1.0/"
+                        )
                     )
                 )
             )
