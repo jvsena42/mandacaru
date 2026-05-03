@@ -138,4 +138,10 @@
     <string name="search_transactions_from_restart_dialog_title">Apply new starting year?</string>
     <string name="search_transactions_from_restart_dialog_body">The app will restart to apply %1$d as the starting year for transaction search.</string>
     <string name="confirm">Confirm</string>
+
+    <string name="synced">Synced</string>
+    <string name="recent_blocks">Recent blocks</string>
+    <string name="coming_soon">Coming soon</string>
+    <string name="latest_block_hash">Latest block hash</string>
+    <string name="block_explorer_hint">Detailed block and mempool data are coming in a future update.</string>
 </resources>

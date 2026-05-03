@@ -311,76 +311,104 @@ fun ScreenNode(
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.TopCenter,
     ) {
-        LazyVerticalStaggeredGrid(
-            columns = columns,
-            modifier = Modifier
-                .fillMaxHeight()
-                .widthIn(max = maxContentWidth),
-            contentPadding = PaddingValues(
-                start = horizontalPadding,
-                top = 16.dp,
-                end = horizontalPadding,
-                bottom = 16.dp + bottomContentPadding,
-            ),
-            verticalItemSpacing = 12.dp,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item(span = heroSpan) { NodeTitle() }
-            if (uiState.ibd && uiState.utreexoPeerCount == 0) {
-                item(span = heroSpan) { UtreexoWarningCard() }
-            }
-            if (isStalled) {
-                item(span = heroSpan) { SyncStalledWarningCard() }
-            }
-            item(span = heroSpan) {
-                SyncProgressCard(
-                    titleRes = syncTitleRes,
-                    isHeaderSync = isHeaderSync,
-                    isFilterSync = isFilterSync,
-                    isStalled = isStalled,
-                    headerSyncDecimal = headerSyncDecimal,
-                    headerSyncPercentage = uiState.headerSyncPercentage,
-                    filterSyncDecimal = filterSyncDecimal,
-                    filterSyncPercentage = uiState.filterSyncPercentage,
-                    syncPercentage = uiState.syncPercentage,
-                    syncDecimal = uiState.syncDecimal,
-                )
-            }
-            item { NetworkInfoCard(uiState = uiState) }
-            if (uiState.ibd && !isHeaderSync && uiState.utreexoPeerCount > 0) {
-                item {
-                    UtreexoImportCard(
-                        isExpanded = uiState.isImportCardExpanded,
-                        onToggle = onToggleImportCard,
-                        onScanClick = onClickScan,
-                        onPasteClick = onClickPaste,
+        if (isExpandedWidth) {
+            TabletNodeDashboard(
+                uiState = uiState,
+                isHeaderSync = isHeaderSync,
+                isFilterSync = isFilterSync,
+                isStalled = isStalled,
+                syncTitleRes = syncTitleRes,
+                onPingClick = { showPingConfirmation = true },
+                onRequestDisconnect = { peerToDisconnect = it },
+                onClickScan = onClickScan,
+                onClickPaste = onClickPaste,
+                onToggleImportCard = onToggleImportCard,
+                onToggleExportCard = onToggleExportCard,
+                onClickShowExportQr = onClickShowExportQr,
+                onClickCopyExport = onClickCopyExport,
+                onClickShareExport = onClickShareExport,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 1600.dp)
+                    .padding(
+                        start = horizontalPadding,
+                        top = 16.dp,
+                        end = horizontalPadding,
+                        bottom = 16.dp + bottomContentPadding,
+                    ),
+            )
+        } else {
+            LazyVerticalStaggeredGrid(
+                columns = columns,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .widthIn(max = maxContentWidth),
+                contentPadding = PaddingValues(
+                    start = horizontalPadding,
+                    top = 16.dp,
+                    end = horizontalPadding,
+                    bottom = 16.dp + bottomContentPadding,
+                ),
+                verticalItemSpacing = 12.dp,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                item(span = heroSpan) { NodeTitle() }
+                if (uiState.ibd && uiState.utreexoPeerCount == 0) {
+                    item(span = heroSpan) { UtreexoWarningCard() }
+                }
+                if (isStalled) {
+                    item(span = heroSpan) { SyncStalledWarningCard() }
+                }
+                item(span = heroSpan) {
+                    SyncProgressCard(
+                        titleRes = syncTitleRes,
+                        isHeaderSync = isHeaderSync,
+                        isFilterSync = isFilterSync,
+                        isStalled = isStalled,
+                        headerSyncDecimal = headerSyncDecimal,
+                        headerSyncPercentage = uiState.headerSyncPercentage,
+                        filterSyncDecimal = filterSyncDecimal,
+                        filterSyncPercentage = uiState.filterSyncPercentage,
+                        syncPercentage = uiState.syncPercentage,
+                        syncDecimal = uiState.syncDecimal,
                     )
                 }
-            }
-            item {
-                PeersCard(
-                    uiState = uiState,
-                    onTogglePeers = onTogglePeers,
-                    onPingClick = { showPingConfirmation = true },
-                    onRequestDisconnect = { peerToDisconnect = it },
-                )
-            }
-            if (!uiState.ibd && uiState.syncDecimal >= 1f && uiState.utreexoPeerCount > 0) {
+                item { NetworkInfoCard(uiState = uiState) }
+                if (uiState.ibd && !isHeaderSync && uiState.utreexoPeerCount > 0) {
+                    item {
+                        UtreexoImportCard(
+                            isExpanded = uiState.isImportCardExpanded,
+                            onToggle = onToggleImportCard,
+                            onScanClick = onClickScan,
+                            onPasteClick = onClickPaste,
+                        )
+                    }
+                }
                 item {
-                    UtreexoExportCard(
-                        isExpanded = uiState.isExportCardExpanded,
-                        onToggle = onToggleExportCard,
-                        onShowQrClick = onClickShowExportQr,
-                        onCopyClick = onClickCopyExport,
-                        onShareClick = onClickShareExport,
+                    PeersCard(
+                        uiState = uiState,
+                        onTogglePeers = onTogglePeers,
+                        onPingClick = { showPingConfirmation = true },
+                        onRequestDisconnect = { peerToDisconnect = it },
                     )
                 }
-            }
-            item {
-                DiagnosticsCard(
-                    uiState = uiState,
-                    onToggle = onToggleDiagnostics,
-                )
+                if (!uiState.ibd && uiState.syncDecimal >= 1f && uiState.utreexoPeerCount > 0) {
+                    item {
+                        UtreexoExportCard(
+                            isExpanded = uiState.isExportCardExpanded,
+                            onToggle = onToggleExportCard,
+                            onShowQrClick = onClickShowExportQr,
+                            onCopyClick = onClickCopyExport,
+                            onShareClick = onClickShareExport,
+                        )
+                    }
+                }
+                item {
+                    DiagnosticsCard(
+                        uiState = uiState,
+                        onToggle = onToggleDiagnostics,
+                    )
+                }
             }
         }
     }
@@ -400,7 +428,7 @@ private fun NodeTitle() {
 }
 
 @Composable
-private fun NetworkInfoCard(uiState: NodeUiState) {
+internal fun NetworkInfoCard(uiState: NodeUiState) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -715,10 +743,10 @@ private fun SyncProgressCard(
     }
 }
 
-private enum class StepState { Done, Current, Pending }
+internal enum class StepState { Done, Current, Pending }
 
 @Composable
-private fun SyncStepper(
+internal fun SyncStepper(
     headersState: StepState,
     blocksState: StepState,
     filtersState: StepState?,
@@ -855,7 +883,7 @@ private fun SyncStepConnector(filled: Boolean, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun SyncStalledWarningCard() {
+internal fun SyncStalledWarningCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -916,7 +944,7 @@ private fun ApplyingSnapshotOverlay() {
 }
 
 @Composable
-private fun UtreexoWarningCard() {
+internal fun UtreexoWarningCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -955,7 +983,7 @@ private fun UtreexoWarningCard() {
 }
 
 @Composable
-private fun PeerItem(
+internal fun PeerItem(
     peer: PeerInfoResult,
     onDisconnect: () -> Unit = {}
 ) {
@@ -1038,7 +1066,7 @@ private fun PeerChip(text: String) {
 }
 
 @Composable
-private fun InfoRow(
+internal fun InfoRow(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
