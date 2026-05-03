@@ -49,8 +49,8 @@ import androidx.compose.ui.unit.dp
 import com.github.jvsena42.mandacaru.presentation.service.FlorestaService
 import com.github.jvsena42.mandacaru.presentation.ui.screens.blockchain.ScreenBlockchain
 import com.github.jvsena42.mandacaru.presentation.ui.screens.node.ScreenNode
-import com.github.jvsena42.mandacaru.presentation.ui.screens.transaction.ScreenTransaction
 import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.ScreenSettings
+import com.github.jvsena42.mandacaru.presentation.ui.screens.transaction.ScreenTransaction
 import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
 import com.github.jvsena42.mandacaru.presentation.utils.NotificationPermissionHelper
 import com.github.jvsena42.mandacaru.presentation.utils.restartApplication
@@ -120,7 +120,9 @@ class MainActivity : ComponentActivity() {
                                 notificationPermissionLauncher
                             )
                         },
-                        hasNotificationPermission = NotificationPermissionHelper.hasNotificationPermission(this)
+                        hasNotificationPermission = NotificationPermissionHelper.hasNotificationPermission(
+                            this
+                        )
                     )
                 }
             }
@@ -250,9 +252,9 @@ private fun MainScreen(
             beyondViewportPageCount = 1
         ) { page ->
             when (pages[page]) {
-                Destinations.TRANSACTION -> ScreenTransaction()
                 Destinations.NODE -> ScreenNode(restartApplication = restartApplication)
                 Destinations.BLOCKCHAIN -> ScreenBlockchain()
+                Destinations.TRANSACTION -> ScreenTransaction()
                 Destinations.SETTINGS -> ScreenSettings(
                     restartApplication = restartApplication
                 )
