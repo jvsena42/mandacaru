@@ -122,11 +122,13 @@ class MainActivity : ComponentActivity() {
             startServiceIfNeeded()
         }
 
+        val isColdStart = savedInstanceState == null
         enableEdgeToEdge()
         setContent {
             MandacaruTheme {
                 KoinAndroidContext {
                     MandacaruRoot(
+                        showSplashOnStart = isColdStart,
                         restartApplication = { restartApplication() },
                         requestNotificationPermission = {
                             NotificationPermissionHelper.requestNotificationPermission(
@@ -169,14 +171,17 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun MandacaruRoot(
+    showSplashOnStart: Boolean,
     restartApplication: () -> Unit,
     requestNotificationPermission: () -> Unit,
     hasNotificationPermission: Boolean,
 ) {
-    var showSplash by remember { mutableStateOf(true) }
+    var showSplash by remember { mutableStateOf(showSplashOnStart) }
     LaunchedEffect(Unit) {
-        delay(SPLASH_DURATION_MS)
-        showSplash = false
+        if (showSplash) {
+            delay(SPLASH_DURATION_MS)
+            showSplash = false
+        }
     }
     Box(modifier = Modifier.fillMaxSize()) {
         MainScreen(
