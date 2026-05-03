@@ -2,7 +2,11 @@ package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 
 import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -212,12 +216,16 @@ private fun ScreenSettings(
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier
                             .fillMaxWidth()
+                            .animateItem()
                             .padding(vertical = 16.dp),
                         textAlign = TextAlign.Center
                     )
                 }
                 item(span = heroSpan) {
-                    AnimatedVisibility(visible = uiState.isLoading) {
+                    AnimatedVisibility(
+                        visible = uiState.isLoading,
+                        modifier = Modifier.animateItem(),
+                    ) {
                         LinearProgressIndicator(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -233,6 +241,7 @@ private fun ScreenSettings(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .animateItem()
                             .clickable {
                                 clipboardManager.setText(AnnotatedString(uiState.electrumAddress))
                                 scope.launch {
@@ -281,7 +290,8 @@ private fun ScreenSettings(
                         title = stringResource(R.string.descriptors),
                         icon = Icons.Outlined.Wallet,
                         isExpanded = uiState.isDescriptorsExpanded,
-                        onToggle = { onAction(SettingsAction.ToggleDescriptorsExpanded) }
+                        onToggle = { onAction(SettingsAction.ToggleDescriptorsExpanded) },
+                        modifier = Modifier.animateItem(),
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             if (uiState.descriptors.isNotEmpty()) {
@@ -375,7 +385,8 @@ private fun ScreenSettings(
                             title = stringResource(R.string.search_transactions_from_title),
                             icon = Icons.Outlined.CalendarMonth,
                             isExpanded = uiState.isBirthdayExpanded,
-                            onToggle = { onAction(SettingsAction.ToggleBirthdayExpanded) }
+                            onToggle = { onAction(SettingsAction.ToggleBirthdayExpanded) },
+                            modifier = Modifier.animateItem(),
                         ) {
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 Text(
@@ -438,7 +449,8 @@ private fun ScreenSettings(
                         title = stringResource(R.string.network),
                         icon = Icons.Outlined.NetworkCheck,
                         isExpanded = uiState.isNetworkExpanded,
-                        onToggle = { onAction(SettingsAction.ToggleNetworkExpanded) }
+                        onToggle = { onAction(SettingsAction.ToggleNetworkExpanded) },
+                        modifier = Modifier.animateItem(),
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             var expanded by remember { mutableStateOf(false) }
@@ -501,7 +513,8 @@ private fun ScreenSettings(
                         title = stringResource(R.string.node),
                         icon = Icons.Outlined.Refresh,
                         isExpanded = uiState.isNodeExpanded,
-                        onToggle = { onAction(SettingsAction.ToggleNodeExpanded) }
+                        onToggle = { onAction(SettingsAction.ToggleNodeExpanded) },
+                        modifier = Modifier.animateItem(),
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             OutlinedTextField(
@@ -579,7 +592,9 @@ private fun ScreenSettings(
                 // Export Logs
                 item {
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .animateItem(),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainer
                         ),
@@ -634,7 +649,8 @@ private fun ScreenSettings(
                         title = stringResource(R.string.donate),
                         icon = Icons.Outlined.Favorite,
                         isExpanded = uiState.isDonateExpanded,
-                        onToggle = { onAction(SettingsAction.ToggleDonateExpanded) }
+                        onToggle = { onAction(SettingsAction.ToggleDonateExpanded) },
+                        modifier = Modifier.animateItem(),
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
@@ -688,7 +704,8 @@ private fun ScreenSettings(
                         title = stringResource(R.string.about),
                         icon = Icons.Outlined.Info,
                         isExpanded = uiState.isAboutExpanded,
-                        onToggle = { onAction(SettingsAction.ToggleAboutExpanded) }
+                        onToggle = { onAction(SettingsAction.ToggleAboutExpanded) },
+                        modifier = Modifier.animateItem(),
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
@@ -851,10 +868,11 @@ private fun SectionCard(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     isExpanded: Boolean,
     onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ),
@@ -870,8 +888,22 @@ private fun SectionCard(
 
             AnimatedVisibility(
                 visible = isExpanded,
-                enter = expandVertically(),
-                exit = shrinkVertically()
+                enter = expandVertically(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessMediumLow,
+                    )
+                ) + fadeIn(
+                    animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+                ),
+                exit = shrinkVertically(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessMediumLow,
+                    )
+                ) + fadeOut(
+                    animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+                ),
             ) {
                 Column(
                     modifier = Modifier
