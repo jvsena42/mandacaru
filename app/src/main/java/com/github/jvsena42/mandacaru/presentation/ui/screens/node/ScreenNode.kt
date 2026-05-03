@@ -967,7 +967,7 @@ internal fun UtreexoWarningCard() {
             )
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    stringResource(R.string.utreexo_warning_title),
+                stringResource(R.string.utreexo_warning_title),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onErrorContainer

@@ -94,7 +94,7 @@
     <string name="share_logs">Share Logs</string>
     <string name="log_file_not_found">Log file not found</string>
     <string name="utreexo_warning_title">No Utreexo peers connected</string>
-    <string name="utreexo_warning_message">The node cannot finish the initial block download without at least one peer advertising the Utreexo service flag. Attempting to connect to known bridges…</string>
+    <string name="utreexo_warning_message">Sync requires a Utreexo peer. Connecting to known bridges…</string>
 
     <string name="cancel">Cancel</string>
     <string name="close">Close</string>
