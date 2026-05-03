@@ -129,6 +129,7 @@ private fun CameraPreview(
         factory = { ctx ->
             val previewView = PreviewView(ctx).apply {
                 scaleType = PreviewView.ScaleType.FILL_CENTER
+                implementationMode = PreviewView.ImplementationMode.COMPATIBLE
             }
             val providerFuture = ProcessCameraProvider.getInstance(ctx)
             providerFuture.addListener({
