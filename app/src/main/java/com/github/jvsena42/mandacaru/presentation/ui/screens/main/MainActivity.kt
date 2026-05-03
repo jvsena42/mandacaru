@@ -238,17 +238,26 @@ private fun MainScreen(
             }
         }
     ) { innerPadding ->
+        val bottomBarPadding = innerPadding.calculateBottomPadding()
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.padding(paddingValues = innerPadding),
+            modifier = Modifier.padding(top = innerPadding.calculateTopPadding()),
             beyondViewportPageCount = 1
         ) { page ->
             when (pages[page]) {
-                Destinations.NODE -> ScreenNode(restartApplication = restartApplication)
-                Destinations.BLOCKCHAIN -> ScreenBlockchain()
-                Destinations.TRANSACTION -> ScreenTransaction()
+                Destinations.NODE -> ScreenNode(
+                    restartApplication = restartApplication,
+                    bottomContentPadding = bottomBarPadding,
+                )
+                Destinations.BLOCKCHAIN -> ScreenBlockchain(
+                    bottomContentPadding = bottomBarPadding,
+                )
+                Destinations.TRANSACTION -> ScreenTransaction(
+                    bottomContentPadding = bottomBarPadding,
+                )
                 Destinations.SETTINGS -> ScreenSettings(
-                    restartApplication = restartApplication
+                    restartApplication = restartApplication,
+                    bottomContentPadding = bottomBarPadding,
                 )
             }
         }

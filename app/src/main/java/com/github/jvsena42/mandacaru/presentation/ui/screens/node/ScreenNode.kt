@@ -79,6 +79,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.jvsena42.mandacaru.R
@@ -91,6 +92,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun ScreenNode(
     restartApplication: () -> Unit = {},
+    bottomContentPadding: Dp = 0.dp,
     viewModel: NodeViewModel = koinViewModel()
 ) {
     RequestNotificationPermissions(onPermissionChange = {})
@@ -130,6 +132,7 @@ fun ScreenNode(
         ScreenNode(
             uiState = uiState,
             modifier = Modifier.padding(padding),
+            bottomContentPadding = bottomContentPadding,
             onTogglePeers = viewModel::togglePeersExpanded,
             onToggleDiagnostics = viewModel::toggleDiagnosticsExpanded,
             onDisconnectPeer = viewModel::disconnectPeer,
@@ -158,6 +161,7 @@ fun ScreenNode(
 fun ScreenNode(
     uiState: NodeUiState,
     modifier: Modifier = Modifier,
+    bottomContentPadding: Dp = 0.dp,
     onTogglePeers: () -> Unit = {},
     onToggleDiagnostics: () -> Unit = {},
     onDisconnectPeer: (String) -> Unit = {},
@@ -278,7 +282,12 @@ fun ScreenNode(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            top = 16.dp,
+            end = 16.dp,
+            bottom = 16.dp + bottomContentPadding,
+        ),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {

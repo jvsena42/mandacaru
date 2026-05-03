@@ -52,6 +52,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetTransactionResponse
@@ -65,10 +66,15 @@ import java.util.Locale
 
 @Composable
 fun ScreenTransaction(
-    viewModel: TransactionViewModel = koinViewModel()
+    bottomContentPadding: Dp = 0.dp,
+    viewModel: TransactionViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    ScreenTransactionContent(uiState = uiState, onAction = viewModel::onAction)
+    ScreenTransactionContent(
+        uiState = uiState,
+        onAction = viewModel::onAction,
+        bottomContentPadding = bottomContentPadding,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,6 +83,7 @@ fun ScreenTransactionContent(
     uiState: TransactionUiState,
     onAction: (TransactionAction) -> Unit,
     modifier: Modifier = Modifier,
+    bottomContentPadding: Dp = 0.dp,
 ) {
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -330,7 +337,7 @@ fun ScreenTransactionContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp + bottomContentPadding))
         }
     }
 }

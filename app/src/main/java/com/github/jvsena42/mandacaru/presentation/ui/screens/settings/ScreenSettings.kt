@@ -77,6 +77,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.florestad.Network
 import com.github.jvsena42.mandacaru.BuildConfig
@@ -94,12 +95,18 @@ import java.time.Year
 fun ScreenSettings(
     restartApplication: () -> Unit,
     modifier: Modifier = Modifier,
+    bottomContentPadding: Dp = 0.dp,
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currentRestartApplication by rememberUpdatedState(restartApplication)
     val context = LocalContext.current
-    ScreenSettings(uiState = uiState, onAction = viewModel::onAction, modifier = modifier)
+    ScreenSettings(
+        uiState = uiState,
+        onAction = viewModel::onAction,
+        modifier = modifier,
+        bottomContentPadding = bottomContentPadding,
+    )
     LaunchedEffect(viewModel.eventFlow) {
         viewModel.eventFlow.collect { event ->
             when (event) {
@@ -128,7 +135,8 @@ fun ScreenSettings(
 private fun ScreenSettings(
     uiState: SettingsUiState,
     onAction: (SettingsAction) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    bottomContentPadding: Dp = 0.dp,
 ) {
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -154,7 +162,8 @@ private fun ScreenSettings(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(contentPadding)
+                .padding(contentPadding),
+            contentPadding = PaddingValues(bottom = bottomContentPadding),
         ) {
             item {
                 Text(

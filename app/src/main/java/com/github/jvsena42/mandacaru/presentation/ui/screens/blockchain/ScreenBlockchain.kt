@@ -52,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.jvsena42.mandacaru.R
@@ -62,10 +63,15 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun ScreenBlockchain(
-    viewModel: BlockchainViewModel = koinViewModel()
+    bottomContentPadding: Dp = 0.dp,
+    viewModel: BlockchainViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    ScreenBlockchainContent(uiState = uiState, onAction = viewModel::onAction)
+    ScreenBlockchainContent(
+        uiState = uiState,
+        onAction = viewModel::onAction,
+        bottomContentPadding = bottomContentPadding,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,6 +80,7 @@ fun ScreenBlockchainContent(
     uiState: BlockchainUiState,
     onAction: (BlockchainAction) -> Unit,
     modifier: Modifier = Modifier,
+    bottomContentPadding: Dp = 0.dp,
 ) {
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -330,7 +337,7 @@ fun ScreenBlockchainContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp + bottomContentPadding))
         }
     }
 }
