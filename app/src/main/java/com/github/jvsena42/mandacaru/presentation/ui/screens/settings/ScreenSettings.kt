@@ -12,17 +12,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -44,6 +48,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -76,9 +81,11 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.window.core.layout.WindowSizeClass
 import com.florestad.Network
 import com.github.jvsena42.mandacaru.BuildConfig
 import com.github.jvsena42.mandacaru.R
@@ -157,556 +164,579 @@ private fun ScreenSettings(
             SnackbarHost(hostState = snackBarHostState)
         }
     ) { contentPadding ->
-        LazyColumn(
-            horizontalAlignment = Alignment.CenterHorizontally,
+        val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+        val isMediumOrWider = windowSizeClass.isWidthAtLeastBreakpoint(
+            WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND
+        )
+        val isExpandedWidth = windowSizeClass.isWidthAtLeastBreakpoint(
+            WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND
+        )
+        val horizontalPadding = when {
+            isExpandedWidth -> 32.dp
+            isMediumOrWider -> 24.dp
+            else -> 16.dp
+        }
+        val maxContentWidth = if (isMediumOrWider) 1200.dp else 600.dp
+        val columns = if (isMediumOrWider) {
+            StaggeredGridCells.Adaptive(minSize = 360.dp)
+        } else {
+            StaggeredGridCells.Fixed(1)
+        }
+        val heroSpan = StaggeredGridItemSpan.FullLine
+
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(contentPadding),
-            contentPadding = PaddingValues(bottom = bottomContentPadding),
+            contentAlignment = Alignment.TopCenter,
         ) {
-            item {
-                Text(
-                    stringResource(R.string.settings),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    textAlign = TextAlign.Center
-                )
-            }
-            item {
-                AnimatedVisibility(visible = uiState.isLoading) {
-                    LinearProgressIndicator(
+            LazyVerticalStaggeredGrid(
+                columns = columns,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .widthIn(max = maxContentWidth),
+                contentPadding = PaddingValues(
+                    start = horizontalPadding,
+                    top = 16.dp,
+                    end = horizontalPadding,
+                    bottom = 16.dp + bottomContentPadding,
+                ),
+                verticalItemSpacing = 12.dp,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                item(span = heroSpan) {
+                    Text(
+                        stringResource(R.string.settings),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(3.dp)
+                            .padding(vertical = 16.dp),
+                        textAlign = TextAlign.Center
                     )
                 }
-            }
+                item(span = heroSpan) {
+                    AnimatedVisibility(visible = uiState.isLoading) {
+                        LinearProgressIndicator(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(3.dp)
+                        )
+                    }
+                }
 
-            // Electrum Address Card
-            item {
-                val clipboardManager = LocalClipboardManager.current
-                val message = stringResource(R.string.node_address_copied_to_clipboard)
+                item(span = heroSpan) {
+                    val clipboardManager = LocalClipboardManager.current
+                    val message = stringResource(R.string.node_address_copied_to_clipboard)
 
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .clickable {
-                            clipboardManager.setText(AnnotatedString(uiState.electrumAddress))
-                            scope.launch {
-                                snackBarHostState.showSnackbar(message = message)
-                            }
-                        },
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Row(
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(20.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                "Node Address",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                uiState.electrumAddress,
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                        Icon(
-                            Icons.Outlined.ContentCopy,
-                            contentDescription = "Copy",
-                            modifier = Modifier.size(24.dp),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            // Descriptors Section
-            item {
-                SectionCard(
-                    title = stringResource(R.string.descriptors),
-                    icon = Icons.Outlined.Wallet,
-                    isExpanded = uiState.isDescriptorsExpanded,
-                    onToggle = { onAction(SettingsAction.ToggleDescriptorsExpanded) }
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        if (uiState.descriptors.isNotEmpty()) {
-                            uiState.descriptors.forEach { descriptor ->
-                                Surface(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp),
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
-                                ) {
-                                    Text(
-                                        text = descriptor,
-                                        fontFamily = FontFamily.Monospace,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        maxLines = 2,
-                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                        modifier = Modifier.padding(12.dp)
-                                    )
+                            .clickable {
+                                clipboardManager.setText(AnnotatedString(uiState.electrumAddress))
+                                scope.launch {
+                                    snackBarHostState.showSnackbar(message = message)
                                 }
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                        } else {
-                            Text(
-                                text = stringResource(R.string.no_descriptors_loaded),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 16.dp)
-                            )
-                        }
-
-                        OutlinedTextField(
-                            value = uiState.descriptorText,
-                            enabled = !uiState.isLoading,
-                            onValueChange = { newText ->
-                                onAction(SettingsAction.OnDescriptorChanged(newText))
                             },
-                            label = { Text(stringResource(R.string.set_your_wallet_descriptor)) },
-                            placeholder = { Text(stringResource(R.string.descriptor_placeholder)) },
-                            maxLines = 1,
-                            singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
-                            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                            keyboardActions = KeyboardActions(
-                                onDone = { onAction(SettingsAction.OnClickUpdateDescriptor) }
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "Node Address",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    uiState.electrumAddress,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
                             Icon(
-                                Icons.Outlined.Info,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                Icons.Outlined.ContentCopy,
+                                contentDescription = "Copy",
+                                modifier = Modifier.size(24.dp),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
-                            Text(
-                                stringResource(R.string.descriptor_hint),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Button(
-                            onClick = { onAction(SettingsAction.OnClickUpdateDescriptor) },
-                            enabled = !uiState.isLoading && uiState.descriptorText.isNotBlank(),
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text(stringResource(R.string.update_descriptor))
                         }
                     }
                 }
-            }
 
-
-            // Search Transactions From Section (Bitcoin mainnet only)
-            if (uiState.selectedNetwork == Network.BITCOIN.name) {
                 item {
                     SectionCard(
-                        title = stringResource(R.string.search_transactions_from_title),
-                        icon = Icons.Outlined.CalendarMonth,
-                        isExpanded = uiState.isBirthdayExpanded,
-                        onToggle = { onAction(SettingsAction.ToggleBirthdayExpanded) }
+                        title = stringResource(R.string.descriptors),
+                        icon = Icons.Outlined.Wallet,
+                        isExpanded = uiState.isDescriptorsExpanded,
+                        onToggle = { onAction(SettingsAction.ToggleDescriptorsExpanded) }
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
-                            Text(
-                                stringResource(R.string.search_transactions_from_body),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            Surface(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                            ) {
-                                Column(
+                            if (uiState.descriptors.isNotEmpty()) {
+                                uiState.descriptors.forEach { descriptor ->
+                                    Surface(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                                    ) {
+                                        Text(
+                                            text = descriptor,
+                                            fontFamily = FontFamily.Monospace,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            maxLines = 2,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                            modifier = Modifier.padding(12.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            } else {
+                                Text(
+                                    text = stringResource(R.string.no_descriptors_loaded),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(16.dp),
-                                ) {
-                                    Text(
-                                        stringResource(R.string.search_transactions_from_year_label),
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = uiState.walletBirthdayYear.toString(),
-                                        style = MaterialTheme.typography.headlineMedium,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    )
-                                }
+                                        .padding(vertical = 16.dp)
+                                )
+                            }
+
+                            OutlinedTextField(
+                                value = uiState.descriptorText,
+                                enabled = !uiState.isLoading,
+                                onValueChange = { newText ->
+                                    onAction(SettingsAction.OnDescriptorChanged(newText))
+                                },
+                                label = { Text(stringResource(R.string.set_your_wallet_descriptor)) },
+                                placeholder = { Text(stringResource(R.string.descriptor_placeholder)) },
+                                maxLines = 1,
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp),
+                                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                                keyboardActions = KeyboardActions(
+                                    onDone = { onAction(SettingsAction.OnClickUpdateDescriptor) }
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Info,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                                Text(
+                                    stringResource(R.string.descriptor_hint),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
                             }
 
                             Spacer(modifier = Modifier.height(12.dp))
 
                             Button(
-                                onClick = { onAction(SettingsAction.OnClickChangeBirthdayYear) },
-                                enabled = !uiState.isLoading,
+                                onClick = { onAction(SettingsAction.OnClickUpdateDescriptor) },
+                                enabled = !uiState.isLoading && uiState.descriptorText.isNotBlank(),
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(12.dp)
                             ) {
-                                Icon(
-                                    Icons.Outlined.CalendarMonth,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp),
-                                )
-                                Spacer(modifier = Modifier.size(8.dp))
-                                Text(stringResource(R.string.search_transactions_from_change))
+                                Text(stringResource(R.string.update_descriptor))
                             }
                         }
                     }
                 }
-            }
 
-            // Network Section
-            item {
-                SectionCard(
-                    title = stringResource(R.string.network),
-                    icon = Icons.Outlined.NetworkCheck,
-                    isExpanded = uiState.isNetworkExpanded,
-                    onToggle = { onAction(SettingsAction.ToggleNetworkExpanded) }
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        var expanded by remember { mutableStateOf(false) }
 
-                        ExposedDropdownMenuBox(
-                            expanded = expanded,
-                            onExpandedChange = { expanded = !expanded }
+                // Search Transactions From Section (Bitcoin mainnet only)
+                if (uiState.selectedNetwork == Network.BITCOIN.name) {
+                    item {
+                        SectionCard(
+                            title = stringResource(R.string.search_transactions_from_title),
+                            icon = Icons.Outlined.CalendarMonth,
+                            isExpanded = uiState.isBirthdayExpanded,
+                            onToggle = { onAction(SettingsAction.ToggleBirthdayExpanded) }
                         ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                    stringResource(R.string.search_transactions_from_body),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                    ) {
+                                        Text(
+                                            stringResource(R.string.search_transactions_from_year_label),
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = uiState.walletBirthdayYear.toString(),
+                                            style = MaterialTheme.typography.headlineMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Button(
+                                    onClick = { onAction(SettingsAction.OnClickChangeBirthdayYear) },
+                                    enabled = !uiState.isLoading,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.CalendarMonth,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Spacer(modifier = Modifier.size(8.dp))
+                                    Text(stringResource(R.string.search_transactions_from_change))
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Network Section
+                item {
+                    SectionCard(
+                        title = stringResource(R.string.network),
+                        icon = Icons.Outlined.NetworkCheck,
+                        isExpanded = uiState.isNetworkExpanded,
+                        onToggle = { onAction(SettingsAction.ToggleNetworkExpanded) }
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            var expanded by remember { mutableStateOf(false) }
+
+                            ExposedDropdownMenuBox(
+                                expanded = expanded,
+                                onExpandedChange = { expanded = !expanded }
+                            ) {
+                                OutlinedTextField(
+                                    value = uiState.selectedNetwork,
+                                    readOnly = true,
+                                    onValueChange = { },
+                                    label = { Text(stringResource(R.string.select_a_network)) },
+                                    trailingIcon = {
+                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                                    },
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .menuAnchor()
+                                )
+
+                                ExposedDropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false }
+                                ) {
+                                    uiState.network.forEach { network ->
+                                        DropdownMenuItem(
+                                            text = { Text(network.name) },
+                                            onClick = {
+                                                onAction(SettingsAction.OnNetworkSelected(network.name))
+                                                expanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                )
+                            ) {
+                                Text(
+                                    stringResource(R.string.the_application_will_be_restarted_to_update_the_network),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.padding(12.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Node Section
+                item {
+                    SectionCard(
+                        title = stringResource(R.string.node),
+                        icon = Icons.Outlined.Refresh,
+                        isExpanded = uiState.isNodeExpanded,
+                        onToggle = { onAction(SettingsAction.ToggleNodeExpanded) }
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             OutlinedTextField(
-                                value = uiState.selectedNetwork,
-                                readOnly = true,
-                                onValueChange = { },
-                                label = { Text(stringResource(R.string.select_a_network)) },
-                                trailingIcon = {
-                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                                value = uiState.nodeAddress,
+                                enabled = !uiState.isLoading,
+                                onValueChange = { newText ->
+                                    onAction(SettingsAction.OnNodeAddressChanged(newText))
                                 },
+                                label = { Text(stringResource(R.string.connect_directly_with_a_node)) },
+                                placeholder = { Text(stringResource(R.string.node_address_placeholder)) },
+                                maxLines = 1,
+                                singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .menuAnchor()
+                                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                                keyboardActions = KeyboardActions(
+                                    onDone = { onAction(SettingsAction.OnClickConnectNode) }
+                                ),
+                                modifier = Modifier.fillMaxWidth()
                             )
 
-                            ExposedDropdownMenu(
-                                expanded = expanded,
-                                onDismissRequest = { expanded = false }
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                uiState.network.forEach { network ->
-                                    DropdownMenuItem(
-                                        text = { Text(network.name) },
-                                        onClick = {
-                                            onAction(SettingsAction.OnNetworkSelected(network.name))
-                                            expanded = false
+                                Icon(
+                                    Icons.Outlined.Info,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                                Text(
+                                    stringResource(R.string.node_address_hint),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Button(
+                                onClick = { onAction(SettingsAction.OnClickConnectNode) },
+                                enabled = !uiState.isLoading && uiState.nodeAddress.isNotBlank(),
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(stringResource(R.string.connect))
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            HorizontalDivider()
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            FilledTonalButton(
+                                onClick = { onAction(SettingsAction.OnClickRescan) },
+                                enabled = !uiState.isLoading && uiState.descriptors.isNotEmpty(),
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Refresh,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.size(8.dp))
+                                Text(stringResource(R.string.rescan))
+                            }
+                        }
+                    }
+                }
+
+                // Export Logs
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Description,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    stringResource(R.string.logs),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                            FilledTonalButton(
+                                onClick = { onAction(SettingsAction.OnClickExportLogs) },
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Share,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.size(8.dp))
+                                Text(stringResource(R.string.export_logs))
+                            }
+                        }
+                    }
+                }
+
+                // Donate Section
+                item {
+                    val clipboardManager = LocalClipboardManager.current
+                    val donateAddress = "jvsena42@blink.sv"
+                    val copiedMessage = stringResource(R.string.lightning_address_copied)
+
+                    SectionCard(
+                        title = stringResource(R.string.donate),
+                        icon = Icons.Outlined.Favorite,
+                        isExpanded = uiState.isDonateExpanded,
+                        onToggle = { onAction(SettingsAction.ToggleDonateExpanded) }
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = stringResource(R.string.lightning_address),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        clipboardManager.setText(AnnotatedString(donateAddress))
+                                        scope.launch {
+                                            snackBarHostState.showSnackbar(message = copiedMessage)
                                         }
+                                    },
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = donateAddress,
+                                        fontFamily = FontFamily.Monospace,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Icon(
+                                        Icons.Outlined.ContentCopy,
+                                        contentDescription = "Copy",
+                                        modifier = Modifier.size(20.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
                         }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer
-                            )
-                        ) {
-                            Text(
-                                stringResource(R.string.the_application_will_be_restarted_to_update_the_network),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.padding(12.dp)
-                            )
-                        }
                     }
                 }
-            }
 
-            // Node Section
-            item {
-                SectionCard(
-                    title = stringResource(R.string.node),
-                    icon = Icons.Outlined.Refresh,
-                    isExpanded = uiState.isNodeExpanded,
-                    onToggle = { onAction(SettingsAction.ToggleNodeExpanded) }
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        OutlinedTextField(
-                            value = uiState.nodeAddress,
-                            enabled = !uiState.isLoading,
-                            onValueChange = { newText ->
-                                onAction(SettingsAction.OnNodeAddressChanged(newText))
-                            },
-                            label = { Text(stringResource(R.string.connect_directly_with_a_node)) },
-                            placeholder = { Text(stringResource(R.string.node_address_placeholder)) },
-                            maxLines = 1,
-                            singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
-                            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                            keyboardActions = KeyboardActions(
-                                onDone = { onAction(SettingsAction.OnClickConnectNode) }
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                // About Section
+                item {
+                    val uriHandler = LocalUriHandler.current
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Outlined.Info,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                            )
-                            Text(
-                                stringResource(R.string.node_address_hint),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Button(
-                            onClick = { onAction(SettingsAction.OnClickConnectNode) },
-                            enabled = !uiState.isLoading && uiState.nodeAddress.isNotBlank(),
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text(stringResource(R.string.connect))
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        HorizontalDivider()
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        FilledTonalButton(
-                            onClick = { onAction(SettingsAction.OnClickRescan) },
-                            enabled = !uiState.isLoading && uiState.descriptors.isNotEmpty(),
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(
-                                Icons.Outlined.Refresh,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.size(8.dp))
-                            Text(stringResource(R.string.rescan))
-                        }
-                    }
-                }
-            }
-
-            // Export Logs
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    SectionCard(
+                        title = stringResource(R.string.about),
+                        icon = Icons.Outlined.Info,
+                        isExpanded = uiState.isAboutExpanded,
+                        onToggle = { onAction(SettingsAction.ToggleAboutExpanded) }
                     ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Outlined.Description,
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
-                                stringResource(R.string.logs),
-                                style = MaterialTheme.typography.titleSmall,
+                                text = "${stringResource(R.string.app_name)} — ${
+                                    stringResource(
+                                        R.string.version,
+                                        BuildConfig.VERSION_NAME
+                                    )
+                                }",
+                                style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium
                             )
-                        }
-                        FilledTonalButton(
-                            onClick = { onAction(SettingsAction.OnClickExportLogs) },
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(
-                                Icons.Outlined.Share,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Text(
+                                text = stringResource(R.string.suggestions_and_bugs),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.clickable {
+                                    uriHandler.openUri("https://github.com/jvsena42/mandacaru/issues")
+                                }
                             )
-                            Spacer(modifier = Modifier.size(8.dp))
-                            Text(stringResource(R.string.export_logs))
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Text(
+                                text = stringResource(R.string.license),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.clickable {
+                                    uriHandler.openUri("https://github.com/jvsena42/mandacaru/blob/main/LICENSE")
+                                }
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Text(
+                                text = stringResource(R.string.check_for_updates),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.clickable {
+                                    uriHandler.openUri("https://github.com/jvsena42/mandacaru/releases/latest")
+                                }
+                            )
                         }
                     }
                 }
-            }
-
-            // Donate Section
-            item {
-                val clipboardManager = LocalClipboardManager.current
-                val donateAddress = "jvsena42@blink.sv"
-                val copiedMessage = stringResource(R.string.lightning_address_copied)
-
-                SectionCard(
-                    title = stringResource(R.string.donate),
-                    icon = Icons.Outlined.Favorite,
-                    isExpanded = uiState.isDonateExpanded,
-                    onToggle = { onAction(SettingsAction.ToggleDonateExpanded) }
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            text = stringResource(R.string.lightning_address),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    clipboardManager.setText(AnnotatedString(donateAddress))
-                                    scope.launch {
-                                        snackBarHostState.showSnackbar(message = copiedMessage)
-                                    }
-                                },
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = donateAddress,
-                                    fontFamily = FontFamily.Monospace,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Icon(
-                                    Icons.Outlined.ContentCopy,
-                                    contentDescription = "Copy",
-                                    modifier = Modifier.size(20.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // About Section
-            item {
-                val uriHandler = LocalUriHandler.current
-
-                SectionCard(
-                    title = stringResource(R.string.about),
-                    icon = Icons.Outlined.Info,
-                    isExpanded = uiState.isAboutExpanded,
-                    onToggle = { onAction(SettingsAction.ToggleAboutExpanded) }
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            text = "${stringResource(R.string.app_name)} — ${
-                                stringResource(
-                                    R.string.version,
-                                    BuildConfig.VERSION_NAME
-                                )
-                            }",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text(
-                            text = stringResource(R.string.suggestions_and_bugs),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.clickable {
-                                uriHandler.openUri("https://github.com/jvsena42/mandacaru/issues")
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Text(
-                            text = stringResource(R.string.license),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.clickable {
-                                uriHandler.openUri("https://github.com/jvsena42/mandacaru/blob/main/LICENSE")
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Text(
-                            text = stringResource(R.string.check_for_updates),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.clickable {
-                                uriHandler.openUri("https://github.com/jvsena42/mandacaru/releases/latest")
-                            }
-                        )
-                    }
-                }
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
             }
         }
 
@@ -824,9 +854,7 @@ private fun SectionCard(
     content: @Composable () -> Unit
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ),
@@ -870,6 +898,33 @@ private fun Preview() {
                         "wpkh([d34db33f/84'/0'/0']xpub6CUGRUo...)",
                         "wpkh([d34db33f/84'/0'/1']xpub6CUGRUo...)"
                     )
+                ),
+                onAction = {}
+            )
+        }
+    }
+}
+
+@Preview(name = "Tablet", widthDp = 840, heightDp = 1280)
+@Preview(name = "Tablet landscape", widthDp = 1280, heightDp = 840)
+@Composable
+private fun TabletPreview() {
+    MandacaruTheme {
+        Surface {
+            ScreenSettings(
+                uiState = SettingsUiState(
+                    electrumAddress = Constants.ELECTRUM_ADDRESS,
+                    selectedNetwork = Network.BITCOIN.name,
+                    descriptors = listOf(
+                        "wpkh([d34db33f/84'/0'/0']xpub6CUGRUo...)",
+                        "wpkh([d34db33f/84'/0'/1']xpub6CUGRUo...)"
+                    ),
+                    isDescriptorsExpanded = true,
+                    isBirthdayExpanded = true,
+                    isNetworkExpanded = true,
+                    isNodeExpanded = true,
+                    isDonateExpanded = true,
+                    isAboutExpanded = true,
                 ),
                 onAction = {}
             )
