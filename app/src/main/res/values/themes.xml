@@ -2,4 +2,10 @@
 <resources>
 
     <style name="Theme.Mandacaru" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="Theme.Mandacaru.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Mandacaru</item>
+    </style>
 </resources>

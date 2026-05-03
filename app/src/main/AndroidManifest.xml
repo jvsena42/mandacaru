@@ -30,7 +30,7 @@
             android:name=".presentation.ui.screens.main.MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.Mandacaru"
+            android:theme="@style/Theme.Mandacaru.Splash"
             android:windowSoftInputMode="adjustResize|stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

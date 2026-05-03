@@ -11,7 +11,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -56,11 +62,13 @@ import com.github.jvsena42.mandacaru.presentation.service.FlorestaService
 import com.github.jvsena42.mandacaru.presentation.ui.screens.blockchain.ScreenBlockchain
 import com.github.jvsena42.mandacaru.presentation.ui.screens.node.ScreenNode
 import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.ScreenSettings
+import com.github.jvsena42.mandacaru.presentation.ui.screens.splash.SplashScreen
 import com.github.jvsena42.mandacaru.presentation.ui.screens.transaction.ScreenTransaction
 import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
 import com.github.jvsena42.mandacaru.presentation.utils.NotificationPermissionHelper
 import com.github.jvsena42.mandacaru.presentation.utils.restartApplication
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import org.koin.androidx.compose.KoinAndroidContext
 
 class MainActivity : ComponentActivity() {
@@ -78,6 +86,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
 
         // Register exit broadcast receiver
@@ -117,19 +126,15 @@ class MainActivity : ComponentActivity() {
         setContent {
             MandacaruTheme {
                 KoinAndroidContext {
-                    MainScreen(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.background),
+                    MandacaruRoot(
                         restartApplication = { restartApplication() },
                         requestNotificationPermission = {
                             NotificationPermissionHelper.requestNotificationPermission(
                                 notificationPermissionLauncher
                             )
                         },
-                        hasNotificationPermission = NotificationPermissionHelper.hasNotificationPermission(
-                            this
-                        )
+                        hasNotificationPermission = NotificationPermissionHelper
+                            .hasNotificationPermission(this@MainActivity),
                     )
                 }
             }
@@ -161,6 +166,39 @@ class MainActivity : ComponentActivity() {
         private const val TAG = "MainActivity"
     }
 }
+
+@Composable
+private fun MandacaruRoot(
+    restartApplication: () -> Unit,
+    requestNotificationPermission: () -> Unit,
+    hasNotificationPermission: Boolean,
+) {
+    var showSplash by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        delay(SPLASH_DURATION_MS)
+        showSplash = false
+    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        MainScreen(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
+            restartApplication = restartApplication,
+            requestNotificationPermission = requestNotificationPermission,
+            hasNotificationPermission = hasNotificationPermission,
+        )
+        AnimatedVisibility(
+            visible = showSplash,
+            enter = EnterTransition.None,
+            exit = fadeOut(animationSpec = tween(durationMillis = SPLASH_FADE_OUT_MS)),
+        ) {
+            SplashScreen()
+        }
+    }
+}
+
+private const val SPLASH_DURATION_MS = 4000L
+private const val SPLASH_FADE_OUT_MS = 350
 
 @Composable
 private fun MainScreen(

@@ -27,6 +27,7 @@
     <string name="sync_stalled_message">The node is stuck far behind the chain tip. This usually means a storage problem. Reinstall Mandacaru on internal storage.</string>
     <string name="receive_bitcoin">Receive Bitcoin</string>
     <string name="your_bitcoin_infrastructure_in_a_single_app">Your bitcoin infrastructure in a single app</string>
+    <string name="splash_tagline">Your mobile Bitcoin node</string>
     <string name="create_a_new_wallet">Create a new wallet</string>
     <string name="restore_existing_wallet">Restore existing wallet</string>
     <string name="navigate_back">Navigate back</string>
