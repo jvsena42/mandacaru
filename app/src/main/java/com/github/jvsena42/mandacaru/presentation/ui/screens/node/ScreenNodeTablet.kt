@@ -14,14 +14,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -37,7 +35,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -46,7 +43,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -102,10 +98,6 @@ internal fun TabletNodeDashboard(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                BlocksPlaceholderCard(
-                    blockHash = uiState.blockHash,
-                    blockHeight = uiState.blockHeight,
-                )
                 if (uiState.ibd && !isHeaderSync && uiState.utreexoPeerCount > 0) {
                     UtreexoImportCard(
                         isExpanded = uiState.isImportCardExpanded,
@@ -355,121 +347,6 @@ private fun KpiTile(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-    }
-}
-
-@Composable
-private fun BlocksPlaceholderCard(
-    blockHash: String,
-    blockHeight: String,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Icon(
-                        Icons.Outlined.Layers,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(
-                        stringResource(R.string.recent_blocks),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-                Surface(
-                    shape = RoundedCornerShape(4.dp),
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                ) {
-                    Text(
-                        stringResource(R.string.coming_soon),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    )
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 720.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    repeat(8) { idx ->
-                        val tone = 0.65f - idx * 0.06f
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .aspectRatio(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(
-                                    MaterialTheme.colorScheme.primary.copy(
-                                        alpha = tone.coerceAtLeast(0.12f),
-                                    ),
-                                ),
-                        )
-                    }
-                }
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            if (blockHeight.isNotEmpty()) {
-                InfoRow(
-                    label = stringResource(R.string.block_height),
-                    value = blockHeight,
-                )
-            }
-            if (blockHash.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        stringResource(R.string.latest_block_hash),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Text(
-                        blockHash,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-
-            Text(
-                stringResource(R.string.block_explorer_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
     }
 }
 

@@ -138,52 +138,69 @@ fun ScreenBlockchainContent(
                 .padding(contentPadding),
             contentAlignment = Alignment.TopCenter,
         ) {
-            LazyVerticalStaggeredGrid(
-                columns = columns,
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .widthIn(max = maxContentWidth),
-                contentPadding = PaddingValues(
-                    start = horizontalPadding,
-                    top = 0.dp,
-                    end = horizontalPadding,
-                    bottom = 16.dp + bottomContentPadding,
-                ),
-                verticalItemSpacing = 12.dp,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                item(span = heroSpan) { BlockchainTitle() }
-                item(span = heroSpan) {
-                    AnimatedVisibility(visible = uiState.isLoading) {
-                        LinearProgressIndicator(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(3.dp)
-                        )
-                    }
-                }
-                item { ChainStatusCard(uiState = uiState, onAction = onAction) }
-                item {
-                    SearchCard(
-                        uiState = uiState,
-                        onAction = onAction,
-                        focusManager = focusManager,
-                    )
-                }
-                if (uiState.blockHeader != null) {
-                    item {
-                        BlockHeaderCard(
-                            header = uiState.blockHeader,
-                            blockHash = uiState.blockHash,
-                            blockHeight = uiState.blockHeight,
-                        )
-                    }
-                }
-                if (uiState.blockHeader == null
-                    && !uiState.isLoading
-                    && uiState.searchQuery.isEmpty()
+            if (isExpandedWidth) {
+                BlockchainTabletDashboard(
+                    uiState = uiState,
+                    onAction = onAction,
+                    focusManager = focusManager,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .widthIn(max = 1600.dp)
+                        .padding(
+                            start = horizontalPadding,
+                            top = 16.dp,
+                            end = horizontalPadding,
+                            bottom = 16.dp + bottomContentPadding,
+                        ),
+                )
+            } else {
+                LazyVerticalStaggeredGrid(
+                    columns = columns,
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .widthIn(max = maxContentWidth),
+                    contentPadding = PaddingValues(
+                        start = horizontalPadding,
+                        top = 0.dp,
+                        end = horizontalPadding,
+                        bottom = 16.dp + bottomContentPadding,
+                    ),
+                    verticalItemSpacing = 12.dp,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    item(span = heroSpan) { EmptyExploreState() }
+                    item(span = heroSpan) { BlockchainTitle() }
+                    item(span = heroSpan) {
+                        AnimatedVisibility(visible = uiState.isLoading) {
+                            LinearProgressIndicator(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(3.dp)
+                            )
+                        }
+                    }
+                    item { ChainStatusCard(uiState = uiState, onAction = onAction) }
+                    item {
+                        SearchCard(
+                            uiState = uiState,
+                            onAction = onAction,
+                            focusManager = focusManager,
+                        )
+                    }
+                    if (uiState.blockHeader != null) {
+                        item {
+                            BlockHeaderCard(
+                                header = uiState.blockHeader,
+                                blockHash = uiState.blockHash,
+                                blockHeight = uiState.blockHeight,
+                            )
+                        }
+                    }
+                    if (uiState.blockHeader == null
+                        && !uiState.isLoading
+                        && uiState.searchQuery.isEmpty()
+                    ) {
+                        item(span = heroSpan) { EmptyExploreState() }
+                    }
                 }
             }
         }
@@ -306,7 +323,7 @@ private fun ChainStatusCard(
 }
 
 @Composable
-private fun SearchCard(
+internal fun SearchCard(
     uiState: BlockchainUiState,
     onAction: (BlockchainAction) -> Unit,
     focusManager: FocusManager,
@@ -368,7 +385,7 @@ private fun SearchCard(
 }
 
 @Composable
-private fun EmptyExploreState() {
+internal fun EmptyExploreState() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -400,7 +417,7 @@ private fun EmptyExploreState() {
 }
 
 @Composable
-private fun BlockHeaderCard(
+internal fun BlockHeaderCard(
     header: BlockHeaderResult,
     blockHash: String,
     blockHeight: String
