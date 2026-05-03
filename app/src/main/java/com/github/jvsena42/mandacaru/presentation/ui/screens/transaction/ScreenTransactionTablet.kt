@@ -1,6 +1,14 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.transaction
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,7 +34,11 @@ internal fun TransactionTabletDashboard(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        AnimatedVisibility(visible = uiState.isSearchLoading || uiState.isBroadcasting) {
+        AnimatedVisibility(
+            visible = uiState.isSearchLoading || uiState.isBroadcasting,
+            enter = progressEnterTransition(),
+            exit = progressExitTransition(),
+        ) {
             LinearProgressIndicator(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -52,8 +64,32 @@ internal fun TransactionTabletDashboard(
                     onAction = onAction,
                     focusManager = focusManager,
                 )
-                uiState.searchResult?.result?.let { tx ->
-                    TransactionDetailsCard(tx)
+                AnimatedContent(
+                    targetState = uiState.searchResult?.result,
+                    label = "tx_details",
+                    transitionSpec = {
+                        (slideInVertically(
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioLowBouncy,
+                                stiffness = Spring.StiffnessMediumLow,
+                            ),
+                            initialOffsetY = { it / 6 },
+                        ) + fadeIn(
+                            animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                        )) togetherWith (slideOutVertically(
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioNoBouncy,
+                                stiffness = Spring.StiffnessMediumLow,
+                            ),
+                            targetOffsetY = { -it / 8 },
+                        ) + fadeOut(
+                            animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                        ))
+                    },
+                ) { tx ->
+                    if (tx != null) {
+                        TransactionDetailsCard(tx)
+                    }
                 }
             }
 

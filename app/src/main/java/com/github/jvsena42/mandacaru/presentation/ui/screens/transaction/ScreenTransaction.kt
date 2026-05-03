@@ -1,6 +1,16 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.transaction
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -161,7 +171,11 @@ fun ScreenTransactionContent(
                             .padding(vertical = 16.dp),
                         textAlign = TextAlign.Center,
                     )
-                    AnimatedVisibility(visible = uiState.isSearchLoading || uiState.isBroadcasting) {
+                    AnimatedVisibility(
+                        visible = uiState.isSearchLoading || uiState.isBroadcasting,
+                        enter = progressEnterTransition(),
+                        exit = progressExitTransition(),
+                    ) {
                         LinearProgressIndicator(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -177,7 +191,11 @@ fun ScreenTransactionContent(
                         focusManager = focusManager,
                     )
 
-                    AnimatedVisibility(visible = uiState.searchResult != null) {
+                    AnimatedVisibility(
+                        visible = uiState.searchResult != null,
+                        enter = revealEnterTransition(),
+                        exit = revealExitTransition(),
+                    ) {
                         Column {
                             Spacer(modifier = Modifier.height(16.dp))
                             uiState.searchResult?.result?.let { tx ->
@@ -363,7 +381,11 @@ internal fun BroadcastTransactionCard(
                 Text(stringResource(R.string.broadcast))
             }
 
-            AnimatedVisibility(visible = uiState.broadcastResult.isNotEmpty()) {
+            AnimatedVisibility(
+                visible = uiState.broadcastResult.isNotEmpty(),
+                enter = revealEnterTransition(),
+                exit = revealExitTransition(),
+            ) {
                 Column(modifier = Modifier.padding(top = 12.dp)) {
                     Row(
                         modifier = Modifier
@@ -550,6 +572,52 @@ private fun TxDetailRow(
         )
     }
 }
+
+internal fun revealEnterTransition(): EnterTransition =
+    expandVertically(
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow,
+        ),
+    ) + fadeIn(
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+    ) + slideInVertically(
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessMediumLow,
+        ),
+        initialOffsetY = { it / 6 },
+    )
+
+internal fun revealExitTransition(): ExitTransition =
+    shrinkVertically(
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow,
+        ),
+    ) + fadeOut(
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+    ) + slideOutVertically(
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow,
+        ),
+        targetOffsetY = { it / 8 },
+    )
+
+internal fun progressEnterTransition(): EnterTransition =
+    expandVertically(
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+    ) + fadeIn(
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+    )
+
+internal fun progressExitTransition(): ExitTransition =
+    shrinkVertically(
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+    ) + fadeOut(
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+    )
 
 @PreviewLightDark
 @Composable
