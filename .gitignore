@@ -3,7 +3,6 @@
 build/
 .mvn/
 .vscode/
-gradle/wrapper/gradle-wrapper.jar
 .gradle/caches/
 .gradle/buildinfo/
 .gradle/wrapper/
