@@ -12,6 +12,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
@@ -22,11 +25,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,8 +48,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.window.core.layout.WindowSizeClass
 import com.github.jvsena42.mandacaru.presentation.service.FlorestaService
 import com.github.jvsena42.mandacaru.presentation.ui.screens.blockchain.ScreenBlockchain
 import com.github.jvsena42.mandacaru.presentation.ui.screens.node.ScreenNode
@@ -187,86 +196,172 @@ private fun MainScreen(
         }
     }
 
+    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+    val useRail = windowSizeClass.isWidthAtLeastBreakpoint(
+        WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND
+    )
+    val onSelectDestination: (Int) -> Unit = { index ->
+        coroutineScope.launch {
+            pagerState.animateScrollToPage(index)
+        }
+    }
+
     Scaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                tonalElevation = 0.dp,
-                modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .shadow(
-                        elevation = 8.dp,
-                        shape = RoundedCornerShape(16.dp)
-                    )
-            ) {
-                pages.forEachIndexed { index, destination ->
-                    NavigationBarItem(
-                        selected = pagerState.currentPage == index,
-                        onClick = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(index)
-                            }
-                        },
-                        label = {
-                            Text(
-                                destination.label,
-                                style = MaterialTheme.typography.labelMedium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                fontWeight = if (pagerState.currentPage == index)
-                                    FontWeight.Bold else FontWeight.Normal
-                            )
-                        },
-                        icon = {
-                            Icon(
-                                painter = painterResource(destination.icon),
-                                contentDescription = destination.label
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
-                }
+            if (!useRail) {
+                AppNavigationBar(
+                    pages = pages,
+                    selectedIndex = pagerState.currentPage,
+                    onSelect = onSelectDestination,
+                )
             }
         }
     ) { innerPadding ->
         val bottomBarPadding = innerPadding.calculateBottomPadding()
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.padding(top = innerPadding.calculateTopPadding()),
-            beyondViewportPageCount = 1
-        ) { page ->
-            when (pages[page]) {
-                Destinations.NODE -> ScreenNode(
-                    restartApplication = restartApplication,
-                    bottomContentPadding = bottomBarPadding,
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = innerPadding.calculateTopPadding()),
+        ) {
+            if (useRail) {
+                AppNavigationRail(
+                    pages = pages,
+                    selectedIndex = pagerState.currentPage,
+                    onSelect = onSelectDestination,
                 )
-                Destinations.BLOCKCHAIN -> ScreenBlockchain(
-                    bottomContentPadding = bottomBarPadding,
-                )
-                Destinations.TRANSACTION -> ScreenTransaction(
-                    bottomContentPadding = bottomBarPadding,
-                )
-                Destinations.SETTINGS -> ScreenSettings(
-                    restartApplication = restartApplication,
-                    bottomContentPadding = bottomBarPadding,
-                )
+            }
+            HorizontalPager(
+                state = pagerState,
+                beyondViewportPageCount = 1
+            ) { page ->
+                when (pages[page]) {
+                    Destinations.NODE -> ScreenNode(
+                        restartApplication = restartApplication,
+                        bottomContentPadding = bottomBarPadding,
+                    )
+                    Destinations.BLOCKCHAIN -> ScreenBlockchain(
+                        bottomContentPadding = bottomBarPadding,
+                    )
+                    Destinations.TRANSACTION -> ScreenTransaction(
+                        bottomContentPadding = bottomBarPadding,
+                    )
+                    Destinations.SETTINGS -> ScreenSettings(
+                        restartApplication = restartApplication,
+                        bottomContentPadding = bottomBarPadding,
+                    )
+                }
             }
         }
     }
 }
 
+@Composable
+private fun AppNavigationBar(
+    pages: List<Destinations>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+) {
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 0.dp,
+        modifier = Modifier
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .shadow(
+                elevation = 8.dp,
+                shape = RoundedCornerShape(16.dp)
+            )
+    ) {
+        pages.forEachIndexed { index, destination ->
+            val selected = selectedIndex == index
+            NavigationBarItem(
+                selected = selected,
+                onClick = { onSelect(index) },
+                label = { DestinationLabel(destination, selected) },
+                icon = { DestinationIcon(destination) },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+        }
+    }
+}
+
+@Composable
+private fun AppNavigationRail(
+    pages: List<Destinations>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+) {
+    NavigationRail(
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.fillMaxHeight(),
+    ) {
+        Spacer(modifier = Modifier.weight(1f))
+        pages.forEachIndexed { index, destination ->
+            val selected = selectedIndex == index
+            NavigationRailItem(
+                selected = selected,
+                onClick = { onSelect(index) },
+                label = { DestinationLabel(destination, selected) },
+                icon = { DestinationIcon(destination) },
+                colors = NavigationRailItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+        }
+        Spacer(modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun DestinationLabel(destination: Destinations, selected: Boolean) {
+    Text(
+        destination.label,
+        style = MaterialTheme.typography.labelMedium,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+    )
+}
+
+@Composable
+private fun DestinationIcon(destination: Destinations) {
+    Icon(
+        painter = painterResource(destination.icon),
+        contentDescription = destination.label
+    )
+}
+
 @PreviewLightDark
 @Composable
 private fun Preview() {
+    MandacaruTheme {
+        Surface {
+            MainScreen(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+                restartApplication = {}
+            )
+        }
+    }
+}
+
+@Preview(name = "Tablet", widthDp = 840, heightDp = 1280)
+@Preview(name = "Tablet landscape", widthDp = 1280, heightDp = 840)
+@Composable
+private fun TabletPreview() {
     MandacaruTheme {
         Surface {
             MainScreen(
