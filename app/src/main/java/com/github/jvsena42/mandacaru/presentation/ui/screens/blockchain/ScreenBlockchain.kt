@@ -1,6 +1,10 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.blockchain
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -167,9 +171,14 @@ fun ScreenBlockchainContent(
                     verticalItemSpacing = 12.dp,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    item(span = heroSpan) { BlockchainTitle() }
                     item(span = heroSpan) {
-                        AnimatedVisibility(visible = uiState.isLoading) {
+                        BlockchainTitle(modifier = Modifier.animateItem())
+                    }
+                    item(span = heroSpan) {
+                        AnimatedVisibility(
+                            visible = uiState.isLoading,
+                            modifier = Modifier.animateItem(),
+                        ) {
                             LinearProgressIndicator(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -177,20 +186,35 @@ fun ScreenBlockchainContent(
                             )
                         }
                     }
-                    item { ChainStatusCard(uiState = uiState, onAction = onAction) }
+                    item {
+                        ChainStatusCard(
+                            uiState = uiState,
+                            onAction = onAction,
+                            modifier = Modifier.animateItem(),
+                        )
+                    }
                     item {
                         SearchCard(
                             uiState = uiState,
                             onAction = onAction,
                             focusManager = focusManager,
+                            modifier = Modifier.animateItem(),
                         )
                     }
                     if (uiState.blockHeader != null) {
-                        item {
+                        item(key = "block_header") {
                             BlockHeaderCard(
                                 header = uiState.blockHeader,
                                 blockHash = uiState.blockHash,
                                 blockHeight = uiState.blockHeight,
+                                modifier = Modifier.animateItem(
+                                    fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                                    fadeOutSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                                    placementSpec = spring(
+                                        dampingRatio = Spring.DampingRatioNoBouncy,
+                                        stiffness = Spring.StiffnessMediumLow,
+                                    ),
+                                ),
                             )
                         }
                     }
@@ -198,7 +222,9 @@ fun ScreenBlockchainContent(
                         && !uiState.isLoading
                         && uiState.searchQuery.isEmpty()
                     ) {
-                        item(span = heroSpan) { EmptyExploreState() }
+                        item(span = heroSpan, key = "empty_explore") {
+                            EmptyExploreState(modifier = Modifier.animateItem())
+                        }
                     }
                 }
             }
@@ -207,12 +233,12 @@ fun ScreenBlockchainContent(
 }
 
 @Composable
-private fun BlockchainTitle() {
+private fun BlockchainTitle(modifier: Modifier = Modifier) {
     Text(
         stringResource(R.string.blockchain),
         style = MaterialTheme.typography.headlineSmall,
         fontWeight = FontWeight.SemiBold,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
         textAlign = TextAlign.Center
@@ -223,9 +249,10 @@ private fun BlockchainTitle() {
 private fun ChainStatusCard(
     uiState: BlockchainUiState,
     onAction: (BlockchainAction) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         ),
@@ -326,9 +353,10 @@ internal fun SearchCard(
     uiState: BlockchainUiState,
     onAction: (BlockchainAction) -> Unit,
     focusManager: FocusManager,
+    modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ),
@@ -384,9 +412,9 @@ internal fun SearchCard(
 }
 
 @Composable
-internal fun EmptyExploreState() {
+internal fun EmptyExploreState(modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -419,10 +447,11 @@ internal fun EmptyExploreState() {
 internal fun BlockHeaderCard(
     header: BlockHeaderResult,
     blockHash: String,
-    blockHeight: String
+    blockHeight: String,
+    modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ),

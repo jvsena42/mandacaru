@@ -1,11 +1,20 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.blockchain
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -75,14 +84,45 @@ internal fun BlockchainTabletDashboard(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                if (uiState.blockHeader != null) {
-                    BlockHeaderCard(
-                        header = uiState.blockHeader,
-                        blockHash = uiState.blockHash,
-                        blockHeight = uiState.blockHeight,
-                    )
-                } else if (!uiState.isLoading && uiState.searchQuery.isEmpty()) {
-                    EmptyExploreState()
+                val detailState = when {
+                    uiState.blockHeader != null -> BlockDetailState.Header
+                    !uiState.isLoading && uiState.searchQuery.isEmpty() -> BlockDetailState.Empty
+                    else -> BlockDetailState.Hidden
+                }
+                AnimatedContent(
+                    targetState = detailState,
+                    label = "block_detail",
+                    transitionSpec = {
+                        (slideInVertically(
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioLowBouncy,
+                                stiffness = Spring.StiffnessMediumLow,
+                            ),
+                            initialOffsetY = { it / 6 },
+                        ) + fadeIn(
+                            animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+                        )) togetherWith (slideOutVertically(
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioNoBouncy,
+                                stiffness = Spring.StiffnessMediumLow,
+                            ),
+                            targetOffsetY = { -it / 8 },
+                        ) + fadeOut(
+                            animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+                        ))
+                    },
+                ) { state ->
+                    when (state) {
+                        BlockDetailState.Header -> uiState.blockHeader?.let { header ->
+                            BlockHeaderCard(
+                                header = header,
+                                blockHash = uiState.blockHash,
+                                blockHeight = uiState.blockHeight,
+                            )
+                        }
+                        BlockDetailState.Empty -> EmptyExploreState()
+                        BlockDetailState.Hidden -> Spacer(modifier = Modifier.fillMaxWidth())
+                    }
                 }
             }
             Column(
@@ -274,3 +314,5 @@ private fun RecentBlocksRibbon() {
         )
     }
 }
+
+private enum class BlockDetailState { Header, Empty, Hidden }
