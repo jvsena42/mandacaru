@@ -332,9 +332,8 @@ fun ScreenNode(
                     .widthIn(max = 1600.dp)
                     .padding(
                         start = horizontalPadding,
-                        top = 16.dp,
                         end = horizontalPadding,
-                        bottom = 16.dp + bottomContentPadding,
+                        bottom = bottomContentPadding,
                     ),
             )
         } else {

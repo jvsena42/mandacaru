@@ -198,9 +198,9 @@ private fun ScreenSettings(
                     .widthIn(max = maxContentWidth),
                 contentPadding = PaddingValues(
                     start = horizontalPadding,
-                    top = 16.dp,
+                    top = if (isExpandedWidth) 0.dp else 16.dp,
                     end = horizontalPadding,
-                    bottom = 16.dp + bottomContentPadding,
+                    bottom = if (isExpandedWidth) bottomContentPadding else 16.dp + bottomContentPadding,
                 ),
                 verticalItemSpacing = 12.dp,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
