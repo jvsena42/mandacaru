@@ -113,7 +113,10 @@ fun ScreenBlockchainContent(
     Scaffold(
         modifier = modifier,
         snackbarHost = {
-            SnackbarHost(hostState = snackBarHostState)
+            SnackbarHost(
+                hostState = snackBarHostState,
+                modifier = Modifier.padding(bottom = bottomContentPadding),
+            )
         },
         contentWindowInsets = WindowInsets(0),
     ) { contentPadding ->
