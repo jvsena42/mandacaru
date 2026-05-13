@@ -118,7 +118,12 @@ fun ScreenTransactionContent(
 
     Scaffold(
         modifier = modifier,
-        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackBarHostState,
+                modifier = Modifier.padding(bottom = bottomContentPadding),
+            )
+        },
         contentWindowInsets = WindowInsets(0),
     ) { contentPadding ->
         val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
