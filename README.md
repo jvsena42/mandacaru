@@ -2,7 +2,7 @@
 
 A lightweight Bitcoin validator node for Android, powered by [Utreexo](https://dci.mit.edu/utreexo) and [Floresta](https://github.com/vinteumorg/Floresta).
 
-Run a full Bitcoin node directly on your phone with minimal storage requirements thanks to Utreexo's compact accumulator design.
+Run a validating Bitcoin node directly on your phone with minimal storage requirements thanks to Utreexo's compact accumulator design. Mandacaru uses `assumeutreexo` by default — see [the note below](#a-note-on-validation-assumeutreexo-is-enabled-by-default) for what that means for the trust model.
 
 ## Features
 
@@ -74,7 +74,7 @@ Run a full Bitcoin node directly on your phone with minimal storage requirements
 
 ## What is Utreexo?
 
-Utreexo is a dynamic hash-based accumulator that allows Bitcoin nodes to validate the blockchain without storing the full UTXO set. This reduces storage requirements from tens of gigabytes to just a few megabytes, making it practical to run a full validating node on mobile devices.
+Utreexo is a dynamic hash-based accumulator that allows Bitcoin nodes to validate the blockchain without storing the full UTXO set. This reduces storage requirements from tens of gigabytes to just a few megabytes, making it practical to run a validating node on mobile devices.
 
 ## A note on validation: `assumeutreexo` is enabled by default
 
