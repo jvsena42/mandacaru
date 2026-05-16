@@ -64,6 +64,7 @@ class SettingsViewModel(
         getDescriptors()
     }
 
+    @Suppress("CyclomaticComplexMethod")
     fun onAction(action: SettingsAction) {
         when (action) {
             is SettingsAction.OnDescriptorChanged -> {
