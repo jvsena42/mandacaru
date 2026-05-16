@@ -42,6 +42,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -99,6 +100,7 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun ScreenNode(
+    modifier: Modifier = Modifier,
     restartApplication: () -> Unit = {},
     bottomContentPadding: Dp = 0.dp,
     viewModel: NodeViewModel = koinViewModel()
@@ -109,11 +111,12 @@ fun ScreenNode(
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val currentRestartApplication by rememberUpdatedState(restartApplication)
 
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
             when (event) {
-                NodeEvents.OnSnapshotApplied -> restartApplication()
+                NodeEvents.OnSnapshotApplied -> currentRestartApplication()
                 is NodeEvents.OnShareAccumulator -> {
                     val share = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
@@ -134,6 +137,7 @@ fun ScreenNode(
     }
 
     Scaffold(
+        modifier = modifier,
         snackbarHost = {
             SnackbarHost(
                 hostState = snackbarHostState,
@@ -214,83 +218,25 @@ fun ScreenNode(
         else -> R.string.sync
     }
 
-    peerToDisconnect?.let { address ->
-        AlertDialog(
-            onDismissRequest = { peerToDisconnect = null },
-            title = { Text("Disconnect Peer") },
-            text = { Text("Disconnect from $address?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    onDisconnectPeer(address)
-                    peerToDisconnect = null
-                }) {
-                    Text("Disconnect")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { peerToDisconnect = null }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
+    ScreenNodeAlertDialogs(
+        peerToDisconnect = peerToDisconnect,
+        showPingConfirmation = showPingConfirmation,
+        onClearPeerToDisconnect = { peerToDisconnect = null },
+        onClearPingConfirmation = { showPingConfirmation = false },
+        onDisconnectPeer = onDisconnectPeer,
+        onPingPeers = onPingPeers,
+    )
 
-    if (showPingConfirmation) {
-        AlertDialog(
-            onDismissRequest = { showPingConfirmation = false },
-            title = { Text("Ping All Peers") },
-            text = { Text("Send a ping to all connected peers?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    onPingPeers()
-                    showPingConfirmation = false
-                }) {
-                    Text("Ping")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showPingConfirmation = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-
-    if (uiState.ibd && uiState.isScanSheetOpen) {
-        UtreexoScanSheet(
-            onPayloadScanned = onAccumulatorReceived,
-            onDismiss = onDismissScanSheet,
-            onPasteFallback = {
-                onDismissScanSheet()
-                onClickPaste()
-            },
-        )
-    }
-    if (uiState.ibd && uiState.isPasteSheetOpen) {
-        UtreexoPasteSheet(
-            onPayloadSubmitted = onAccumulatorReceived,
-            onDismiss = onDismissPasteSheet,
-        )
-    }
-    val preview = uiState.pendingSnapshotPreview
-    if (uiState.ibd && preview != null) {
-        UtreexoImportConfirmDialog(
-            preview = preview,
-            onConfirm = onConfirmImport,
-            onDismiss = onDismissImportConfirm,
-        )
-    }
-    val exportForQr = uiState.exportPayload
-    if (!uiState.ibd && uiState.isExportQrSheetOpen && exportForQr != null) {
-        UtreexoExportQrSheet(
-            payload = exportForQr,
-            onDismiss = onDismissExportQrSheet,
-        )
-    }
-
-    if (uiState.isApplyingSnapshot) {
-        ApplyingSnapshotOverlay()
-    }
+    ScreenNodeOverlays(
+        uiState = uiState,
+        onAccumulatorReceived = onAccumulatorReceived,
+        onDismissScanSheet = onDismissScanSheet,
+        onClickPaste = onClickPaste,
+        onDismissPasteSheet = onDismissPasteSheet,
+        onConfirmImport = onConfirmImport,
+        onDismissImportConfirm = onDismissImportConfirm,
+        onDismissExportQrSheet = onDismissExportQrSheet,
+    )
 
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
     val isMediumOrWider = windowSizeClass.isWidthAtLeastBreakpoint(
@@ -417,6 +363,106 @@ fun ScreenNode(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ScreenNodeAlertDialogs(
+    peerToDisconnect: String?,
+    showPingConfirmation: Boolean,
+    onClearPeerToDisconnect: () -> Unit,
+    onClearPingConfirmation: () -> Unit,
+    onDisconnectPeer: (String) -> Unit,
+    onPingPeers: () -> Unit,
+) {
+    peerToDisconnect?.let { address ->
+        AlertDialog(
+            onDismissRequest = onClearPeerToDisconnect,
+            title = { Text("Disconnect Peer") },
+            text = { Text("Disconnect from $address?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDisconnectPeer(address)
+                    onClearPeerToDisconnect()
+                }) {
+                    Text("Disconnect")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onClearPeerToDisconnect) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showPingConfirmation) {
+        AlertDialog(
+            onDismissRequest = onClearPingConfirmation,
+            title = { Text("Ping All Peers") },
+            text = { Text("Send a ping to all connected peers?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onPingPeers()
+                    onClearPingConfirmation()
+                }) {
+                    Text("Ping")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onClearPingConfirmation) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun ScreenNodeOverlays(
+    uiState: NodeUiState,
+    onAccumulatorReceived: (String) -> Unit,
+    onDismissScanSheet: () -> Unit,
+    onClickPaste: () -> Unit,
+    onDismissPasteSheet: () -> Unit,
+    onConfirmImport: () -> Unit,
+    onDismissImportConfirm: () -> Unit,
+    onDismissExportQrSheet: () -> Unit,
+) {
+    if (uiState.ibd && uiState.isScanSheetOpen) {
+        UtreexoScanSheet(
+            onPayloadScanned = onAccumulatorReceived,
+            onDismiss = onDismissScanSheet,
+            onPasteFallback = {
+                onDismissScanSheet()
+                onClickPaste()
+            },
+        )
+    }
+    if (uiState.ibd && uiState.isPasteSheetOpen) {
+        UtreexoPasteSheet(
+            onPayloadSubmitted = onAccumulatorReceived,
+            onDismiss = onDismissPasteSheet,
+        )
+    }
+    val preview = uiState.pendingSnapshotPreview
+    if (uiState.ibd && preview != null) {
+        UtreexoImportConfirmDialog(
+            preview = preview,
+            onConfirm = onConfirmImport,
+            onDismiss = onDismissImportConfirm,
+        )
+    }
+    val exportForQr = uiState.exportPayload
+    if (!uiState.ibd && uiState.isExportQrSheetOpen && exportForQr != null) {
+        UtreexoExportQrSheet(
+            payload = exportForQr,
+            onDismiss = onDismissExportQrSheet,
+        )
+    }
+
+    if (uiState.isApplyingSnapshot) {
+        ApplyingSnapshotOverlay()
     }
 }
 
@@ -610,6 +656,128 @@ private fun DiagnosticsCard(
     }
 }
 
+private data class SyncStepStates(
+    val headers: StepState,
+    val blocks: StepState,
+    val filters: StepState?,
+    val allDone: Boolean,
+)
+
+private fun computeSyncStepStates(
+    isHeaderSync: Boolean,
+    syncDecimal: Float,
+    filterSyncDecimal: Float?,
+): SyncStepStates {
+    val hasFiltersStep = filterSyncDecimal != null
+    val headersDone = !isHeaderSync
+    val blocksDone = syncDecimal >= 1f
+    val filtersDone = filterSyncDecimal == null || filterSyncDecimal >= 1f
+    val headers = if (headersDone) StepState.Done else StepState.Current
+    val blocks = when {
+        blocksDone -> StepState.Done
+        headersDone -> StepState.Current
+        else -> StepState.Pending
+    }
+    val filters: StepState? = when {
+        !hasFiltersStep -> null
+        filtersDone && blocksDone -> StepState.Done
+        blocksDone -> StepState.Current
+        else -> StepState.Pending
+    }
+    return SyncStepStates(headers, blocks, filters, headersDone && blocksDone && filtersDone)
+}
+
+private data class SyncProgressInputs(
+    val isStalled: Boolean,
+    val isHeaderSync: Boolean,
+    val isFilterSync: Boolean,
+    val headerSyncDecimal: Float?,
+    val headerSyncPercentage: String,
+    val filterSyncDecimal: Float?,
+    val filterSyncPercentage: String,
+    val syncPercentage: String,
+    val syncDecimal: Float,
+)
+
+private fun SyncProgressInputs.rawDecimal(): Float? = when {
+    isStalled -> 0f
+    isHeaderSync && headerSyncDecimal != null -> headerSyncDecimal
+    isHeaderSync -> null
+    isFilterSync && filterSyncDecimal != null -> filterSyncDecimal
+    else -> syncDecimal
+}
+
+private fun SyncProgressInputs.percentageText(): String? = when {
+    isStalled -> null
+    isHeaderSync && headerSyncDecimal != null -> "$headerSyncPercentage%"
+    isHeaderSync -> null
+    isFilterSync && filterSyncDecimal != null -> "$filterSyncPercentage%"
+    else -> "$syncPercentage%"
+}
+
+@Composable
+private fun SyncProgressBar(
+    isStalled: Boolean,
+    rawDecimal: Float?,
+    animatedDecimal: Float,
+) {
+    val barModifier = Modifier
+        .fillMaxWidth()
+        .height(8.dp)
+        .clip(RoundedCornerShape(4.dp))
+    when {
+        isStalled -> LinearProgressIndicator(
+            progress = { 0f },
+            modifier = barModifier,
+            color = MaterialTheme.colorScheme.error,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+        )
+        rawDecimal == null -> LinearProgressIndicator(
+            modifier = barModifier,
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+        )
+        else -> LinearProgressIndicator(
+            progress = { animatedDecimal },
+            modifier = barModifier,
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun SyncProgressTitleRow(titleRes: Int, percentageText: String?) {
+    AnimatedContent(
+        targetState = titleRes,
+        transitionSpec = {
+            fadeIn(animationSpec = tween(300)) togetherWith
+                fadeOut(animationSpec = tween(300))
+        },
+        label = "syncTitle",
+    ) { currentTitleRes ->
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                stringResource(currentTitleRes),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            if (percentageText != null) {
+                Text(
+                    percentageText,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun SyncProgressCard(
     titleRes: Int,
@@ -623,44 +791,25 @@ private fun SyncProgressCard(
     syncPercentage: String,
     syncDecimal: Float,
 ) {
-    val rawDecimal: Float? = when {
-        isStalled -> 0f
-        isHeaderSync && headerSyncDecimal != null -> headerSyncDecimal
-        isHeaderSync -> null
-        isFilterSync && filterSyncDecimal != null -> filterSyncDecimal
-        else -> syncDecimal
-    }
+    val inputs = SyncProgressInputs(
+        isStalled = isStalled,
+        isHeaderSync = isHeaderSync,
+        isFilterSync = isFilterSync,
+        headerSyncDecimal = headerSyncDecimal,
+        headerSyncPercentage = headerSyncPercentage,
+        filterSyncDecimal = filterSyncDecimal,
+        filterSyncPercentage = filterSyncPercentage,
+        syncPercentage = syncPercentage,
+        syncDecimal = syncDecimal,
+    )
+    val rawDecimal = inputs.rawDecimal()
     val animatedDecimal by animateFloatAsState(
         targetValue = rawDecimal ?: 0f,
         animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
         label = "syncProgress",
     )
-
-    val percentageText: String? = when {
-        isStalled -> null
-        isHeaderSync && headerSyncDecimal != null -> "$headerSyncPercentage%"
-        isHeaderSync -> null
-        isFilterSync && filterSyncDecimal != null -> "$filterSyncPercentage%"
-        else -> "$syncPercentage%"
-    }
-
-    val hasFiltersStep = filterSyncDecimal != null
-    val headersDone = !isHeaderSync
-    val blocksDone = syncDecimal >= 1f
-    val filtersDone = filterSyncDecimal == null || filterSyncDecimal >= 1f
-    val allStepsDone = headersDone && blocksDone && filtersDone
-    val headersState = if (headersDone) StepState.Done else StepState.Current
-    val blocksState = when {
-        blocksDone -> StepState.Done
-        headersDone -> StepState.Current
-        else -> StepState.Pending
-    }
-    val filtersState: StepState? = when {
-        !hasFiltersStep -> null
-        filtersDone && blocksDone -> StepState.Done
-        blocksDone -> StepState.Current
-        else -> StepState.Pending
-    }
+    val percentageText = inputs.percentageText()
+    val steps = computeSyncStepStates(isHeaderSync, syncDecimal, filterSyncDecimal)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -675,7 +824,7 @@ private fun SyncProgressCard(
                 .padding(20.dp)
         ) {
             AnimatedVisibility(
-                visible = !isStalled && !allStepsDone,
+                visible = !isStalled && !steps.allDone,
                 enter = fadeIn(animationSpec = tween(300)) +
                     expandVertically(animationSpec = tween(300)),
                 exit = fadeOut(animationSpec = tween(300)) +
@@ -683,68 +832,23 @@ private fun SyncProgressCard(
             ) {
                 Column {
                     SyncStepper(
-                        headersState = headersState,
-                        blocksState = blocksState,
-                        filtersState = filtersState,
+                        headersState = steps.headers,
+                        blocksState = steps.blocks,
+                        filtersState = steps.filters,
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
 
-            AnimatedContent(
-                targetState = titleRes,
-                transitionSpec = {
-                    fadeIn(animationSpec = tween(300)) togetherWith
-                        fadeOut(animationSpec = tween(300))
-                },
-                label = "syncTitle",
-            ) { currentTitleRes ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        stringResource(currentTitleRes),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    if (percentageText != null) {
-                        Text(
-                            percentageText,
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                }
-            }
+            SyncProgressTitleRow(titleRes = titleRes, percentageText = percentageText)
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            val barModifier = Modifier
-                .fillMaxWidth()
-                .height(8.dp)
-                .clip(RoundedCornerShape(4.dp))
-            when {
-                isStalled -> LinearProgressIndicator(
-                    progress = { 0f },
-                    modifier = barModifier,
-                    color = MaterialTheme.colorScheme.error,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                )
-                rawDecimal == null -> LinearProgressIndicator(
-                    modifier = barModifier,
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                )
-                else -> LinearProgressIndicator(
-                    progress = { animatedDecimal },
-                    modifier = barModifier,
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                )
-            }
+            SyncProgressBar(
+                isStalled = isStalled,
+                rawDecimal = rawDecimal,
+                animatedDecimal = animatedDecimal,
+            )
         }
     }
 }
