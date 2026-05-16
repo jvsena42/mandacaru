@@ -261,6 +261,10 @@ class FlorestaService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val isHeaderSync = ibd && progress == 0f
+        val headerDecimal = if (isHeaderSync) computeHeaderSyncProgress(height, peers) else null
+        val stalled = isLikelyStalled(progress = progress, ibd = ibd, ourHeight = height, peers = peers)
+
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Mandacaru")
             .setSmallIcon(R.drawable.ic_notification)
@@ -270,32 +274,30 @@ class FlorestaService : Service() {
             .setOngoing(true)
             .setContentIntent(openAppPendingIntent)
             .addAction(R.drawable.ic_x, "Stop", stopPendingIntent)
+            .applySyncState(progress, height, isHeaderSync, headerDecimal, stalled)
 
-        val isHeaderSync = ibd && progress == 0f
-        val headerDecimal = if (isHeaderSync) {
-            computeHeaderSyncProgress(height, peers)
-        } else {
-            null
-        }
-        val stalled = isLikelyStalled(
-            progress = progress,
-            ibd = ibd,
-            ourHeight = height,
-            peers = peers,
-        )
+        notificationManager.notify(FLORESTA_NOTIFICATION_ID, builder.build())
+    }
 
+    private fun NotificationCompat.Builder.applySyncState(
+        progress: Float,
+        height: Int,
+        isHeaderSync: Boolean,
+        headerDecimal: Float?,
+        stalled: Boolean,
+    ): NotificationCompat.Builder {
         when {
             headerDecimal != null -> {
                 val label = headerDecimal.toSyncPercentageString()
                 val barProgress = (headerDecimal * PERCENTAGE_MULTIPLIER).toInt()
-                builder.setContentText("Syncing headers: $label%")
+                setContentText("Syncing headers: $label%")
                     .setSubText("$label% headers")
                     .setProgress(PERCENTAGE_MULTIPLIER, barProgress, false)
                     .setColor(COLOR_PRIMARY.toColorInt())
                     .setColorized(true)
             }
             isHeaderSync -> {
-                builder.setContentText("Syncing headers…")
+                setContentText("Syncing headers…")
                     .setSubText("Connecting to peers")
                     .setProgress(0, 0, true)
                     .setColor(COLOR_PRIMARY.toColorInt())
@@ -303,7 +305,7 @@ class FlorestaService : Service() {
             }
             stalled -> {
                 val formattedHeight = NumberFormat.getNumberInstance().format(height)
-                builder.setContentText("Sync stalled at block #$formattedHeight")
+                setContentText("Sync stalled at block #$formattedHeight")
                     .setSubText("Storage may be unhealthy")
                     .setColor(COLOR_PRIMARY.toColorInt())
                     .setColorized(true)
@@ -311,7 +313,7 @@ class FlorestaService : Service() {
             progress < FULL_SYNC_THRESHOLD -> {
                 val label = progress.toSyncPercentageString()
                 val barProgress = (progress * PERCENTAGE_MULTIPLIER).toInt()
-                builder.setContentText("Syncing blocks: $label%")
+                setContentText("Syncing blocks: $label%")
                     .setSubText("$label% blocks")
                     .setProgress(PERCENTAGE_MULTIPLIER, barProgress, false)
                     .setColor(COLOR_PRIMARY.toColorInt())
@@ -319,14 +321,13 @@ class FlorestaService : Service() {
             }
             else -> {
                 val formattedHeight = NumberFormat.getNumberInstance().format(height)
-                builder.setContentText("Synced - Block #$formattedHeight")
+                setContentText("Synced - Block #$formattedHeight")
                     .setSubText("Fully synced")
                     .setColor(COLOR_SYNCED.toColorInt())
                     .setColorized(true)
             }
         }
-
-        notificationManager.notify(FLORESTA_NOTIFICATION_ID, builder.build())
+        return this
     }
 
     private fun stopServiceAndExitApp() {
