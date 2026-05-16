@@ -15,6 +15,7 @@ import com.github.jvsena42.mandacaru.domain.floresta.hasUtreexoServiceFlag
 import com.github.jvsena42.mandacaru.domain.floresta.isLikelyStalled
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlowImpl
+import com.github.jvsena42.mandacaru.presentation.utils.HexUtils
 import com.github.jvsena42.mandacaru.presentation.utils.SnapshotCodec
 import com.github.jvsena42.mandacaru.presentation.utils.toHumanReadableDifficulty
 import com.github.jvsena42.mandacaru.presentation.utils.toSyncPercentageString
@@ -244,26 +245,7 @@ class NodeViewModel(
                     }
                     return@launch
                 }
-            Log.i(
-                TAG,
-                "onConfirmImport: normalized JSON len=${payloadToPersist.length} " +
-                    "digest=${sha256Short(payloadToPersist)}",
-            )
-            preferencesDataSource.setString(
-                PreferenceKeys.PENDING_UTREEXO_SNAPSHOT,
-                payloadToPersist,
-            )
-            val readBack = preferencesDataSource
-                .getString(PreferenceKeys.PENDING_UTREEXO_SNAPSHOT, "")
-            if (readBack.length != payloadToPersist.length) {
-                Log.e(
-                    TAG,
-                    "onConfirmImport: DataStore read-back MISMATCH " +
-                        "wrote=${payloadToPersist.length} read=${readBack.length}",
-                )
-            } else {
-                Log.i(TAG, "onConfirmImport: setString OK, read-back len=${readBack.length}")
-            }
+            persistAndVerifyPendingSnapshot(payloadToPersist)
             florestaDaemon.stop()
             florestaDaemon.prepareForSnapshotImport()
                 .onFailure { error ->
@@ -278,6 +260,29 @@ class NodeViewModel(
                 }
             Log.i(TAG, "onConfirmImport: OK — restart pending")
             with(viewModelScope) { sendEvent(NodeEvents.OnSnapshotApplied) }
+        }
+    }
+
+    private suspend fun persistAndVerifyPendingSnapshot(payloadToPersist: String) {
+        Log.i(
+            TAG,
+            "onConfirmImport: normalized JSON len=${payloadToPersist.length} " +
+                "digest=${sha256Short(payloadToPersist)}",
+        )
+        preferencesDataSource.setString(
+            PreferenceKeys.PENDING_UTREEXO_SNAPSHOT,
+            payloadToPersist,
+        )
+        val readBack = preferencesDataSource
+            .getString(PreferenceKeys.PENDING_UTREEXO_SNAPSHOT, "")
+        if (readBack.length != payloadToPersist.length) {
+            Log.e(
+                TAG,
+                "onConfirmImport: DataStore read-back MISMATCH " +
+                    "wrote=${payloadToPersist.length} read=${readBack.length}",
+            )
+        } else {
+            Log.i(TAG, "onConfirmImport: setString OK, read-back len=${readBack.length}")
         }
     }
 
@@ -351,19 +356,9 @@ class NodeViewModel(
 
     private fun sha256Short(s: String): String {
         val digest = java.security.MessageDigest.getInstance("SHA-256").digest(s.toByteArray())
-        val sb = StringBuilder(16)
-        for (i in 0 until 4) {
-            val b = digest[i].toInt() and 0xFF
-            sb.append("0123456789abcdef"[b ushr 4])
-            sb.append("0123456789abcdef"[b and 0x0F])
-        }
-        sb.append("..")
-        for (i in digest.size - 4 until digest.size) {
-            val b = digest[i].toInt() and 0xFF
-            sb.append("0123456789abcdef"[b ushr 4])
-            sb.append("0123456789abcdef"[b and 0x0F])
-        }
-        return sb.toString()
+        val head = HexUtils.bytesToHex(digest.copyOfRange(0, DIGEST_PREFIX_BYTES))
+        val tail = HexUtils.bytesToHex(digest.copyOfRange(digest.size - DIGEST_PREFIX_BYTES, digest.size))
+        return "$head..$tail"
     }
 
     private fun errorToMessage(error: Throwable, currentNetwork: FlorestaNetwork): String =
@@ -386,5 +381,6 @@ class NodeViewModel(
         const val SECONDS_PER_HOUR = 3600L
         const val SECONDS_PER_MINUTE = 60L
         const val COPIED_MESSAGE = "Copied to clipboard"
+        const val DIGEST_PREFIX_BYTES = 4
     }
 }
