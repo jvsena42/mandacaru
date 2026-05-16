@@ -113,6 +113,7 @@ fun ScreenSettings(
     val uiState by viewModel.uiState.collectAsState()
     val currentRestartApplication by rememberUpdatedState(restartApplication)
     val context = LocalContext.current
+    val shareLogsTitle = stringResource(R.string.share_logs)
     ScreenSettings(
         uiState = uiState,
         onAction = viewModel::onAction,
@@ -131,10 +132,7 @@ fun ScreenSettings(
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
                     context.startActivity(
-                        Intent.createChooser(
-                            shareIntent,
-                            context.getString(R.string.share_logs)
-                        )
+                        Intent.createChooser(shareIntent, shareLogsTitle)
                     )
                 }
             }

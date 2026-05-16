@@ -1,5 +1,6 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import androidx.core.content.FileProvider
@@ -36,7 +37,7 @@ import com.florestad.Network as FlorestaNetwork
 class SettingsViewModel(
     private val florestaRpc: FlorestaRpc,
     private val preferencesDataSource: PreferencesDataSource,
-    private val context: Context
+    @field:SuppressLint("StaticFieldLeak") private val context: Context,
 ) : ViewModel(), EventFlow<SettingsEvents> by EventFlowImpl() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())

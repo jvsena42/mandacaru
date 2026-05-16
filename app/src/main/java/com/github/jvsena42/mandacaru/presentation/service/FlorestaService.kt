@@ -346,7 +346,7 @@ class FlorestaService : Service() {
             stopDaemonWithTimeout()
 
             // Send broadcast to close activities
-            sendBroadcast(Intent(ACTION_EXIT_APP))
+            sendBroadcast(Intent(ACTION_EXIT_APP).setPackage(packageName))
 
             // Stop foreground service and remove notification
             stopForeground(STOP_FOREGROUND_REMOVE)
