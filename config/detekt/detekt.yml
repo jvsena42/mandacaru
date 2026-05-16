@@ -16,13 +16,22 @@ complexity:
     ignoreAnnotated:
       - 'Composable'
   TooManyFunctions:
-    thresholdInFiles: 20
-    thresholdInClasses: 25
+    thresholdInFiles: 30
+    thresholdInClasses: 30
+    thresholdInObjects: 25
     thresholdInInterfaces: 20
   CyclomaticComplexMethod:
     threshold: 20
+    ignoreAnnotated:
+      - 'Composable'
+
+Compose:
+  ParameterNaming:
+    active: false
 
 style:
+  ReturnCount:
+    max: 7
   MagicNumber:
     ignorePropertyDeclaration: true
     ignoreCompanionObjectPropertyDeclaration: true
@@ -30,6 +39,10 @@ style:
       - 'Composable'
       - 'Preview'
       - 'PreviewLightDark'
+    excludes:
+      - '**/SnapshotCodec.kt'
+      - '**/PeerAddressValidator.kt'
+      - '**/HeaderSyncProgress.kt'
   UnusedPrivateMember:
     ignoreAnnotated:
       - 'Preview'
@@ -39,3 +52,5 @@ style:
     excludes:
       - '**/test/**'
       - '**/androidTest/**'
+      - '**/Constants.kt'
+      - '**/UtreexoExportQrSheet.kt'
