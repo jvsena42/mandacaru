@@ -43,26 +43,23 @@ class FlorestaDaemonImpl(
             } else null
             val userAgent =
                 "/Floresta:${Constants.FLORESTA_VERSION}/mandacaru:${BuildConfig.VERSION_NAME}/"
-            val builtinSnapshotJson: String? = runCatching {
-                SnapshotCodec.normalizeToJson(Constants.BUILTIN_UTREEXO_SNAPSHOT_COMPACT)
-            }.onFailure {
-                Log.w(TAG, "builtin snapshot decode failed; falling back to Floresta default", it)
-            }.getOrNull()
+            val builtinSnapshotJson = builtinSnapshotFor(network)
             val startupSnapshotJson: String? = pendingSnapshot ?: builtinSnapshotJson
             val snapshotSource = when {
                 pendingSnapshot != null -> "pending"
                 builtinSnapshotJson != null -> "builtin"
                 else -> "floresta-default"
             }
+            val effectiveDataDir = dataDirFor(network)
             Log.i(
                 TAG,
                 "start: snapshotSource=$snapshotSource, " +
                     "snapshotLen=${startupSnapshotJson?.length ?: 0}, " +
-                    "network=$network, datadir=$datadir, " +
+                    "network=$network, datadir=$effectiveDataDir, " +
                     "filtersStartHeight=$filtersStartHeight, userAgent=$userAgent",
             )
             val config = Config(
-                dataDir = datadir,
+                dataDir = effectiveDataDir,
                 network = network,
                 assumeUtreexo = true,
                 userUtreexoSnapshotJson = startupSnapshotJson,
@@ -111,7 +108,11 @@ class FlorestaDaemonImpl(
                 IllegalStateException("Daemon is still running; call stop() first")
             )
         }
-        val base = File(datadir)
+        val network = preferencesDataSource.getString(
+            PreferenceKeys.CURRENT_NETWORK,
+            FlorestaNetwork.BITCOIN.name
+        ).toFlorestaNetwork()
+        val base = File(dataDirFor(network))
         listOf("chaindata", "cfilters").forEach { sub ->
             val dir = File(base, sub)
             val size = if (dir.exists()) dirSize(dir) else 0L
@@ -122,6 +123,35 @@ class FlorestaDaemonImpl(
 
     private fun dirSize(dir: File): Long =
         dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+
+    // The builtin snapshot is a mainnet dump; Floresta rejects it on other networks,
+    // so only apply it when running mainnet.
+    private fun builtinSnapshotFor(network: FlorestaNetwork): String? {
+        if (network != FlorestaNetwork.BITCOIN) return null
+        return runCatching {
+            SnapshotCodec.normalizeToJson(Constants.BUILTIN_UTREEXO_SNAPSHOT_COMPACT)
+        }.onFailure {
+            Log.w(TAG, "builtin snapshot decode failed; falling back to Floresta default", it)
+        }.getOrNull()
+    }
+
+    // Each network needs its own chain data. Mainnet keeps the flat base dir for
+    // backward compatibility with already-synced installs; other networks live in a
+    // dedicated subdir so they never collide with mainnet (or each other).
+    private fun dataDirFor(network: FlorestaNetwork): String {
+        if (network == FlorestaNetwork.BITCOIN) return datadir
+        val dir = File(datadir, network.dirName())
+        if (!dir.exists()) dir.mkdirs()
+        return dir.absolutePath
+    }
+
+    private fun FlorestaNetwork.dirName(): String = when (this) {
+        FlorestaNetwork.BITCOIN -> "bitcoin"
+        FlorestaNetwork.SIGNET -> "signet"
+        FlorestaNetwork.TESTNET -> "testnet"
+        FlorestaNetwork.TESTNET4 -> "testnet4"
+        FlorestaNetwork.REGTEST -> "regtest"
+    }
 
     companion object {
         private const val TAG = "FlorestaDaemonImpl"
