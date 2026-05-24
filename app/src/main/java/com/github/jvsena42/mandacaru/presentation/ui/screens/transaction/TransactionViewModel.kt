@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class TransactionViewModel(
     private val florestaRpc: FlorestaRpc,
@@ -26,6 +27,7 @@ class TransactionViewModel(
     val uiState = _uiState.asStateFlow()
 
     private var searchJob: Job? = null
+    private var scanErrorJob: Job? = null
 
     fun onAction(action: TransactionAction) {
         when (action) {
@@ -59,6 +61,7 @@ class TransactionViewModel(
     }
 
     private fun openScanner() {
+        scanErrorJob?.cancel()
         qrScanner.reset()
         _uiState.update {
             it.copy(
@@ -72,18 +75,19 @@ class TransactionViewModel(
     }
 
     private fun closeScanner() {
+        scanErrorJob?.cancel()
         qrScanner.reset()
         _uiState.update { it.copy(isScannerVisible = false, scanProgress = 0f, scanError = "") }
     }
 
     private fun handleScannedFrame(payload: String) {
-        if (_uiState.value.isDecoding || _uiState.value.decodedTx != null) return
+        val current = _uiState.value
+        if (current.isDecoding || current.decodedTx != null || current.scanError.isNotEmpty()) return
         when (val state = qrScanner.ingest(payload)) {
             is ScanState.Idle -> Unit
             is ScanState.InProgress ->
                 _uiState.update { it.copy(scanProgress = state.progress, scanError = "") }
-            is ScanState.Error ->
-                _uiState.update { it.copy(scanError = state.reason, scanProgress = 0f) }
+            is ScanState.Error -> showScanError(state.reason)
             is ScanState.Complete -> decodePayload(state)
         }
     }
@@ -104,14 +108,18 @@ class TransactionViewModel(
                 }
                 .onFailure { error ->
                     Log.e(TAG, "decode error: ${error.message}", error)
-                    _uiState.update {
-                        it.copy(
-                            scanError = error.message ?: "Couldn't decode the QR code",
-                            isDecoding = false,
-                            scanProgress = 0f,
-                        )
-                    }
+                    showScanError(error.message ?: "Couldn't decode the QR code")
                 }
+        }
+    }
+
+    private fun showScanError(reason: String) {
+        scanErrorJob?.cancel()
+        _uiState.update { it.copy(scanError = reason, scanProgress = 0f, isDecoding = false) }
+        scanErrorJob = viewModelScope.launch {
+            delay(SCAN_ERROR_COOLDOWN)
+            qrScanner.reset()
+            _uiState.update { it.copy(scanError = "", scanProgress = 0f) }
         }
     }
 
@@ -217,6 +225,7 @@ class TransactionViewModel(
     override fun onCleared() {
         super.onCleared()
         searchJob?.cancel()
+        scanErrorJob?.cancel()
     }
 
     companion object {
@@ -224,5 +233,6 @@ class TransactionViewModel(
         private const val PERCENTAGE_MULTIPLIER = 100
         private val SEARCH_REGEX = Regex("^[a-fA-F0-9]{64}$")
         private val BROADCAST_REGEX = Regex("^[a-fA-F0-9]+$")
+        private val SCAN_ERROR_COOLDOWN = 10.seconds
     }
 }
