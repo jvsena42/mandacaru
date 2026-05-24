@@ -38,6 +38,9 @@ class TransactionViewModel(
             TransactionAction.ClearSnackBarMessage -> {
                 _uiState.update { it.copy(errorMessage = "") }
             }
+            TransactionAction.ClearBroadcastResult -> {
+                _uiState.update { it.copy(broadcastResult = "") }
+            }
             is TransactionAction.OnRawTxChanged -> {
                 _uiState.update { it.copy(rawTxHex = action.rawTx, broadcastResult = "") }
             }

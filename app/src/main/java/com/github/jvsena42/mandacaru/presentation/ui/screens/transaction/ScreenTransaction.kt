@@ -44,8 +44,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDefaults
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarVisuals
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
@@ -108,6 +112,7 @@ fun ScreenTransactionContent(
     val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val currentOnAction by rememberUpdatedState(onAction)
+    val broadcastSuccessLabel = stringResource(R.string.broadcast_success)
 
     LaunchedEffect(uiState.errorMessage) {
         if (uiState.errorMessage.isNotEmpty()) {
@@ -118,13 +123,39 @@ fun ScreenTransactionContent(
         }
     }
 
+    LaunchedEffect(uiState.broadcastResult) {
+        if (uiState.broadcastResult.isNotEmpty()) {
+            scope.launch {
+                snackBarHostState.showSnackbar(
+                    SuccessSnackbarVisuals("$broadcastSuccessLabel\n${uiState.broadcastResult}")
+                )
+                currentOnAction(TransactionAction.ClearBroadcastResult)
+            }
+        }
+    }
+
     Scaffold(
         modifier = modifier,
         snackbarHost = {
             SnackbarHost(
                 hostState = snackBarHostState,
                 modifier = Modifier.padding(bottom = bottomContentPadding),
-            )
+            ) { data ->
+                val isSuccess = data.visuals is SuccessSnackbarVisuals
+                Snackbar(
+                    snackbarData = data,
+                    containerColor = if (isSuccess) {
+                        MaterialTheme.colorScheme.tertiaryContainer
+                    } else {
+                        SnackbarDefaults.color
+                    },
+                    contentColor = if (isSuccess) {
+                        MaterialTheme.colorScheme.onTertiaryContainer
+                    } else {
+                        SnackbarDefaults.contentColor
+                    },
+                )
+            }
         },
         contentWindowInsets = WindowInsets(0),
     ) { contentPadding ->
@@ -420,48 +451,14 @@ internal fun BroadcastTransactionCard(
                     text = " ${stringResource(R.string.scan_to_broadcast)}",
                 )
             }
-
-            AnimatedVisibility(
-                visible = uiState.broadcastResult.isNotEmpty(),
-                enter = revealEnterTransition(),
-                exit = revealExitTransition(),
-            ) {
-                Column(modifier = Modifier.padding(top = 12.dp)) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f))
-                            .padding(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Outlined.Check,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.tertiary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Column {
-                            Text(
-                                stringResource(R.string.broadcast_success),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                uiState.broadcastResult,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontFamily = FontFamily.Monospace,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-                }
-            }
         }
     }
+}
+
+private class SuccessSnackbarVisuals(override val message: String) : SnackbarVisuals {
+    override val actionLabel: String? = null
+    override val duration: SnackbarDuration = SnackbarDuration.Short
+    override val withDismissAction: Boolean = false
 }
 
 @Composable
