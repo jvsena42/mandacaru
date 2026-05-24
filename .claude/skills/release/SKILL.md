@@ -18,13 +18,13 @@ Release process for Mandacaru. Version: $ARGUMENTS
 
 3. **Bump version**:
    - Extract the numeric version (strip the `v` prefix, e.g. `v0.2.0` -> `0.2.0`).
-   - Update `versionName` in `app/build.gradle.kts` to the new version.
+   - Update the `appVersionName` top-level `val` in `app/build.gradle.kts` to the new numeric version. This single `val` feeds both `defaultConfig.versionName` and the APK output name, so it is the only place to change.
    - Increment `versionCode` by 1 in `app/build.gradle.kts`.
    - Commit the version bump: `chore: bump version to <version>`.
 
 4. **Build signed APK**:
    - Run `./gradlew clean assembleRelease`.
-   - Verify the APK exists at `app/build/outputs/apk/release/app-release.apk`.
+   - Verify the APK exists at `app/build/outputs/apk/release/Mandacaru-<numeric_version>.apk` (the output is named `Mandacaru-$appVersionName.apk`, e.g. `Mandacaru-0.2.0.apk`).
 
 5. **Create git tag**:
    - Create annotated tag: `git tag -a <version> -m "Release <version>"`.
@@ -38,7 +38,7 @@ Release process for Mandacaru. Version: $ARGUMENTS
    - Show the changelog to the user for approval before proceeding.
 
 7. **Create GitHub release**:
-   - Use `gh release create <version>` with the signed APK attached.
+   - Use `gh release create <version>` with the signed APK (`Mandacaru-<numeric_version>.apk`) attached.
    - Title: `Mandacaru <version>`.
    - Use the approved changelog as the release body (pass via `--notes`).
    - Mark as latest release.
