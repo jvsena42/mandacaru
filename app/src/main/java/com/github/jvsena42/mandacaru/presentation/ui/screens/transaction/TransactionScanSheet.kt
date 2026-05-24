@@ -35,9 +35,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -114,6 +116,7 @@ fun TransactionScanSheet(
                             contentAlignment = Alignment.Center,
                         ) {
                             ContinuousCameraPreview(
+                                enabled = uiState.scanError.isEmpty() && !uiState.isDecoding,
                                 onPayloadScanned = { onAction(TransactionAction.OnQrFrameScanned(it)) },
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -259,11 +262,13 @@ private fun CameraDeniedFallback() {
 
 @Composable
 private fun ContinuousCameraPreview(
+    enabled: Boolean,
     onPayloadScanned: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val lastPayload = remember { AtomicReference<String?>(null) }
+    val isEnabled = rememberUpdatedState(enabled)
     val scanner = remember {
         BarcodeScanning.getClient(
             BarcodeScannerOptions.Builder()
@@ -272,6 +277,10 @@ private fun ContinuousCameraPreview(
         )
     }
     val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
+
+    LaunchedEffect(enabled) {
+        if (enabled) lastPayload.set(null)
+    }
 
     AndroidView(
         modifier = modifier,
@@ -292,7 +301,7 @@ private fun ContinuousCameraPreview(
                     .also {
                         it.setAnalyzer(analysisExecutor) { proxy ->
                             processFrame(proxy, scanner) { payload ->
-                                if (lastPayload.getAndSet(payload) != payload) {
+                                if (isEnabled.value && lastPayload.getAndSet(payload) != payload) {
                                     onPayloadScanned(payload)
                                 }
                             }
