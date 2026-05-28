@@ -21,6 +21,7 @@ data class NodeUiState(
     val filterSyncPercentage: String = "0.00",
     val isStalled: Boolean = false,
     val ibd: Boolean = true,
+    val rescanInProgress: Boolean = false,
     val validatedBLocks: Int = 0,
     val peers: List<PeerInfoResult> = emptyList(),
     val utreexoPeerCount: Int = 0,

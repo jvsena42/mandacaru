@@ -48,6 +48,8 @@ class SettingsViewModel(
     val uiState = _uiState.asStateFlow()
 
     private var nodeAddressValidationJob: Job? = null
+    private var rescanPollJob: Job? = null
+    private var wasRescanning = false
 
     init {
         viewModelScope.launch {
@@ -68,6 +70,37 @@ class SettingsViewModel(
         }
         getDescriptors()
         observeUpdateStatus()
+        observeRescanState()
+    }
+
+    /**
+     * Polls the node for rescan state so the Rescan button reflects the real
+     * background scan (driven by `rescan_in_progress` from `getblockchaininfo`)
+     * instead of a fixed timer. Also surfaces a completion message and catches
+     * rescans started elsewhere (e.g. the auto-rescan after a descriptor load).
+     */
+    private fun observeRescanState() {
+        rescanPollJob?.cancel()
+        rescanPollJob = viewModelScope.launch(Dispatchers.IO) {
+            while (true) {
+                val info = florestaRpc.getBlockchainInfo().firstOrNull()?.getOrNull()?.result
+                if (info != null) {
+                    val running = info.rescanInProgress
+                    _uiState.update {
+                        it.copy(
+                            isRescanning = running,
+                            rescanBlocksProcessed = info.rescanBlocksProcessed,
+                            rescanBlocksTotal = info.rescanBlocksTotal,
+                        )
+                    }
+                    if (wasRescanning && !running) {
+                        _uiState.update { it.copy(snackBarMessage = "Rescan complete") }
+                    }
+                    wasRescanning = running
+                }
+                delay(RESCAN_POLL_INTERVAL_MS.milliseconds)
+            }
+        }
     }
 
     private fun observeUpdateStatus() {
@@ -316,6 +349,11 @@ class SettingsViewModel(
             florestaRpc.loadDescriptor(DescriptorUtils.wrapDescriptorIfNeeded(input))
                 .collect { result ->
                     result.onSuccess { data ->
+                        // The server-side rescan kicked off by loaddescriptor only
+                        // covers filters already downloaded; flag a rescan so the
+                        // service re-scans once filters reach the tip, picking up
+                        // history in blocks downloaded after this point.
+                        preferencesDataSource.setBoolean(PreferenceKeys.WALLET_NEEDS_RESCAN, true)
                         _uiState.update { it.copy(descriptorText = "", snackBarMessage = "Descriptor loaded successfully") }
                         getDescriptors()
                         Log.d(TAG, "updateDescriptor: Success: $data")
@@ -331,20 +369,21 @@ class SettingsViewModel(
     }
 
     private fun rescan() {
-        if (_uiState.value.descriptors.isEmpty()) return
-        _uiState.update { it.copy(isLoading = true) }
+        if (_uiState.value.descriptors.isEmpty() || _uiState.value.isRescanning) return
         viewModelScope.launch(Dispatchers.IO) {
             florestaRpc.rescan().collect { result ->
                 result.onSuccess { data ->
-                    _uiState.update { it.copy(snackBarMessage = "Rescan started") }
+                    // Optimistically reflect the running state; observeRescanState
+                    // takes over from here (progress + completion message).
+                    wasRescanning = true
+                    _uiState.update {
+                        it.copy(isRescanning = true, snackBarMessage = "Rescan started")
+                    }
                     Log.d(TAG, "rescan: Success: $data")
                 }.onFailure { error ->
                     Log.d(TAG, "rescan: Fail: ${error.message}")
                     _uiState.update { it.copy(snackBarMessage = error.message.toString()) }
                 }
-
-                delay(2.seconds)
-                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }
@@ -378,5 +417,6 @@ class SettingsViewModel(
     companion object {
         private const val TAG = "SettingsViewModel"
         private const val VALIDATION_DEBOUNCE_MS = 500L
+        private const val RESCAN_POLL_INTERVAL_MS = 3000L
     }
 }

@@ -210,11 +210,20 @@ fun ScreenNode(
         && uiState.syncDecimal >= 1f
         && filterSyncDecimal != null
         && filterSyncDecimal < 1f
+    // Filters reaching the tip doesn't mean the wallet is scanned; while a
+    // rescan runs the node is still finding the wallet's transactions, so we
+    // surface that instead of claiming "Synced".
+    val isWalletScanning = !isHeaderSync
+        && !isStalled
+        && uiState.syncDecimal >= 1f
+        && (filterSyncDecimal == null || filterSyncDecimal >= 1f)
+        && uiState.rescanInProgress
     val syncTitleRes = when {
         isHeaderSync -> R.string.syncing_headers_title
         isStalled -> R.string.sync_stalled_title
         isFilterSync -> R.string.syncing_filters_title
         uiState.ibd -> R.string.syncing_blocks_title
+        isWalletScanning -> R.string.scanning_wallet_title
         else -> R.string.sync
     }
 
@@ -317,12 +326,14 @@ fun ScreenNode(
                         isHeaderSync = isHeaderSync,
                         isFilterSync = isFilterSync,
                         isStalled = isStalled,
+                        isWalletScanning = isWalletScanning,
                         headerSyncDecimal = headerSyncDecimal,
                         headerSyncPercentage = uiState.headerSyncPercentage,
                         filterSyncDecimal = filterSyncDecimal,
                         filterSyncPercentage = uiState.filterSyncPercentage,
                         syncPercentage = uiState.syncPercentage,
                         syncDecimal = uiState.syncDecimal,
+                        rescanInProgress = uiState.rescanInProgress,
                     )
                 }
                 item { NetworkInfoCard(uiState = uiState) }
@@ -663,34 +674,56 @@ private data class SyncStepStates(
     val allDone: Boolean,
 )
 
+private fun blocksStepState(
+    headersDone: Boolean,
+    blocksDone: Boolean,
+    walletScanning: Boolean,
+    hasFiltersStep: Boolean,
+): StepState = when {
+    walletScanning && !hasFiltersStep -> StepState.Current
+    blocksDone -> StepState.Done
+    headersDone -> StepState.Current
+    else -> StepState.Pending
+}
+
+private fun filtersStepState(
+    hasFiltersStep: Boolean,
+    walletScanning: Boolean,
+    filtersDownloaded: Boolean,
+    blocksDone: Boolean,
+): StepState? = when {
+    !hasFiltersStep -> null
+    walletScanning -> StepState.Current
+    filtersDownloaded && blocksDone -> StepState.Done
+    blocksDone -> StepState.Current
+    else -> StepState.Pending
+}
+
 private fun computeSyncStepStates(
     isHeaderSync: Boolean,
     syncDecimal: Float,
     filterSyncDecimal: Float?,
+    rescanInProgress: Boolean,
 ): SyncStepStates {
     val hasFiltersStep = filterSyncDecimal != null
     val headersDone = !isHeaderSync
     val blocksDone = syncDecimal >= 1f
-    val filtersDone = filterSyncDecimal == null || filterSyncDecimal >= 1f
+    val filtersDownloaded = filterSyncDecimal == null || filterSyncDecimal >= 1f
+    // A running rescan means the wallet isn't fully scanned yet: keep the last
+    // step Current and don't report everything done.
+    val walletScanning = headersDone && blocksDone && filtersDownloaded && rescanInProgress
     val headers = if (headersDone) StepState.Done else StepState.Current
-    val blocks = when {
-        blocksDone -> StepState.Done
-        headersDone -> StepState.Current
-        else -> StepState.Pending
-    }
-    val filters: StepState? = when {
-        !hasFiltersStep -> null
-        filtersDone && blocksDone -> StepState.Done
-        blocksDone -> StepState.Current
-        else -> StepState.Pending
-    }
-    return SyncStepStates(headers, blocks, filters, headersDone && blocksDone && filtersDone)
+    val blocks = blocksStepState(headersDone, blocksDone, walletScanning, hasFiltersStep)
+    val filters = filtersStepState(hasFiltersStep, walletScanning, filtersDownloaded, blocksDone)
+    val allDone = headersDone && blocksDone && filtersDownloaded && !rescanInProgress
+    return SyncStepStates(headers, blocks, filters, allDone)
 }
 
 private data class SyncProgressInputs(
     val isStalled: Boolean,
     val isHeaderSync: Boolean,
     val isFilterSync: Boolean,
+    val isWalletScanning: Boolean,
     val headerSyncDecimal: Float?,
     val headerSyncPercentage: String,
     val filterSyncDecimal: Float?,
@@ -704,6 +737,9 @@ private fun SyncProgressInputs.rawDecimal(): Float? = when {
     isHeaderSync && headerSyncDecimal != null -> headerSyncDecimal
     isHeaderSync -> null
     isFilterSync && filterSyncDecimal != null -> filterSyncDecimal
+    // Wallet scan has no meaningful percentage here; show an indeterminate bar
+    // rather than a misleading 100%.
+    isWalletScanning -> null
     else -> syncDecimal
 }
 
@@ -712,6 +748,7 @@ private fun SyncProgressInputs.percentageText(): String? = when {
     isHeaderSync && headerSyncDecimal != null -> "$headerSyncPercentage%"
     isHeaderSync -> null
     isFilterSync && filterSyncDecimal != null -> "$filterSyncPercentage%"
+    isWalletScanning -> null
     else -> "$syncPercentage%"
 }
 
@@ -784,17 +821,20 @@ private fun SyncProgressCard(
     isHeaderSync: Boolean,
     isFilterSync: Boolean,
     isStalled: Boolean,
+    isWalletScanning: Boolean,
     headerSyncDecimal: Float?,
     headerSyncPercentage: String,
     filterSyncDecimal: Float?,
     filterSyncPercentage: String,
     syncPercentage: String,
     syncDecimal: Float,
+    rescanInProgress: Boolean,
 ) {
     val inputs = SyncProgressInputs(
         isStalled = isStalled,
         isHeaderSync = isHeaderSync,
         isFilterSync = isFilterSync,
+        isWalletScanning = isWalletScanning,
         headerSyncDecimal = headerSyncDecimal,
         headerSyncPercentage = headerSyncPercentage,
         filterSyncDecimal = filterSyncDecimal,
@@ -809,7 +849,7 @@ private fun SyncProgressCard(
         label = "syncProgress",
     )
     val percentageText = inputs.percentageText()
-    val steps = computeSyncStepStates(isHeaderSync, syncDecimal, filterSyncDecimal)
+    val steps = computeSyncStepStates(isHeaderSync, syncDecimal, filterSyncDecimal, rescanInProgress)
 
     Card(
         modifier = Modifier.fillMaxWidth(),

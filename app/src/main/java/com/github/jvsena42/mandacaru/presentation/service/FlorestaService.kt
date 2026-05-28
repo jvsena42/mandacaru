@@ -184,10 +184,20 @@ class FlorestaService : Service() {
                                 ourHeight = data.result.height,
                                 peers = peers,
                             )
+                            // Compact filters must be downloaded all the way to
+                            // the tip before a rescan can find every relevant
+                            // block. `filters` null means cfilters are disabled
+                            // or started from genesis — then there's nothing to
+                            // wait on. When present, require filters >= height.
+                            val filtersComplete = data.result.filters
+                                ?.let { it >= data.result.height && data.result.height > 0 }
+                                ?: true
                             maybeTriggerWalletRescan(
                                 progress = data.result.progress,
                                 ibd = data.result.ibd,
                                 stalled = stalled,
+                                filtersComplete = filtersComplete,
+                                rescanInProgress = data.result.rescanInProgress,
                             )
                         }
                     }
@@ -199,14 +209,25 @@ class FlorestaService : Service() {
     }
 
     /**
-     * After a wallet-birthday change, Floresta wipes the compact filter store
-     * and re-syncs from the new height — but the wallet's cached descriptors
-     * are not auto-rescanned against the new store. Trigger a rescan once the
-     * chain looks fully synced (with a grace window so filter downloads can
-     * catch up too), then clear the flag.
+     * Loading a descriptor (or changing the wallet birthday) caches addresses
+     * that the node has not necessarily scanned against the full compact-filter
+     * store — the server-side rescan kicked off by `loaddescriptor` runs once,
+     * against whatever filters existed at that moment, so anything downloaded
+     * afterwards is missed. Trigger one rescan once the chain is fully validated
+     * AND filters have reached the tip (with a grace window), then clear the
+     * [PreferenceKeys.WALLET_NEEDS_RESCAN] flag so it only fires once.
+     *
+     * Skips while a rescan is already running so we never stack duplicates.
      */
-    private fun maybeTriggerWalletRescan(progress: Float, ibd: Boolean, stalled: Boolean) {
-        if (ibd || progress < FULL_SYNC_THRESHOLD || stalled) {
+    private fun maybeTriggerWalletRescan(
+        progress: Float,
+        ibd: Boolean,
+        stalled: Boolean,
+        filtersComplete: Boolean,
+        rescanInProgress: Boolean,
+    ) {
+        val chainFullySynced = !ibd && progress >= FULL_SYNC_THRESHOLD && !stalled
+        if (!chainFullySynced || !filtersComplete || rescanInProgress) {
             fullySyncedSinceMs = null
             return
         }

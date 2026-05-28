@@ -75,6 +75,7 @@ class NodeViewModel(
                             syncDecimal = data.result.progress,
                             validatedBLocks = data.result.validated,
                             ibd = data.result.ibd,
+                            rescanInProgress = data.result.rescanInProgress,
                             filterHeightRaw = filterHeight ?: 0,
                             filterSyncDecimal = filterDecimal,
                             filterSyncPercentage = filterDecimal

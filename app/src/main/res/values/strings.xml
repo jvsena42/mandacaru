@@ -12,6 +12,7 @@
     <string name="syncing_headers_title">Syncing headers</string>
     <string name="syncing_blocks_title">Syncing blocks</string>
     <string name="syncing_filters_title">Syncing filters</string>
+    <string name="scanning_wallet_title">Scanning wallet</string>
     <string name="sync_step_headers">Headers</string>
     <string name="sync_step_blocks">Blocks</string>
     <string name="sync_step_filters">Filters</string>
@@ -23,6 +24,8 @@
     <string name="descriptor_placeholder">zpub…, xpub…, or wpkh([fp/path]xpub…/0/*)</string>
     <string name="update_descriptor">Update Descriptor</string>
     <string name="rescan">Rescan</string>
+    <string name="rescanning">Rescanning…</string>
+    <string name="rescanning_progress">Rescanning %1$d/%2$d</string>
     <string name="node_address_copied_to_clipboard">Node address copied to clipboard</string>
     <string name="enter_the_transaction_id">Enter the transaction Id</string>
     <string name="node_address_placeholder">189.44.63.101:8333</string>

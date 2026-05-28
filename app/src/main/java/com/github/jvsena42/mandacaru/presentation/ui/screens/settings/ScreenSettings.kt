@@ -585,17 +585,40 @@ private fun ScreenSettings(
 
                             FilledTonalButton(
                                 onClick = { onAction(SettingsAction.OnClickRescan) },
-                                enabled = !uiState.isLoading && uiState.descriptors.isNotEmpty(),
+                                enabled = !uiState.isLoading && !uiState.isRescanning &&
+                                    uiState.descriptors.isNotEmpty(),
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
-                                Icon(
-                                    Icons.Outlined.Refresh,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.size(8.dp))
-                                Text(stringResource(R.string.rescan))
+                                if (uiState.isRescanning) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(18.dp),
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Spacer(modifier = Modifier.size(8.dp))
+                                    val total = uiState.rescanBlocksTotal
+                                    val processed = uiState.rescanBlocksProcessed
+                                    Text(
+                                        if (total != null && total > 0 && processed != null) {
+                                            stringResource(
+                                                R.string.rescanning_progress,
+                                                processed,
+                                                total,
+                                            )
+                                        } else {
+                                            stringResource(R.string.rescanning)
+                                        }
+                                    )
+                                } else {
+                                    Icon(
+                                        Icons.Outlined.Refresh,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.size(8.dp))
+                                    Text(stringResource(R.string.rescan))
+                                }
                             }
                         }
                     }

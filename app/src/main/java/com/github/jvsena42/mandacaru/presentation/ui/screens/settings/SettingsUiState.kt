@@ -29,4 +29,7 @@ data class SettingsUiState(
     val pendingBirthdayYear: Int? = null,
     val updateStatus: UpdateStatus = UpdateStatus(),
     val isDownloading: Boolean = false,
+    val isRescanning: Boolean = false,
+    val rescanBlocksProcessed: Int? = null,
+    val rescanBlocksTotal: Int? = null,
 )

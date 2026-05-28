@@ -168,7 +168,9 @@ private fun HeroStatusBand(
     val headersDone = !isHeaderSync
     val blocksDone = uiState.syncDecimal >= 1f
     val filtersDone = uiState.filterSyncDecimal == null || uiState.filterSyncDecimal >= 1f
-    val allDone = headersDone && blocksDone && filtersDone
+    // A running wallet rescan means we're not fully synced yet, even once
+    // filters reached the tip.
+    val allDone = headersDone && blocksDone && filtersDone && !uiState.rescanInProgress
     val headersState = if (headersDone) StepState.Done else StepState.Current
     val blocksState = when {
         blocksDone -> StepState.Done
