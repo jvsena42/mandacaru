@@ -144,7 +144,6 @@ fun ScreenBlockchainContent(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .testTag("screen_blockchain")
                 .background(MaterialTheme.colorScheme.background)
                 .padding(contentPadding),
             contentAlignment = Alignment.TopCenter,

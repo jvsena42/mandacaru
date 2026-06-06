@@ -22,17 +22,40 @@ Hand a journey file to the agent and ask it to evaluate it, e.g. "run
 `journeys/navigate_tabs.xml`". The agent drives the app with `adb shell input`, inspects
 state with `android layout`, and reports a per-action PASSED/FAILED/SKIPPED summary.
 
-Inspect the live UI tree (and confirm tags resolve to `resourceId`s) with:
+Inspect the live UI tree (and confirm tags resolve to ids) with:
 
 ```bash
 android layout --pretty
 ```
 
+Note: `android layout` reports the tag under the `resource-id` key (e.g.
+`"resource-id":"nav_settings"`).
+
+## Cold-start splash
+
+On a cold start the app shows a ~4-second splash before the Node screen appears. A
+"Launch the app" step must wait for the splash to dismiss (poll `android layout` until a
+known tag such as `nav_node` appears) before asserting on screen content.
+
+## Identifying the current screen
+
+Navigation is a `HorizontalPager`, not a `NavController`, and adjacent pages stay
+composed — so content from the neighbouring screen can be present (off-screen) in the
+tree. The reliable signal for "which screen is active" is the **selected nav item**: the
+active destination's nav element carries `"state":["selected"]` in the layout dump
+(e.g. `nav_blockchain` is selected on the Blockchain screen). Combine that with a
+screen-unique element (see tables below) when an extra check is wanted.
+
+Container/screen-root tags are intentionally not used: a Compose layout node carrying
+only a `testTag` is not important-for-accessibility and does not surface in
+`android layout`. Only nodes that already emit semantics (interactive controls, text,
+nav items) appear.
+
 ## testTag contract
 
-Compose `testTag`s surface as `resourceId` in `android layout` output because the root
-sets `testTagsAsResourceId = true` (see `MainActivity.MandacaruRoot`). Agents should
-prefer targeting these stable ids over localized `text` or raw `bounds`.
+Compose `testTag`s surface under the `resource-id` key in `android layout` output
+because the root sets `testTagsAsResourceId = true` (see `MainActivity.MandacaruRoot`).
+Agents should prefer targeting these stable ids over localized `text` or raw `bounds`.
 
 Tags are inline string literals at each call site (no shared constants file, to avoid
 merge conflicts across branches). This README is the canonical list — keep it in sync
@@ -40,25 +63,16 @@ when adding or renaming a tag.
 
 ### Navigation (`MainActivity.kt`)
 
-| resourceId        | element                                  |
+| resource-id        | element                                  |
 |-------------------|------------------------------------------|
 | `nav_node`        | Node Info bottom-nav / rail item         |
 | `nav_blockchain`  | Blockchain nav item                      |
 | `nav_transaction` | Transactions nav item                    |
 | `nav_settings`    | Settings nav item                        |
 
-### Screen roots
-
-| resourceId           | screen           |
-|----------------------|------------------|
-| `screen_node`        | Node             |
-| `screen_blockchain`  | Blockchain       |
-| `screen_transaction` | Transactions     |
-| `screen_settings`    | Settings         |
-
 ### Node screen (`node/ScreenNode.kt`)
 
-| resourceId              | element                         |
+| resource-id              | element                         |
 |-------------------------|---------------------------------|
 | `node_sync_percentage`  | sync progress percentage        |
 | `node_network`          | network value                   |
@@ -68,7 +82,7 @@ when adding or renaming a tag.
 
 ### Blockchain screen (`blockchain/ScreenBlockchain.kt`)
 
-| resourceId                  | element                  |
+| resource-id                  | element                  |
 |-----------------------------|--------------------------|
 | `blockchain_block_height`   | current block height     |
 | `button_view_latest_block`  | "View latest block"      |
@@ -76,7 +90,7 @@ when adding or renaming a tag.
 
 ### Transactions screen (`transaction/ScreenTransaction.kt`)
 
-| resourceId               | element                       |
+| resource-id               | element                       |
 |--------------------------|-------------------------------|
 | `input_txid`             | transaction-id lookup field   |
 | `input_rawtx`            | raw-tx broadcast field        |
@@ -85,15 +99,22 @@ when adding or renaming a tag.
 
 ### Settings screen (`settings/ScreenSettings.kt`)
 
-| resourceId                  | element                                |
+| resource-id                  | element                                |
 |-----------------------------|----------------------------------------|
 | `input_descriptor`          | wallet descriptor field                |
 | `button_update_descriptor`  | "Update descriptor"                    |
 | `input_network`             | network selector field                 |
-| `network_option_<NAME>`     | dropdown option per `Network` enum     |
 
-`Network` enum names: `BITCOIN`, `SIGNET`, `TESTNET`, `REGTEST`, `TESTNET4` — so the
-options are `network_option_BITCOIN`, `network_option_SIGNET`, etc.
+Tapping `input_network` opens the network dropdown. Its options are **targeted by text**
+(`BITCOIN`, `SIGNET`, `TESTNET`, `REGTEST`, `TESTNET4`) — see the popup caveat below.
+
+## Popups, dropdowns, and dialogs
+
+`testTagsAsResourceId` is set on the app's root composable, but Compose renders dropdowns
+(`ExposedDropdownMenu`), dialogs, and bottom sheets in a **separate window** outside that
+subtree, so their `testTag`s do **not** surface as `resource-id`. Their `text` and
+`content-desc` still appear in `android layout`. Target items inside these popups by their
+visible text (e.g. tap the `SIGNET` menu item by text).
 
 ## Cross-checking node state
 

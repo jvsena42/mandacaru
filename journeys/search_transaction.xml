@@ -4,7 +4,7 @@
         handles the query without crashing (showing either a result or a not-found state).
     </description>
     <actions>
-        <action>Launch the Mandacaru app</action>
+        <action>Launch the Mandacaru app and wait for the splash screen to dismiss (poll until nav_node is present)</action>
         <action>Tap the Transactions navigation item (nav_transaction)</action>
         <action>Verify the transaction id field (input_txid) is displayed</action>
         <action>Tap the transaction id field (input_txid)</action>

@@ -4,7 +4,7 @@
         list updates without the app crashing.
     </description>
     <actions>
-        <action>Launch the Mandacaru app</action>
+        <action>Launch the Mandacaru app and wait for the splash screen to dismiss (poll until nav_node is present)</action>
         <action>Tap the Settings navigation item (nav_settings)</action>
         <action>Expand the Descriptors section if it is collapsed</action>
         <action>Tap the descriptor field (input_descriptor)</action>

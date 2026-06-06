@@ -1,17 +1,17 @@
 <journey name="Navigate tabs">
     <description>
-        Taps each bottom-navigation destination and verifies the matching screen
-        root appears.
+        Taps each bottom-navigation destination and verifies the matching nav item
+        becomes selected.
     </description>
     <actions>
-        <action>Launch the Mandacaru app</action>
+        <action>Launch the Mandacaru app and wait for the splash screen to dismiss (poll until nav_node is present)</action>
         <action>Tap the Blockchain navigation item (nav_blockchain)</action>
-        <action>Verify the Blockchain screen (screen_blockchain) is displayed</action>
+        <action>Verify the Blockchain navigation item (nav_blockchain) is selected</action>
         <action>Tap the Transactions navigation item (nav_transaction)</action>
-        <action>Verify the Transactions screen (screen_transaction) is displayed</action>
+        <action>Verify the Transactions navigation item (nav_transaction) is selected</action>
         <action>Tap the Settings navigation item (nav_settings)</action>
-        <action>Verify the Settings screen (screen_settings) is displayed</action>
+        <action>Verify the Settings navigation item (nav_settings) is selected</action>
         <action>Tap the Node navigation item (nav_node)</action>
-        <action>Verify the Node screen (screen_node) is displayed</action>
+        <action>Verify the Node navigation item (nav_node) is selected</action>
     </actions>
 </journey>

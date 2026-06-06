@@ -4,11 +4,11 @@
         and comes back up on the Node screen.
     </description>
     <actions>
-        <action>Launch the Mandacaru app</action>
+        <action>Launch the Mandacaru app and wait for the splash screen to dismiss (poll until nav_node is present)</action>
         <action>Tap the Settings navigation item (nav_settings)</action>
         <action>Expand the Network section if it is collapsed</action>
         <action>Tap the network selector field (input_network)</action>
-        <action>Tap the Signet option (network_option_SIGNET)</action>
-        <action>Verify the app restarts and the Node screen (screen_node) is displayed</action>
+        <action>Tap the SIGNET option in the dropdown (target it by its text)</action>
+        <action>Verify the app restarts and the Node navigation item (nav_node) is selected once it is back up</action>
     </actions>
 </journey>

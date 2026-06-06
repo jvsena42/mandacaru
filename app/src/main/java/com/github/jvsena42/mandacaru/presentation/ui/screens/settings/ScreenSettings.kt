@@ -200,7 +200,6 @@ private fun ScreenSettings(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .testTag("screen_settings")
                 .background(MaterialTheme.colorScheme.background)
                 .padding(contentPadding),
             contentAlignment = Alignment.TopCenter,
@@ -494,7 +493,6 @@ private fun ScreenSettings(
                                 ) {
                                     uiState.network.forEach { network ->
                                         DropdownMenuItem(
-                                            modifier = Modifier.testTag("network_option_${network.name}"),
                                             text = { Text(network.name) },
                                             onClick = {
                                                 onAction(SettingsAction.OnNetworkSelected(network.name))

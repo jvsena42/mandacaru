@@ -177,7 +177,6 @@ fun ScreenTransactionContent(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .testTag("screen_transaction")
                 .background(MaterialTheme.colorScheme.background)
                 .padding(contentPadding),
             contentAlignment = Alignment.TopCenter,

@@ -272,7 +272,6 @@ fun ScreenNode(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .testTag("screen_node")
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.TopCenter,
     ) {

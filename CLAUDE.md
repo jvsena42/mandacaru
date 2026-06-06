@@ -227,7 +227,7 @@ When loading wallet descriptors via Settings, use standard Bitcoin descriptor fo
 ### Agentic UI Tests (android-cli journeys)
 - Journey tests live in `journeys/` — natural-language XML steps an AI agent runs via the `android-cli` skill (`android layout`, `adb shell input`) against an installed debug build on an ARM64 device.
 - `journeys/README.md` is the canonical **testTag contract**: it lists every `testTag` and what it maps to. Keep it in sync when adding/renaming a tag.
-- Compose `testTag`s surface as `resourceId` in `android layout` because the root composable (`MainActivity.MandacaruRoot`) sets `testTagsAsResourceId = true`. Prefer targeting these stable ids over localized text or bounds.
+- Compose `testTag`s surface under the `resource-id` key in `android layout` because the root composable (`MainActivity.MandacaruRoot`) sets `testTagsAsResourceId = true`. Prefer targeting these stable ids over localized text or bounds. Two caveats learned from real runs: (1) a `testTag` only surfaces on a node that already emits semantics (interactive controls, text, nav items) — a plain container `Box` with only a `testTag` does not appear, so identify the active screen by the selected nav item's `"state":["selected"]`; (2) dropdowns/dialogs/bottom sheets render in a separate window outside the root subtree, so their `testTag`s do not surface — target items inside them by text.
 - Tags are **inline string literals** at each call site (no shared constants file) to avoid cross-branch merge conflicts. When adding UI an agent must drive, tag it and document it in `journeys/README.md`.
 
 ## Common Development Scenarios
