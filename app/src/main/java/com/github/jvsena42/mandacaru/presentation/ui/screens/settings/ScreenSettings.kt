@@ -39,7 +39,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.NetworkCheck
@@ -740,6 +740,7 @@ private fun ScreenSettings(
                         icon = Icons.Outlined.Info,
                         isExpanded = uiState.isAboutExpanded,
                         onToggle = { onAction(SettingsAction.ToggleAboutExpanded) },
+                        showBadge = uiState.updateStatus.isBadgeVisible,
                         modifier = Modifier.animateItem(),
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
@@ -784,7 +785,6 @@ private fun ScreenSettings(
 
                             UpdateRow(
                                 updateStatus = uiState.updateStatus,
-                                isDownloading = uiState.isDownloading,
                                 onAction = onAction,
                             )
                         }
@@ -901,10 +901,8 @@ private fun BirthdayRestartConfirmDialog(
 @Composable
 private fun UpdateRow(
     updateStatus: UpdateStatus,
-    isDownloading: Boolean,
     onAction: (SettingsAction) -> Unit,
 ) {
-    val uriHandler = LocalUriHandler.current
     Column(modifier = Modifier.fillMaxWidth()) {
         when {
             updateStatus.isChecking -> {
@@ -930,28 +928,17 @@ private fun UpdateRow(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Button(
-                    onClick = { onAction(SettingsAction.OnClickDownloadUpdate) },
-                    enabled = !isDownloading,
+                    onClick = { onAction(SettingsAction.OnClickGetUpdate) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                 ) {
-                    if (isDownloading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
-                        Spacer(modifier = Modifier.size(8.dp))
-                        Text(stringResource(R.string.downloading_update))
-                    } else {
-                        Icon(
-                            Icons.Outlined.Download,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Spacer(modifier = Modifier.size(8.dp))
-                        Text(stringResource(R.string.download_update))
-                    }
+                    Icon(
+                        Icons.AutoMirrored.Outlined.OpenInNew,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Text(stringResource(R.string.get_update))
                 }
             }
 
@@ -961,7 +948,7 @@ private fun UpdateRow(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.clickable {
-                        uriHandler.openUri(updateStatus.releasePageUrl)
+                        onAction(SettingsAction.OnClickCheckForUpdates)
                     }
                 )
             }
@@ -971,6 +958,15 @@ private fun UpdateRow(
                     text = stringResource(R.string.up_to_date),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.check_for_updates),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable {
+                        onAction(SettingsAction.OnClickCheckForUpdates)
+                    }
                 )
             }
         }
@@ -984,6 +980,7 @@ private fun SectionCard(
     isExpanded: Boolean,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
+    showBadge: Boolean = false,
     content: @Composable () -> Unit
 ) {
     Card(
@@ -998,7 +995,8 @@ private fun SectionCard(
                 title = title,
                 icon = icon,
                 isExpanded = isExpanded,
-                onToggle = onToggle
+                onToggle = onToggle,
+                showBadge = showBadge
             )
 
             AnimatedVisibility(

@@ -17,6 +17,6 @@ class MainViewModel(
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     init {
-        viewModelScope.launch { appUpdateRepository.refresh() }
+        viewModelScope.launch { appUpdateRepository.refresh(force = true) }
     }
 }

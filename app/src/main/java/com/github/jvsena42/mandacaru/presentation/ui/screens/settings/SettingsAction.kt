@@ -16,7 +16,8 @@ sealed interface SettingsAction {
     object ToggleAboutExpanded: SettingsAction
     object ToggleDonateExpanded: SettingsAction
     object OnClickExportLogs: SettingsAction
-    object OnClickDownloadUpdate: SettingsAction
+    object OnClickGetUpdate: SettingsAction
+    object OnClickCheckForUpdates: SettingsAction
     object ToggleBirthdayExpanded: SettingsAction
     object OnClickChangeBirthdayYear: SettingsAction
     data class OnBirthdayYearSelected(val year: Int): SettingsAction

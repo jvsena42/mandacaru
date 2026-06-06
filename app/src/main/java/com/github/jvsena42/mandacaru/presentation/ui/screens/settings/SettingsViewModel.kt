@@ -10,7 +10,6 @@ import com.github.jvsena42.mandacaru.data.AppUpdateRepository
 import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
-import com.github.jvsena42.mandacaru.data.update.AppUpdateDownloader
 import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.AddNodeCommand
 import com.github.jvsena42.mandacaru.presentation.utils.DescriptorUtils
@@ -40,7 +39,6 @@ class SettingsViewModel(
     private val florestaRpc: FlorestaRpc,
     private val preferencesDataSource: PreferencesDataSource,
     private val appUpdateRepository: AppUpdateRepository,
-    private val appUpdateDownloader: AppUpdateDownloader,
     @field:SuppressLint("StaticFieldLeak") private val context: Context,
 ) : ViewModel(), EventFlow<SettingsEvents> by EventFlowImpl() {
 
@@ -104,7 +102,7 @@ class SettingsViewModel(
     }
 
     private fun observeUpdateStatus() {
-        viewModelScope.launch { appUpdateRepository.refresh() }
+        viewModelScope.launch { appUpdateRepository.refresh(force = true) }
         viewModelScope.launch {
             appUpdateRepository.updateStatus.collect { status ->
                 _uiState.update { it.copy(updateStatus = status) }
@@ -154,7 +152,9 @@ class SettingsViewModel(
 
             SettingsAction.ToggleAboutExpanded -> toggleAboutExpanded()
 
-            SettingsAction.OnClickDownloadUpdate -> downloadUpdate()
+            SettingsAction.OnClickGetUpdate -> getUpdate()
+
+            SettingsAction.OnClickCheckForUpdates -> checkForUpdates()
 
             SettingsAction.ToggleDonateExpanded -> _uiState.update {
                 it.copy(isDonateExpanded = !it.isDonateExpanded)
@@ -194,18 +194,13 @@ class SettingsViewModel(
         }
     }
 
-    private fun downloadUpdate() {
-        if (_uiState.value.isDownloading) return
+    private fun getUpdate() {
         val status = _uiState.value.updateStatus
-        val url = status.apkDownloadUrl
-        if (url == null) {
-            viewModelScope.sendEvent(SettingsEvents.OpenReleasePage(status.releasePageUrl))
-            return
-        }
-        _uiState.update { it.copy(isDownloading = true) }
-        appUpdateDownloader.enqueue(url, "Mandacaru-${status.latestVersion}.apk") {
-            _uiState.update { it.copy(isDownloading = false) }
-        }
+        viewModelScope.sendEvent(SettingsEvents.OpenReleasePage(status.releasePageUrl))
+    }
+
+    private fun checkForUpdates() {
+        viewModelScope.launch { appUpdateRepository.refresh(force = true) }
     }
 
     private fun applyBirthdayYearAndRestart() {
