@@ -1,0 +1,16 @@
+<journey name="Broadcast validation">
+    <description>
+        Pastes an unsigned raw transaction and attempts to broadcast it. The app must
+        surface a signed-ness validation error rather than silently broadcasting, because
+        the Floresta node's sendrawtransaction does not verify signatures.
+    </description>
+    <actions>
+        <action>Launch the Mandacaru app</action>
+        <action>Tap the Transactions navigation item (nav_transaction)</action>
+        <action>Verify the raw transaction field (input_rawtx) is displayed</action>
+        <action>Tap the raw transaction field (input_rawtx)</action>
+        <action>Type "0200000001c8b1e2f3a4b5c6d7e8f90112233445566778899aabbccddeeff00112233445500000000000fdffffff0100e1f5050000000016001489abcdef0123456789abcdef0123456789abcdef00000000" into the raw transaction field (input_rawtx)</action>
+        <action>Tap the Broadcast button (button_broadcast)</action>
+        <action>Verify the app shows a validation error indicating the transaction is not signed, and does not report a successful broadcast</action>
+    </actions>
+</journey>

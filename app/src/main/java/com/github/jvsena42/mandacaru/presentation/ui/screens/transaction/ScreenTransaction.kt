@@ -64,6 +64,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
@@ -176,6 +177,7 @@ fun ScreenTransactionContent(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .testTag("screen_transaction")
                 .background(MaterialTheme.colorScheme.background)
                 .padding(contentPadding),
             contentAlignment = Alignment.TopCenter,
@@ -319,7 +321,9 @@ internal fun TransactionLookupCard(
                 keyboardActions = KeyboardActions(
                     onSearch = { focusManager.clearFocus() }
                 ),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("input_txid"),
                 supportingText = {
                     Text(
                         "${uiState.transactionId.length}/64 characters",
@@ -401,7 +405,9 @@ internal fun BroadcastTransactionCard(
                 keyboardActions = KeyboardActions(
                     onDone = { onAction(TransactionAction.OnClickBroadcast) }
                 ),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("input_rawtx")
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -428,7 +434,9 @@ internal fun BroadcastTransactionCard(
             Button(
                 onClick = { onAction(TransactionAction.OnClickBroadcast) },
                 enabled = !uiState.isBroadcasting && uiState.rawTxHex.isNotBlank(),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("button_broadcast"),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(stringResource(R.string.broadcast))
@@ -439,7 +447,9 @@ internal fun BroadcastTransactionCard(
             OutlinedButton(
                 onClick = { onAction(TransactionAction.OnClickScan) },
                 enabled = !uiState.isBroadcasting,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("button_scan_broadcast"),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Icon(

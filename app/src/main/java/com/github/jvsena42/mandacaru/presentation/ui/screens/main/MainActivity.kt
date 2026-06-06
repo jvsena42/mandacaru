@@ -51,10 +51,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -173,6 +177,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun MandacaruRoot(
     showSplashOnStart: Boolean,
@@ -189,7 +194,11 @@ private fun MandacaruRoot(
             showSplash = false
         }
     }
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .semantics { testTagsAsResourceId = true }
+    ) {
         MainScreen(
             modifier = Modifier
                 .fillMaxSize()
@@ -331,6 +340,7 @@ private fun AppNavigationBar(
         pages.forEachIndexed { index, destination ->
             val selected = selectedIndex == index
             NavigationBarItem(
+                modifier = Modifier.testTag("nav_${destination.route.lowercase()}"),
                 selected = selected,
                 onClick = { onSelect(index) },
                 label = { DestinationLabel(destination, selected) },
@@ -362,6 +372,7 @@ private fun AppNavigationRail(
         pages.forEachIndexed { index, destination ->
             val selected = selectedIndex == index
             NavigationRailItem(
+                modifier = Modifier.testTag("nav_${destination.route.lowercase()}"),
                 selected = selected,
                 onClick = { onSelect(index) },
                 label = { DestinationLabel(destination, selected) },
