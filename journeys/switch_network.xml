@@ -1,0 +1,14 @@
+<journey name="Switch network">
+    <description>
+        Changes the active network in Settings to Signet and verifies the app restarts
+        and comes back up on the Node screen.
+    </description>
+    <actions>
+        <action>Launch the Mandacaru app</action>
+        <action>Tap the Settings navigation item (nav_settings)</action>
+        <action>Expand the Network section if it is collapsed</action>
+        <action>Tap the network selector field (input_network)</action>
+        <action>Tap the Signet option (network_option_SIGNET)</action>
+        <action>Verify the app restarts and the Node screen (screen_node) is displayed</action>
+    </actions>
+</journey>

@@ -1,0 +1,15 @@
+<journey name="Load descriptor">
+    <description>
+        Pastes a wallet descriptor in Settings, submits it, and verifies the descriptor
+        list updates without the app crashing.
+    </description>
+    <actions>
+        <action>Launch the Mandacaru app</action>
+        <action>Tap the Settings navigation item (nav_settings)</action>
+        <action>Expand the Descriptors section if it is collapsed</action>
+        <action>Tap the descriptor field (input_descriptor)</action>
+        <action>Type "wpkh([73c5da0a/84h/1h/0h]tpubDC8msFGeGuwnKG9Upg7DM2b4DaRqg3CUZa5g8v2SRQ6K4NSkxUgd7HsL2XVWbVm39yBA4LgAFKvDsdsBPzMw3RGYbjeMs9dGcTLeUw6f7c/0/*)" into the descriptor field (input_descriptor)</action>
+        <action>Tap the Update descriptor button (button_update_descriptor)</action>
+        <action>Verify the descriptors list shows the loaded descriptor or a confirmation, and the app has not crashed</action>
+    </actions>
+</journey>

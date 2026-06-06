@@ -1,0 +1,13 @@
+<journey name="Launch and sync">
+    <description>
+        Cold-launches the app and verifies the Node screen renders with live sync,
+        peer, and network information.
+    </description>
+    <actions>
+        <action>Launch the Mandacaru app</action>
+        <action>Verify the Node screen (screen_node) is displayed</action>
+        <action>Verify a sync progress percentage (node_sync_percentage) is displayed</action>
+        <action>Verify the number of peers (node_peer_count) is displayed</action>
+        <action>Verify the network name (node_network) is displayed</action>
+    </actions>
+</journey>

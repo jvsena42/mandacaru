@@ -1,0 +1,14 @@
+<journey name="Search transaction">
+    <description>
+        Looks up a transaction by id on the Transactions screen and verifies the app
+        handles the query without crashing (showing either a result or a not-found state).
+    </description>
+    <actions>
+        <action>Launch the Mandacaru app</action>
+        <action>Tap the Transactions navigation item (nav_transaction)</action>
+        <action>Verify the transaction id field (input_txid) is displayed</action>
+        <action>Tap the transaction id field (input_txid)</action>
+        <action>Type "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b" into the transaction id field (input_txid)</action>
+        <action>Verify the app shows a transaction result or a not-found message and has not crashed</action>
+    </actions>
+</journey>

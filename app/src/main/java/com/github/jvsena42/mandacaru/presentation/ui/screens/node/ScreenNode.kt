@@ -81,6 +81,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -271,6 +272,7 @@ fun ScreenNode(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .testTag("screen_node")
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.TopCenter,
     ) {
@@ -521,6 +523,7 @@ internal fun NetworkInfoCard(uiState: NodeUiState) {
             InfoRow(
                 label = stringResource(R.string.network),
                 value = uiState.network,
+                valueTestTag = "node_network",
                 icon = {
                     Icon(
                         Icons.Outlined.Cloud,
@@ -534,6 +537,7 @@ internal fun NetworkInfoCard(uiState: NodeUiState) {
             InfoRow(
                 label = stringResource(R.string.number_of_peers),
                 value = uiState.numberOfPeers,
+                valueTestTag = "node_peer_count",
                 icon = {
                     Icon(
                         Icons.Outlined.Person,
@@ -547,6 +551,7 @@ internal fun NetworkInfoCard(uiState: NodeUiState) {
             InfoRow(
                 label = stringResource(R.string.difficulty),
                 value = uiState.difficulty,
+                valueTestTag = "node_difficulty",
                 icon = {
                     Icon(
                         Icons.Outlined.Speed,
@@ -816,7 +821,8 @@ private fun SyncProgressTitleRow(titleRes: Int, percentageText: String?) {
                     percentageText,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.testTag("node_sync_percentage"),
                 )
             }
         }
@@ -1184,7 +1190,9 @@ internal fun PeerItem(
 
             IconButton(
                 onClick = onDisconnect,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier
+                    .size(32.dp)
+                    .testTag("node_disconnect_peer")
             ) {
                 Icon(
                     Icons.Outlined.LinkOff,
@@ -1248,6 +1256,7 @@ internal fun InfoRow(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
+    valueTestTag: String? = null,
     icon: @Composable (() -> Unit)? = null,
 ) {
     Row(
@@ -1272,7 +1281,8 @@ internal fun InfoRow(
             value.ifEmpty { "—" },
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = if (valueTestTag != null) Modifier.testTag(valueTestTag) else Modifier,
         )
     }
 }

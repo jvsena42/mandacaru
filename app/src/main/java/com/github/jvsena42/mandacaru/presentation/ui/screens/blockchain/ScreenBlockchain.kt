@@ -57,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -143,6 +144,7 @@ fun ScreenBlockchainContent(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .testTag("screen_blockchain")
                 .background(MaterialTheme.colorScheme.background)
                 .padding(contentPadding),
             contentAlignment = Alignment.TopCenter,
@@ -301,7 +303,8 @@ private fun ChainStatusCard(
                     uiState.blockCount.ifEmpty { "..." },
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.testTag("blockchain_block_height"),
                 )
             }
 
@@ -344,7 +347,9 @@ private fun ChainStatusCard(
 
             Button(
                 onClick = { onAction(BlockchainAction.SearchLatestBlock) },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("button_view_latest_block"),
                 enabled = uiState.bestBlockHash.isNotEmpty(),
             ) {
                 Text(stringResource(R.string.view_latest_block))
@@ -402,7 +407,9 @@ internal fun SearchCard(
                 keyboardActions = KeyboardActions(
                     onSearch = { focusManager.clearFocus() }
                 ),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("input_block")
             )
 
             Spacer(modifier = Modifier.height(4.dp))

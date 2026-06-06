@@ -82,6 +82,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -199,6 +200,7 @@ private fun ScreenSettings(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .testTag("screen_settings")
                 .background(MaterialTheme.colorScheme.background)
                 .padding(contentPadding),
             contentAlignment = Alignment.TopCenter,
@@ -349,7 +351,9 @@ private fun ScreenSettings(
                                 keyboardActions = KeyboardActions(
                                     onDone = { onAction(SettingsAction.OnClickUpdateDescriptor) }
                                 ),
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("input_descriptor")
                             )
 
                             Spacer(modifier = Modifier.height(8.dp))
@@ -376,7 +380,9 @@ private fun ScreenSettings(
                             Button(
                                 onClick = { onAction(SettingsAction.OnClickUpdateDescriptor) },
                                 enabled = !uiState.isLoading && uiState.descriptorText.isNotBlank(),
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("button_update_descriptor"),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
                                 Text(stringResource(R.string.update_descriptor))
@@ -479,6 +485,7 @@ private fun ScreenSettings(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .menuAnchor()
+                                        .testTag("input_network")
                                 )
 
                                 ExposedDropdownMenu(
@@ -487,6 +494,7 @@ private fun ScreenSettings(
                                 ) {
                                     uiState.network.forEach { network ->
                                         DropdownMenuItem(
+                                            modifier = Modifier.testTag("network_option_${network.name}"),
                                             text = { Text(network.name) },
                                             onClick = {
                                                 onAction(SettingsAction.OnNetworkSelected(network.name))
