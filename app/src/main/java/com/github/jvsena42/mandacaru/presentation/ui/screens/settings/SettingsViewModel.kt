@@ -55,6 +55,8 @@ class SettingsViewModel(
                 .getString(PreferenceKeys.WALLET_BIRTHDAY_YEAR, "")
                 .toIntOrNull()
                 ?: WalletBirthday.defaultYear()
+            val useAlsoMobileData = preferencesDataSource
+                .getBoolean(PreferenceKeys.USE_ALSO_MOBILE_DATA, false)
             _uiState.update {
                 it.copy(
                     selectedNetwork = preferencesDataSource.getString(
@@ -62,6 +64,7 @@ class SettingsViewModel(
                         FlorestaNetwork.BITCOIN.name
                     ),
                     walletBirthdayYear = birthdayYear,
+                    useAlsoMobileData = useAlsoMobileData,
                 )
             }
             updateElectrumAddress()
@@ -110,7 +113,7 @@ class SettingsViewModel(
         }
     }
 
-    @Suppress("CyclomaticComplexMethod")
+    @Suppress("CyclomaticComplexMethod", "LongMethod")
     fun onAction(action: SettingsAction) {
         when (action) {
             is SettingsAction.OnDescriptorChanged -> {
@@ -183,6 +186,24 @@ class SettingsViewModel(
             }
 
             SettingsAction.OnConfirmBirthdayRestart -> applyBirthdayYearAndRestart()
+            SettingsAction.ToggleDataUsageExpanded -> toggleDataUsageExpanded()
+            is SettingsAction.OnToggleMobileData -> handleMobileDataToggled(action)
+        }
+    }
+
+    private fun toggleDataUsageExpanded() = _uiState.update {
+        it.copy(isDataUsageExpanded = !it.isDataUsageExpanded)
+    }
+
+    private fun handleMobileDataToggled(action: SettingsAction.OnToggleMobileData) {
+        viewModelScope.launch(Dispatchers.IO) {
+            preferencesDataSource.setBoolean(
+                PreferenceKeys.USE_ALSO_MOBILE_DATA,
+                action.enabled
+            )
+            _uiState.update { it.copy(useAlsoMobileData = action.enabled, isLoading = true) }
+            delay(2.seconds)
+            viewModelScope.sendEvent(SettingsEvents.OnNetworkPolicyChanged)
         }
     }
 

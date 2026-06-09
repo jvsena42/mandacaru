@@ -14,6 +14,7 @@ import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
+import com.github.jvsena42.mandacaru.data.network.NetworkPolicyManager
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.floresta.UtreexoBridgeAutoConnect
 import com.github.jvsena42.mandacaru.domain.floresta.computeHeaderSyncProgress
@@ -27,6 +28,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -41,8 +43,11 @@ class FlorestaService : Service() {
     private val florestaRpc: FlorestaRpc by inject()
     private val utreexoBridgeAutoConnect: UtreexoBridgeAutoConnect by inject()
     private val preferencesDataSource: PreferencesDataSource by inject()
+    private val networkPolicyManager: NetworkPolicyManager by inject()
     private val isStopping = AtomicBoolean(false)
     private var notificationPollingJob: Job? = null
+    private var wifiStateJob: Job? = null
+    @Volatile private var waitingForWifi = false
     private var startupSeedDone = false
     private var fullySyncedSinceMs: Long? = null
     private val rescanInFlight = AtomicBoolean(false)
@@ -147,6 +152,7 @@ class FlorestaService : Service() {
                         florestaDaemon.start()
                     }
                     startNotificationPolling()
+                    observeWifiState()
                 } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
                     Log.e(TAG, "onStartCommand error: ", e)
                 }
@@ -154,6 +160,23 @@ class FlorestaService : Service() {
         }
 
         return START_STICKY
+    }
+
+    private fun observeWifiState() {
+        wifiStateJob?.cancel()
+        wifiStateJob = ioScope.launch {
+            networkPolicyManager.isWaitingForWifi.collect { waiting ->
+                waitingForWifi = waiting
+                if (waiting) {
+                    val notificationManager =
+                        getSystemService(NotificationManager::class.java)
+                    notificationManager?.notify(
+                        FLORESTA_NOTIFICATION_ID,
+                        createWaitingForWifiNotification()
+                    )
+                }
+            }
+        }
     }
 
     private fun startNotificationPolling() {
@@ -266,6 +289,14 @@ class FlorestaService : Service() {
     ) {
         val notificationManager = getSystemService(NotificationManager::class.java) ?: return
 
+        if (waitingForWifi) {
+            notificationManager.notify(
+                FLORESTA_NOTIFICATION_ID,
+                createWaitingForWifiNotification()
+            )
+            return
+        }
+
         val openAppIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
@@ -358,6 +389,7 @@ class FlorestaService : Service() {
         }
         Log.d(TAG, "stopServiceAndExitApp called")
         notificationPollingJob?.cancel()
+        wifiStateJob?.cancel()
 
         // Update notification to show shutdown in progress
         val notificationManager = getSystemService(NotificationManager::class.java)
@@ -392,6 +424,37 @@ class FlorestaService : Service() {
         }
     }
 
+    private fun createWaitingForWifiNotification(): Notification {
+        val openAppIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val openAppPendingIntent = PendingIntent.getActivity(
+            this, 0, openAppIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val stopIntent = Intent(this, FlorestaService::class.java).apply {
+            action = ACTION_STOP_SERVICE
+        }
+        val stopPendingIntent = PendingIntent.getService(
+            this, 1, stopIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Mandacaru")
+            .setContentText(getString(R.string.waiting_for_wifi))
+            .setSubText(getString(R.string.waiting_for_wifi_subtitle))
+            .setSmallIcon(R.drawable.ic_notification)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setAutoCancel(false)
+            .setOngoing(true)
+            .setColor(COLOR_PRIMARY.toColorInt())
+            .setColorized(true)
+            .setContentIntent(openAppPendingIntent)
+            .addAction(R.drawable.ic_x, "Stop", stopPendingIntent)
+            .build()
+    }
+
     private fun createStoppingNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Mandacaru")
@@ -412,6 +475,7 @@ class FlorestaService : Service() {
         super.onDestroy()
         Log.d(TAG, "onDestroy called")
         notificationPollingJob?.cancel()
+        wifiStateJob?.cancel()
         if (isStopping.compareAndSet(false, true)) {
             // Only stop daemon here if stopServiceAndExitApp wasn't called
             runBlocking(Dispatchers.IO) {

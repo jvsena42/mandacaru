@@ -12,5 +12,6 @@ enum class PreferenceKeys(val dataStoreKey: Preferences.Key<String>) {
     UPDATE_LAST_CHECK(stringPreferencesKey("UPDATE_LAST_CHECK")),
     UPDATE_LATEST_VERSION(stringPreferencesKey("UPDATE_LATEST_VERSION")),
     UPDATE_LATEST_APK_URL(stringPreferencesKey("UPDATE_LATEST_APK_URL")),
-    UPDATE_SEEN_VERSION(stringPreferencesKey("UPDATE_SEEN_VERSION"))
+    UPDATE_SEEN_VERSION(stringPreferencesKey("UPDATE_SEEN_VERSION")),
+    USE_ALSO_MOBILE_DATA(stringPreferencesKey("USE_ALSO_MOBILE_DATA"))
 }

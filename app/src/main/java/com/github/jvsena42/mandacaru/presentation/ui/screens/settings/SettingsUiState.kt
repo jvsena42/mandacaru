@@ -31,4 +31,6 @@ data class SettingsUiState(
     val isRescanning: Boolean = false,
     val rescanBlocksProcessed: Int? = null,
     val rescanBlocksTotal: Int? = null,
+    val useAlsoMobileData: Boolean = false,
+    val isDataUsageExpanded: Boolean = false,
 )

@@ -43,6 +43,7 @@ import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.NetworkCheck
+import androidx.compose.material.icons.outlined.DataUsage
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Wallet
@@ -66,6 +67,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -129,6 +131,7 @@ fun ScreenSettings(
         viewModel.eventFlow.collect { event ->
             when (event) {
                 is SettingsEvents.OnNetworkChanged -> currentRestartApplication()
+                is SettingsEvents.OnNetworkPolicyChanged -> currentRestartApplication()
                 is SettingsEvents.OnBirthdayChanged -> currentRestartApplication()
                 is SettingsEvents.OnExportLogs -> {
                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
@@ -501,6 +504,59 @@ private fun ScreenSettings(
                                         )
                                     }
                                 }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                )
+                            ) {
+                                Text(
+                                    stringResource(R.string.the_application_will_be_restarted_to_update_the_network),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.padding(12.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Data usage Section
+                item {
+                    SectionCard(
+                        title = stringResource(R.string.data_usage),
+                        icon = Icons.Outlined.DataUsage,
+                        isExpanded = uiState.isDataUsageExpanded,
+                        onToggle = { onAction(SettingsAction.ToggleDataUsageExpanded) },
+                        modifier = Modifier.animateItem(),
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.also_use_mobile_data),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.also_use_mobile_data_subtitle),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                Switch(
+                                    checked = uiState.useAlsoMobileData,
+                                    onCheckedChange = { onAction(SettingsAction.OnToggleMobileData(it)) },
+                                    modifier = Modifier
+                                        .padding(start = 12.dp)
+                                        .testTag("toggle_mobile_data"),
+                                )
                             }
 
                             Spacer(modifier = Modifier.height(12.dp))

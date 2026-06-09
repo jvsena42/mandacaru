@@ -12,6 +12,7 @@ import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.data.PreferencesDataSourceImpl
 import com.github.jvsena42.mandacaru.data.floresta.FlorestaDaemonImpl
 import com.github.jvsena42.mandacaru.data.floresta.FlorestaRpcImpl
+import com.github.jvsena42.mandacaru.data.network.NetworkPolicyManager
 import com.github.jvsena42.mandacaru.data.update.AppUpdateRepositoryImpl
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.floresta.UtreexoBridgeAutoConnect
@@ -28,6 +29,7 @@ import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.SettingsVi
 import com.google.gson.Gson
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
+import org.koin.android.ext.android.inject
 import org.koin.core.context.startKoin
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -40,6 +42,8 @@ val Context.florestaDataStore: DataStore<Preferences> by preferencesDataStore(
 )
 
 class MandacaruApplication : Application() {
+    private val networkPolicyManager: NetworkPolicyManager by inject()
+
     override fun onCreate() {
         super.onCreate()
         startKoin {
@@ -50,6 +54,9 @@ class MandacaruApplication : Application() {
                 dataModule
             )
         }
+        // Bind the process network before the service starts the daemon, so the
+        // very first peer socket already respects the WiFi-only policy.
+        networkPolicyManager.apply()
     }
 }
 
@@ -60,6 +67,7 @@ val presentationModule = module {
             snapshotService = get(),
             florestaDaemon = get(),
             preferencesDataSource = get(),
+            networkPolicyManager = get(),
         )
     }
     viewModel {
@@ -95,6 +103,12 @@ val dataModule = module {
     single<PreferencesDataSource> {
         PreferencesDataSourceImpl(
             dataStore = androidContext().florestaDataStore
+        )
+    }
+    single {
+        NetworkPolicyManager(
+            context = androidContext(),
+            preferencesDataSource = get()
         )
     }
     single { UtreexoBridgeAutoConnect(florestaRpc = get(), preferencesDataSource = get()) }

@@ -39,6 +39,11 @@
     <string name="node_address_error_invalid_port">Invalid port. Must be between 1 and 65535.</string>
     <string name="select_a_network">Select a network</string>
     <string name="the_application_will_be_restarted_to_update_the_network">The application will be restarted to update the network</string>
+    <string name="data_usage">Data usage</string>
+    <string name="also_use_mobile_data">Also use mobile data</string>
+    <string name="also_use_mobile_data_subtitle">When off, the node syncs only over Wi-Fi to avoid using mobile data</string>
+    <string name="waiting_for_wifi">Waiting for Wi-Fi</string>
+    <string name="waiting_for_wifi_subtitle">Sync paused — connect to Wi-Fi or allow mobile data in Settings</string>
     <string name="validated_blocks">Validated Blocks</string>
     <string name="descriptors">Descriptors</string>
     <string name="no_descriptors_loaded">No descriptors loaded yet</string>

@@ -8,6 +8,7 @@ import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.data.floresta.toFlorestaNetwork
+import com.github.jvsena42.mandacaru.data.network.NetworkPolicyManager
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.floresta.UtreexoSnapshotService
 import com.github.jvsena42.mandacaru.domain.floresta.computeHeaderSyncProgress
@@ -23,6 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -34,6 +36,7 @@ class NodeViewModel(
     private val snapshotService: UtreexoSnapshotService,
     private val florestaDaemon: FlorestaDaemon,
     private val preferencesDataSource: PreferencesDataSource,
+    private val networkPolicyManager: NetworkPolicyManager,
 ) : ViewModel(), EventFlow<NodeEvents> by EventFlowImpl() {
 
     private val _uiState = MutableStateFlow(NodeUiState())
@@ -41,6 +44,11 @@ class NodeViewModel(
 
     init {
         getInLoop()
+        viewModelScope.launch {
+            networkPolicyManager.isWaitingForWifi.collect { waiting ->
+                _uiState.update { it.copy(isWaitingForWifi = waiting) }
+            }
+        }
     }
 
     private fun getInLoop() {

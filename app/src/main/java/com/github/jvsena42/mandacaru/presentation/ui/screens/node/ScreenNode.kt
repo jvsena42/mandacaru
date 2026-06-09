@@ -57,6 +57,7 @@ import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.LinkOff
 import androidx.compose.material.icons.outlined.NetworkPing
 import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material.icons.outlined.WifiOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -149,31 +150,89 @@ fun ScreenNode(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0),
     ) { padding ->
-        ScreenNode(
-            uiState = uiState,
-            modifier = Modifier.padding(padding),
-            bottomContentPadding = bottomContentPadding,
-            onTogglePeers = viewModel::togglePeersExpanded,
-            onToggleDiagnostics = viewModel::toggleDiagnosticsExpanded,
-            onDisconnectPeer = viewModel::disconnectPeer,
-            onPingPeers = viewModel::pingPeers,
-            onClickScan = viewModel::onClickScan,
-            onClickPaste = viewModel::onClickPaste,
-            onDismissScanSheet = viewModel::onDismissScanSheet,
-            onDismissPasteSheet = viewModel::onDismissPasteSheet,
-            onAccumulatorReceived = viewModel::onAccumulatorReceived,
-            onDismissImportConfirm = viewModel::onDismissImportConfirm,
-            onConfirmImport = viewModel::onConfirmImport,
-            onToggleImportCard = viewModel::toggleImportCardExpanded,
-            onToggleExportCard = viewModel::toggleExportCardExpanded,
-            onClickShowExportQr = viewModel::onClickShowExportQr,
-            onClickCopyExport = {
-                viewModel.onClickCopyExport()
-                uiState.exportPayload?.let { clipboard.setText(AnnotatedString(it)) }
-            },
-            onClickShareExport = viewModel::onClickShareExport,
-            onDismissExportQrSheet = viewModel::onDismissExportQrSheet,
+        // Match the inner content's adaptive width/padding so the banner lines
+        // up with the centered, width-capped layout on tablets instead of
+        // spanning full-bleed above it.
+        val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+        val isMediumOrWider = windowSizeClass.isWidthAtLeastBreakpoint(
+            WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND
         )
+        val isExpandedWidth = windowSizeClass.isWidthAtLeastBreakpoint(
+            WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND
+        )
+        val bannerHorizontalPadding = when {
+            isExpandedWidth -> 32.dp
+            isMediumOrWider -> 24.dp
+            else -> 16.dp
+        }
+        // The expanded (tablet) dashboard fills the full pager width, while the
+        // compact/medium layouts cap and center their content; mirror that so the
+        // banner always spans the same width as the content beneath it.
+        val bannerWidth = if (isExpandedWidth) {
+            Modifier.fillMaxWidth()
+        } else {
+            Modifier
+                .widthIn(max = if (isMediumOrWider) 1200.dp else 600.dp)
+                .fillMaxWidth()
+        }
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            if (uiState.isWaitingForWifi) {
+                Card(
+                    modifier = bannerWidth
+                        .padding(horizontal = bannerHorizontalPadding, vertical = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.WifiOff,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = stringResource(R.string.waiting_for_wifi),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                        )
+                    }
+                }
+            }
+            ScreenNode(
+                uiState = uiState,
+                modifier = Modifier.weight(1f),
+                bottomContentPadding = bottomContentPadding,
+                onTogglePeers = viewModel::togglePeersExpanded,
+                onToggleDiagnostics = viewModel::toggleDiagnosticsExpanded,
+                onDisconnectPeer = viewModel::disconnectPeer,
+                onPingPeers = viewModel::pingPeers,
+                onClickScan = viewModel::onClickScan,
+                onClickPaste = viewModel::onClickPaste,
+                onDismissScanSheet = viewModel::onDismissScanSheet,
+                onDismissPasteSheet = viewModel::onDismissPasteSheet,
+                onAccumulatorReceived = viewModel::onAccumulatorReceived,
+                onDismissImportConfirm = viewModel::onDismissImportConfirm,
+                onConfirmImport = viewModel::onConfirmImport,
+                onToggleImportCard = viewModel::toggleImportCardExpanded,
+                onToggleExportCard = viewModel::toggleExportCardExpanded,
+                onClickShowExportQr = viewModel::onClickShowExportQr,
+                onClickCopyExport = {
+                    viewModel.onClickCopyExport()
+                    uiState.exportPayload?.let { clipboard.setText(AnnotatedString(it)) }
+                },
+                onClickShareExport = viewModel::onClickShareExport,
+                onDismissExportQrSheet = viewModel::onDismissExportQrSheet,
+            )
+        }
     }
 }
 

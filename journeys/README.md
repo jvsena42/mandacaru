@@ -104,6 +104,11 @@ when adding or renaming a tag.
 | `input_descriptor`          | wallet descriptor field                |
 | `button_update_descriptor`  | "Update descriptor"                    |
 | `input_network`             | network selector field                 |
+| `toggle_mobile_data`        | "Also use mobile data" switch          |
+
+The Data usage section's `toggle_mobile_data` switch is off by default (Wi-Fi only);
+turning it on persists the preference and restarts the app. Expand the "Data usage"
+section by text before asserting on it.
 
 Tapping `input_network` opens the network dropdown. Its options are **targeted by text**
 (`BITCOIN`, `SIGNET`, `TESTNET`, `REGTEST`, `TESTNET4`) — see the popup caveat below.

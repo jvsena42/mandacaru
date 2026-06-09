@@ -24,4 +24,6 @@ sealed interface SettingsAction {
     object OnDismissBirthdayPicker: SettingsAction
     object OnConfirmBirthdayRestart: SettingsAction
     object OnCancelBirthdayRestart: SettingsAction
+    object ToggleDataUsageExpanded: SettingsAction
+    data class OnToggleMobileData(val enabled: Boolean): SettingsAction
 }

@@ -43,4 +43,5 @@ data class NodeUiState(
     val exportPayload: String? = null,
     val snapshotMessage: String? = null,
     val isApplyingSnapshot: Boolean = false,
+    val isWaitingForWifi: Boolean = false,
 )
