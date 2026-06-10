@@ -242,7 +242,10 @@ class NodeViewModel(
         if (text.isEmpty()) return
         viewModelScope.launch(Dispatchers.IO) {
             snapshotService.validate(text, currentNetwork()).onSuccess {
-                _uiState.update { it.copy(clipboardImportPayload = text) }
+                val preview = snapshotService.peek(text).getOrNull() ?: return@onSuccess
+                if (preview.height > _uiState.value.validatedBLocks) {
+                    _uiState.update { it.copy(clipboardImportPayload = text) }
+                }
             }
         }
     }
