@@ -19,9 +19,9 @@
         <action>Relaunch the app (cold start) and wait until nav_node is present</action>
         <action>Verify an "Accumulator found on clipboard" snackbar with an "Import" action is shown (target by text); if no payload could be set, SKIP this step</action>
         <action>Tap the "Import" action on the snackbar (by text)</action>
-        <action>Verify the paste sheet opens with its payload field pre-filled (the snapshot text is visible in the sheet)</action>
-        <action>Dismiss the sheet by tapping "Cancel" (by text)</action>
-        <action>Open the import card on the Node screen and tap its "Paste" entry to reopen the paste sheet</action>
+        <action>Verify the import confirmation dialog opens directly (the paste sheet is skipped), showing the snapshot network and height</action>
+        <action>Dismiss the confirmation dialog (by text)</action>
+        <action>Open the import card on the Node screen and tap its "Paste" entry to open the paste sheet</action>
         <action>Tap the "Paste from clipboard" button inside the sheet (by text)</action>
         <action>Verify the payload field becomes populated (valid clipboard) or an inline error "Clipboard does not contain a valid accumulator" is shown (empty/invalid clipboard), and the app has not crashed</action>
         <action>Tap the "Import" button (by text) and verify the import confirmation dialog appears showing the snapshot network and height</action>

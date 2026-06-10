@@ -250,14 +250,8 @@ class NodeViewModel(
     fun onAcceptClipboardHint() {
         val payload = _uiState.value.clipboardImportPayload ?: return
         if (!_uiState.value.ibd) return
-        _uiState.update {
-            it.copy(
-                isPasteSheetOpen = true,
-                pasteSheetText = payload,
-                pasteSheetError = null,
-                clipboardImportPayload = null,
-            )
-        }
+        _uiState.update { it.copy(clipboardImportPayload = null) }
+        onAccumulatorReceived(payload)
     }
 
     fun onDismissClipboardHint() {
