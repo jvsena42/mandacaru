@@ -5,21 +5,30 @@
         camera), submits a wallet descriptor, confirms it in the confirmation dialog, and
         verifies the descriptor list updates without the app crashing.
 
+        IMPORTANT — network match: a descriptor only loads if its extended key matches the
+        node's network. A mainnet node (chain "bitcoin") rejects a testnet `tpub`, and vice
+        versa, with an "Invalid descriptor … Error while parsing xkey" snackbar. So this
+        journey first reads the node's network and then types a network-appropriate
+        descriptor. Mainnet uses the `xpub` descriptor below; signet/testnet/testnet4/
+        regtest all use the `tpub` descriptor below.
+
         Camera-dependent steps are SKIPPABLE when the device has no camera. The paste
         fallback inside the sheet and the confirmation dialog are rendered in separate
         windows, so their controls are targeted by visible text, not testTag.
     </description>
     <actions>
         <action>Launch the Mandacaru app and wait for the splash screen to dismiss (poll until nav_node is present)</action>
+        <action>Tap the Node Info navigation item (nav_node) and read the node's network from node_network (e.g. "bitcoin", "signet", "testnet"); remember it for the descriptor choice below</action>
         <action>Tap the Settings navigation item (nav_settings)</action>
         <action>Expand the Descriptors section if it is collapsed</action>
         <action>Tap the Scan QR button (button_scan_descriptor)</action>
-        <action>Verify the descriptor scan sheet opens — either a camera preview or, if camera permission is denied/unavailable, a "Camera permission is required" fallback (SKIPPABLE: depends on device camera)</action>
+        <action>If a camera permission dialog appears, grant it (tap Allow). Then verify the descriptor scan sheet opens — a camera preview titled "Scan wallet descriptor", or, if camera permission is denied/unavailable, a "Camera permission is required" fallback (SKIPPABLE: depends on device camera)</action>
         <action>Tap the "Paste instead" button (target by text) to switch the sheet to paste mode</action>
-        <action>Tap the paste text field and type "wpkh([73c5da0a/84h/1h/0h]tpubDC8msFGeGuwnKG9Upg7DM2b4DaRqg3CUZa5g8v2SRQ6K4NSkxUgd7HsL2XVWbVm39yBA4LgAFKvDsdsBPzMw3RGYbjeMs9dGcTLeUw6f7c/0/*)"</action>
+        <action>Tap the paste text field. If the node's network is mainnet ("bitcoin"), type "wpkh([abcd1234/84h/0h/0h]xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj/0/*)". Otherwise (signet/testnet/testnet4/regtest) type "wpkh([73c5da0a/84h/1h/0h]tpubDC8msFGeGuwnKG9Upg7DM2b4DaRqg3CUZa5g8v2SRQ6K4NSkxUgd7HsL2XVWbVm39yBA4LgAFKvDsdsBPzMw3RGYbjeMs9dGcTLeUw6f7c/0/*)"</action>
+        <action>Dismiss the soft keyboard if it covers the buttons (press Back once — this only hides the keyboard, it does not close the sheet)</action>
         <action>Tap the "Decode" button (target by text) to submit the pasted descriptor</action>
-        <action>Verify a confirmation dialog appears showing the decoded descriptor and a detected script type (e.g. "Native SegWit") (target by text)</action>
+        <action>Verify a confirmation dialog appears titled "Load this descriptor?" showing a detected script type ("Native SegWit (P2WPKH)"), the fingerprint, the derivation path, and the full descriptor (target by text)</action>
         <action>Tap the "Load" button in the confirmation dialog (target by text)</action>
-        <action>Verify the descriptors list shows the loaded descriptor or a confirmation snackbar, and the app has not crashed</action>
+        <action>Verify the Descriptors list now shows the loaded descriptor (a wpkh(...) entry) and the app has not crashed</action>
     </actions>
 </journey>
