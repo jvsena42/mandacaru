@@ -26,12 +26,12 @@ import kotlinx.coroutines.runBlocking
 class NetworkPolicyManager(
     context: Context,
     private val preferencesDataSource: PreferencesDataSource,
-) {
+) : NetworkPolicy {
     private val connectivityManager =
         context.getSystemService(ConnectivityManager::class.java)
 
     private val _isWaitingForWifi = MutableStateFlow(false)
-    val isWaitingForWifi: StateFlow<Boolean> = _isWaitingForWifi.asStateFlow()
+    override val isWaitingForWifi: StateFlow<Boolean> = _isWaitingForWifi.asStateFlow()
 
     private var wifiCallback: ConnectivityManager.NetworkCallback? = null
 
@@ -41,7 +41,7 @@ class NetworkPolicyManager(
      * so existing daemon sockets are torn down, but re-applying keeps the
      * callback in a single, correct state.
      */
-    fun apply() {
+    override fun apply() {
         val allowMobileData = runBlocking {
             preferencesDataSource.getBoolean(PreferenceKeys.USE_ALSO_MOBILE_DATA, false)
         }

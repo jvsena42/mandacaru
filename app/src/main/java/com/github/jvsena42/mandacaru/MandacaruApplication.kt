@@ -12,6 +12,7 @@ import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.data.PreferencesDataSourceImpl
 import com.github.jvsena42.mandacaru.data.floresta.FlorestaDaemonImpl
 import com.github.jvsena42.mandacaru.data.floresta.FlorestaRpcImpl
+import com.github.jvsena42.mandacaru.data.network.NetworkPolicy
 import com.github.jvsena42.mandacaru.data.network.NetworkPolicyManager
 import com.github.jvsena42.mandacaru.data.update.AppUpdateRepositoryImpl
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
@@ -32,6 +33,7 @@ import org.koin.android.ext.koin.androidLogger
 import org.koin.android.ext.android.inject
 import org.koin.core.context.startKoin
 import org.koin.core.module.dsl.viewModel
+import org.koin.dsl.bind
 import org.koin.dsl.module
 
 val Context.florestaDataStore: DataStore<Preferences> by preferencesDataStore(
@@ -110,7 +112,7 @@ val dataModule = module {
             context = androidContext(),
             preferencesDataSource = get()
         )
-    }
+    } bind NetworkPolicy::class
     single { UtreexoBridgeAutoConnect(florestaRpc = get(), preferencesDataSource = get()) }
     single { UtreexoSnapshotService(daemon = get()) }
     factory<QrTransactionScanner> { DefaultQrTransactionScanner() }

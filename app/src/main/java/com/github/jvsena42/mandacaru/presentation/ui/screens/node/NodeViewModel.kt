@@ -8,7 +8,7 @@ import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.data.floresta.toFlorestaNetwork
-import com.github.jvsena42.mandacaru.data.network.NetworkPolicyManager
+import com.github.jvsena42.mandacaru.data.network.NetworkPolicy
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.floresta.UtreexoSnapshotService
 import com.github.jvsena42.mandacaru.domain.floresta.computeHeaderSyncProgress
@@ -20,6 +20,7 @@ import com.github.jvsena42.mandacaru.presentation.utils.HexUtils
 import com.github.jvsena42.mandacaru.presentation.utils.SnapshotCodec
 import com.github.jvsena42.mandacaru.presentation.utils.toHumanReadableDifficulty
 import com.github.jvsena42.mandacaru.presentation.utils.toSyncPercentageString
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,7 +38,8 @@ class NodeViewModel(
     private val snapshotService: UtreexoSnapshotService,
     private val florestaDaemon: FlorestaDaemon,
     private val preferencesDataSource: PreferencesDataSource,
-    private val networkPolicyManager: NetworkPolicyManager,
+    private val networkPolicyManager: NetworkPolicy,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel(), EventFlow<NodeEvents> by EventFlowImpl() {
 
     private val _uiState = MutableStateFlow(NodeUiState())
@@ -53,7 +55,7 @@ class NodeViewModel(
     }
 
     private fun getInLoop() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(ioDispatcher) {
             getInfo()
             delay(10.seconds)
             getInLoop()
@@ -61,7 +63,7 @@ class NodeViewModel(
     }
 
     private fun getInfo() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(ioDispatcher) {
             florestaRpc.getBlockchainInfo().collect { result ->
                 result.onSuccess { data ->
                     val filterHeight = data.result.filters
@@ -141,7 +143,7 @@ class NodeViewModel(
     }
 
     fun disconnectPeer(address: String) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(ioDispatcher) {
             florestaRpc.disconnectNode(address).collect { result ->
                 result.onSuccess { updatePeerInfo() }
                 result.onFailure { e ->
@@ -152,7 +154,7 @@ class NodeViewModel(
     }
 
     fun pingPeers() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(ioDispatcher) {
             florestaRpc.ping().collect { result ->
                 result.onFailure { e -> Log.e(TAG, "ping failure: ${e.message}") }
             }
@@ -222,7 +224,7 @@ class NodeViewModel(
             _uiState.update { it.copy(pasteSheetError = CLIPBOARD_INVALID_MESSAGE) }
             return
         }
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(ioDispatcher) {
             val currentNetworkEnum = currentNetwork()
             snapshotService.validate(text, currentNetworkEnum)
                 .onSuccess {
@@ -240,7 +242,7 @@ class NodeViewModel(
         if (!_uiState.value.ibd) return
         val text = clip?.trim().orEmpty()
         if (text.isEmpty()) return
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(ioDispatcher) {
             snapshotService.validate(text, currentNetwork()).onSuccess {
                 val preview = snapshotService.peek(text).getOrNull() ?: return@onSuccess
                 if (preview.height > _uiState.value.validatedBLocks) {
@@ -271,7 +273,7 @@ class NodeViewModel(
                 pasteSheetError = null,
             )
         }
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(ioDispatcher) {
             val currentNetworkEnum = currentNetwork()
             snapshotService.validate(payload, currentNetworkEnum).onFailure { error ->
                 _uiState.update {
@@ -309,7 +311,7 @@ class NodeViewModel(
                 pendingSnapshotPayload = null,
             )
         }
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(ioDispatcher) {
             Log.i(
                 TAG,
                 "onConfirmImport: payload len=${payload.length} " +
@@ -407,7 +409,7 @@ class NodeViewModel(
             then(cached)
             return
         }
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(ioDispatcher) {
             snapshotService.dump()
                 .onSuccess { then(it) }
                 .onFailure { error ->

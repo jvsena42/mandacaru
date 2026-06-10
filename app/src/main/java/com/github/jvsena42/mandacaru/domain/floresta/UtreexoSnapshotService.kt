@@ -14,13 +14,13 @@ data class SnapshotPreview(
     val rootCount: Int,
 )
 
-class UtreexoSnapshotService(
+open class UtreexoSnapshotService(
     private val daemon: FlorestaDaemon,
 ) {
-    suspend fun dump(): Result<String> =
+    open suspend fun dump(): Result<String> =
         daemon.dumpUtreexoState().mapCatching { SnapshotCodec.encodeCompact(it) }
 
-    suspend fun validate(payload: String, expectedNetwork: Network) =
+    open suspend fun validate(payload: String, expectedNetwork: Network) =
         withContext(Dispatchers.IO) {
             runCatching {
                 val json = SnapshotCodec.normalizeToJson(payload)
@@ -28,7 +28,7 @@ class UtreexoSnapshotService(
             }
         }
 
-    fun peek(payload: String): Result<SnapshotPreview> = runCatching {
+    open fun peek(payload: String): Result<SnapshotPreview> = runCatching {
         val obj = JSONObject(SnapshotCodec.normalizeToJson(payload))
         val network = networkTagToEnum(obj.getString(KEY_NETWORK))
             ?: error("Unknown network tag")

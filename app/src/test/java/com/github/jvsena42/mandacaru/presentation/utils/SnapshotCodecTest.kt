@@ -177,4 +177,35 @@ class SnapshotCodecTest {
             SnapshotCodec.encodeCompact(json)
         }
     }
+
+    @Test
+    fun `maximum 63 roots round-trips`() {
+        val roots = (0 until 63).map { String.format("%064x", it.toLong()) }
+        val json = sampleJson(roots = roots)
+        val back = SnapshotCodec.normalizeToJson(SnapshotCodec.encodeCompact(json))
+        assertJsonEquivalent(json, back)
+    }
+
+    @Test
+    fun `more than 63 roots is rejected`() {
+        val roots = (0 until 64).map { String.format("%064x", it.toLong()) }
+        assertThrows(IllegalArgumentException::class.java) {
+            SnapshotCodec.encodeCompact(sampleJson(roots = roots))
+        }
+    }
+
+    @Test
+    fun `height at the u32 maximum round-trips`() {
+        val json = sampleJson(height = 0xFFFF_FFFFL)
+        val back = SnapshotCodec.normalizeToJson(SnapshotCodec.encodeCompact(json))
+        assertEquals(0xFFFF_FFFFL, JSONObject(back).getLong("height"))
+    }
+
+    @Test
+    fun `height above the u32 maximum is rejected`() {
+        val json = sampleJson(height = 0x1_0000_0000L)
+        assertThrows(IllegalArgumentException::class.java) {
+            SnapshotCodec.encodeCompact(json)
+        }
+    }
 }

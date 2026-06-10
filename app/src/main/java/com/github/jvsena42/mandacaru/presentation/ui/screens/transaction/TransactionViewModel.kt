@@ -7,6 +7,7 @@ import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.domain.scan.QrTransactionScanner
 import com.github.jvsena42.mandacaru.domain.scan.ScanState
 import com.github.jvsena42.mandacaru.domain.scan.TransactionDecoder
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -21,6 +22,7 @@ class TransactionViewModel(
     private val florestaRpc: FlorestaRpc,
     private val qrScanner: QrTransactionScanner,
     private val transactionDecoder: TransactionDecoder,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TransactionUiState())
@@ -94,7 +96,7 @@ class TransactionViewModel(
 
     private fun decodePayload(complete: ScanState.Complete) {
         _uiState.update { it.copy(isDecoding = true, scanError = "") }
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(ioDispatcher) {
             transactionDecoder.decode(complete.payload, complete.transport)
                 .onSuccess { decoded ->
                     _uiState.update {
@@ -125,7 +127,7 @@ class TransactionViewModel(
 
     private fun debouncedSearch() {
         searchJob?.cancel()
-        searchJob = viewModelScope.launch(Dispatchers.IO) {
+        searchJob = viewModelScope.launch(ioDispatcher) {
             delay(500.milliseconds)
 
             val txId = _uiState.value.transactionId.trim()
@@ -197,7 +199,7 @@ class TransactionViewModel(
 
         _uiState.update { it.copy(isBroadcasting = true, broadcastResult = "") }
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(ioDispatcher) {
             florestaRpc.sendRawTransaction(hex).collect { result ->
                 result.onSuccess { data ->
                     Log.d(TAG, "broadcast success: ${data.result}")
