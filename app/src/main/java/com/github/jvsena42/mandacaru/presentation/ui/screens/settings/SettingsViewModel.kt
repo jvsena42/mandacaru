@@ -12,6 +12,8 @@ import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.AddNodeCommand
+import com.github.jvsena42.mandacaru.domain.scan.DescriptorQrScanner
+import com.github.jvsena42.mandacaru.domain.scan.DescriptorScanState
 import com.github.jvsena42.mandacaru.presentation.utils.DescriptorUtils
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlowImpl
@@ -39,6 +41,7 @@ class SettingsViewModel(
     private val florestaRpc: FlorestaRpc,
     private val preferencesDataSource: PreferencesDataSource,
     private val appUpdateRepository: AppUpdateRepository,
+    private val descriptorScanner: DescriptorQrScanner,
     @field:SuppressLint("StaticFieldLeak") private val context: Context,
 ) : ViewModel(), EventFlow<SettingsEvents> by EventFlowImpl() {
 
@@ -46,6 +49,7 @@ class SettingsViewModel(
     val uiState = _uiState.asStateFlow()
 
     private var nodeAddressValidationJob: Job? = null
+    private var descriptorScanErrorJob: Job? = null
     private var rescanPollJob: Job? = null
     private var wasRescanning = false
 
@@ -123,6 +127,14 @@ class SettingsViewModel(
             }
 
             is SettingsAction.OnClickUpdateDescriptor -> updateDescriptor()
+
+            SettingsAction.OnClickScanDescriptor -> openDescriptorScanner()
+            SettingsAction.OnDismissDescriptorScanner -> closeDescriptorScanner()
+            is SettingsAction.OnDescriptorQrFrameScanned -> handleDescriptorFrame(action.raw)
+            SettingsAction.OnConfirmScannedDescriptor -> confirmScannedDescriptor()
+            SettingsAction.OnDismissScannedDescriptor -> _uiState.update {
+                it.copy(pendingScannedDescriptor = null)
+            }
 
             SettingsAction.OnClickRescan -> rescan()
             SettingsAction.ClearSnackBarMessage -> _uiState.update { it.copy(snackBarMessage = "") }
@@ -351,8 +363,12 @@ class SettingsViewModel(
     }
 
     private fun updateDescriptor() {
-        val input = _uiState.value.descriptorText
+        loadDescriptorString(_uiState.value.descriptorText) {
+            _uiState.update { it.copy(descriptorText = "") }
+        }
+    }
 
+    private fun loadDescriptorString(input: String, onSuccess: () -> Unit = {}) {
         if (DescriptorUtils.isPrivateKey(input)) {
             _uiState.update {
                 it.copy(snackBarMessage = "Private keys are not supported. Please use a public key (xpub, zpub, etc.) or a full descriptor.")
@@ -370,17 +386,87 @@ class SettingsViewModel(
                         // service re-scans once filters reach the tip, picking up
                         // history in blocks downloaded after this point.
                         preferencesDataSource.setBoolean(PreferenceKeys.WALLET_NEEDS_RESCAN, true)
-                        _uiState.update { it.copy(descriptorText = "", snackBarMessage = "Descriptor loaded successfully") }
+                        onSuccess()
+                        _uiState.update { it.copy(snackBarMessage = "Descriptor loaded successfully") }
                         getDescriptors()
-                        Log.d(TAG, "updateDescriptor: Success: $data")
+                        Log.d(TAG, "loadDescriptorString: Success: $data")
                     }.onFailure { error ->
-                        Log.d(TAG, "updateDescriptor: Fail: ${error.message}")
+                        Log.d(TAG, "loadDescriptorString: Fail: ${error.message}")
                         _uiState.update { it.copy(snackBarMessage = error.message.toString()) }
                     }
 
                     delay(2.seconds)
                     _uiState.update { it.copy(isLoading = false) }
                 }
+        }
+    }
+
+    private fun openDescriptorScanner() {
+        descriptorScanErrorJob?.cancel()
+        descriptorScanner.reset()
+        _uiState.update {
+            it.copy(
+                isDescriptorScanSheetOpen = true,
+                descriptorScanProgress = 0f,
+                descriptorScanError = "",
+                pendingScannedDescriptor = null,
+            )
+        }
+    }
+
+    private fun closeDescriptorScanner() {
+        descriptorScanErrorJob?.cancel()
+        descriptorScanner.reset()
+        _uiState.update {
+            it.copy(
+                isDescriptorScanSheetOpen = false,
+                descriptorScanProgress = 0f,
+                descriptorScanError = "",
+            )
+        }
+    }
+
+    private fun handleDescriptorFrame(raw: String) {
+        val current = _uiState.value
+        if (current.pendingScannedDescriptor != null || current.descriptorScanError.isNotEmpty()) return
+        when (val state = descriptorScanner.ingest(raw)) {
+            is DescriptorScanState.Idle -> Unit
+            is DescriptorScanState.InProgress -> _uiState.update {
+                it.copy(descriptorScanProgress = state.progress, descriptorScanError = "")
+            }
+            is DescriptorScanState.Error -> showDescriptorScanError(state.reason)
+            is DescriptorScanState.Complete -> onDescriptorScanned(state.descriptor)
+        }
+    }
+
+    private fun onDescriptorScanned(descriptor: String) {
+        val wrapped = DescriptorUtils.wrapDescriptorIfNeeded(descriptor)
+        _uiState.update {
+            it.copy(
+                isDescriptorScanSheetOpen = false,
+                descriptorScanProgress = 0f,
+                descriptorScanError = "",
+                pendingScannedDescriptor = PendingDescriptor(
+                    descriptor = wrapped,
+                    summary = DescriptorUtils.summarize(wrapped),
+                ),
+            )
+        }
+    }
+
+    private fun confirmScannedDescriptor() {
+        val pending = _uiState.value.pendingScannedDescriptor ?: return
+        _uiState.update { it.copy(pendingScannedDescriptor = null) }
+        loadDescriptorString(pending.descriptor)
+    }
+
+    private fun showDescriptorScanError(reason: String) {
+        descriptorScanErrorJob?.cancel()
+        _uiState.update { it.copy(descriptorScanError = reason, descriptorScanProgress = 0f) }
+        descriptorScanErrorJob = viewModelScope.launch {
+            delay(SCAN_ERROR_COOLDOWN_MS.milliseconds)
+            descriptorScanner.reset()
+            _uiState.update { it.copy(descriptorScanError = "", descriptorScanProgress = 0f) }
         }
     }
 
@@ -428,11 +514,13 @@ class SettingsViewModel(
     override fun onCleared() {
         super.onCleared()
         nodeAddressValidationJob?.cancel()
+        descriptorScanErrorJob?.cancel()
     }
 
     companion object {
         private const val TAG = "SettingsViewModel"
         private const val VALIDATION_DEBOUNCE_MS = 500L
         private const val RESCAN_POLL_INTERVAL_MS = 3000L
+        private const val SCAN_ERROR_COOLDOWN_MS = 10000L
     }
 }

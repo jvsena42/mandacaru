@@ -7,6 +7,11 @@ sealed interface SettingsAction {
     data class OnNodeAddressChanged(val address: String): SettingsAction
     data class OnNetworkSelected(val network: String): SettingsAction
     object OnClickUpdateDescriptor: SettingsAction
+    object OnClickScanDescriptor: SettingsAction
+    object OnDismissDescriptorScanner: SettingsAction
+    data class OnDescriptorQrFrameScanned(val raw: String): SettingsAction
+    object OnConfirmScannedDescriptor: SettingsAction
+    object OnDismissScannedDescriptor: SettingsAction
     object OnClickConnectNode: SettingsAction
     object OnClickRescan: SettingsAction
     object ClearSnackBarMessage: SettingsAction

@@ -43,6 +43,7 @@ import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.NetworkCheck
+import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.DataUsage
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Share
@@ -62,6 +63,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -378,6 +380,24 @@ private fun ScreenSettings(
                             }
 
                             Spacer(modifier = Modifier.height(12.dp))
+
+                            OutlinedButton(
+                                onClick = { onAction(SettingsAction.OnClickScanDescriptor) },
+                                enabled = !uiState.isLoading,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("button_scan_descriptor"),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(
+                                    Icons.Outlined.QrCodeScanner,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Text(text = " ${stringResource(R.string.scan_descriptor)}")
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
 
                             Button(
                                 onClick = { onAction(SettingsAction.OnClickUpdateDescriptor) },
@@ -874,6 +894,24 @@ private fun ScreenSettings(
                 year = year,
                 onConfirm = { currentOnAction(SettingsAction.OnConfirmBirthdayRestart) },
                 onDismiss = { currentOnAction(SettingsAction.OnCancelBirthdayRestart) },
+            )
+        }
+
+        if (uiState.isDescriptorScanSheetOpen) {
+            DescriptorScanSheet(
+                progress = uiState.descriptorScanProgress,
+                error = uiState.descriptorScanError,
+                onFrameScanned = { currentOnAction(SettingsAction.OnDescriptorQrFrameScanned(it)) },
+                onPasteSubmitted = { currentOnAction(SettingsAction.OnDescriptorQrFrameScanned(it)) },
+                onDismiss = { currentOnAction(SettingsAction.OnDismissDescriptorScanner) },
+            )
+        }
+
+        uiState.pendingScannedDescriptor?.let { pending ->
+            DescriptorScanConfirmDialog(
+                pending = pending,
+                onConfirm = { currentOnAction(SettingsAction.OnConfirmScannedDescriptor) },
+                onDismiss = { currentOnAction(SettingsAction.OnDismissScannedDescriptor) },
             )
         }
     }

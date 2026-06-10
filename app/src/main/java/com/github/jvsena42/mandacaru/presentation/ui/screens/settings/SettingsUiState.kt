@@ -3,12 +3,21 @@ package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 import androidx.compose.runtime.Stable
 import com.florestad.Network
 import com.github.jvsena42.mandacaru.domain.model.UpdateStatus
+import com.github.jvsena42.mandacaru.presentation.utils.DescriptorUtils
 import com.github.jvsena42.mandacaru.presentation.utils.WalletBirthday
 
+data class PendingDescriptor(
+    val descriptor: String,
+    val summary: DescriptorUtils.DescriptorSummary,
+)
 
 @Stable
 data class SettingsUiState(
     val descriptorText: String = "",
+    val isDescriptorScanSheetOpen: Boolean = false,
+    val descriptorScanProgress: Float = 0f,
+    val descriptorScanError: String = "",
+    val pendingScannedDescriptor: PendingDescriptor? = null,
     val electrumAddress: String = "",
     val nodeAddress: String = "",
     val nodeAddressError: Int? = null,

@@ -19,7 +19,9 @@ import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.floresta.UtreexoBridgeAutoConnect
 import com.github.jvsena42.mandacaru.domain.floresta.UtreexoSnapshotService
 import com.github.jvsena42.mandacaru.domain.scan.BdkTransactionDecoder
+import com.github.jvsena42.mandacaru.domain.scan.DefaultDescriptorQrScanner
 import com.github.jvsena42.mandacaru.domain.scan.DefaultQrTransactionScanner
+import com.github.jvsena42.mandacaru.domain.scan.DescriptorQrScanner
 import com.github.jvsena42.mandacaru.domain.scan.QrTransactionScanner
 import com.github.jvsena42.mandacaru.domain.scan.TransactionDecoder
 import com.github.jvsena42.mandacaru.presentation.ui.screens.blockchain.BlockchainViewModel
@@ -77,6 +79,7 @@ val presentationModule = module {
             florestaRpc = get(),
             preferencesDataSource = get(),
             appUpdateRepository = get(),
+            descriptorScanner = get(),
             context = androidContext(),
         )
     }
@@ -116,5 +119,6 @@ val dataModule = module {
     single { UtreexoBridgeAutoConnect(florestaRpc = get(), preferencesDataSource = get()) }
     single { UtreexoSnapshotService(daemon = get()) }
     factory<QrTransactionScanner> { DefaultQrTransactionScanner() }
+    factory<DescriptorQrScanner> { DefaultDescriptorQrScanner() }
     single<TransactionDecoder> { BdkTransactionDecoder() }
 }

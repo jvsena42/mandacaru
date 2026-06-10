@@ -183,4 +183,130 @@ class DescriptorUtilsTest {
     fun `full descriptor is not a false positive for private key`() {
         assertFalse(DescriptorUtils.isPrivateKey("wpkh(xpub6CFy3kRXorC3NMTt8qrsY9ucUfxVLXyFQ49JSLm3iEG5gf)"))
     }
+
+    // --- extractDescriptor ---
+
+    @Test
+    fun `extractDescriptor returns a raw descriptor unchanged`() {
+        val desc = "wpkh([abcd1234/84h/0h/0h]$XPUB1/<0;1>/*)"
+        assertEquals(desc, DescriptorUtils.extractDescriptor(desc))
+    }
+
+    @Test
+    fun `extractDescriptor returns a bare extended key`() {
+        assertEquals(XPUB1, DescriptorUtils.extractDescriptor(XPUB1))
+        assertEquals(realZpub, DescriptorUtils.extractDescriptor(realZpub))
+    }
+
+    @Test
+    fun `extractDescriptor pulls the descriptor out of a JSON export`() {
+        val json = """{"label":"Cold","descriptor":"wpkh($XPUB1/<0;1>/*)"}"""
+        assertEquals("wpkh($XPUB1/<0;1>/*)", DescriptorUtils.extractDescriptor(json))
+    }
+
+    @Test
+    fun `extractDescriptor finds a nested descriptor in JSON`() {
+        val json = """{"bip84":{"name":"p2wpkh","desc":"wpkh($XPUB1/0/*)"}}"""
+        assertEquals("wpkh($XPUB1/0/*)", DescriptorUtils.extractDescriptor(json))
+    }
+
+    @Test
+    fun `extractDescriptor rejects garbage`() {
+        assertEquals(null, DescriptorUtils.extractDescriptor("not a descriptor at all"))
+        assertEquals(null, DescriptorUtils.extractDescriptor(""))
+    }
+
+    // --- parseMultisigSetupFile (BlueWallet / Coldcard) ---
+
+    @Test
+    fun `parseMultisigSetupFile assembles a sortedmulti P2WSH descriptor`() {
+        val expected = "wsh(sortedmulti(2," +
+            "[abcd1234/48h/0h/0h/2h]$XPUB1/<0;1>/*," +
+            "[dead5678/48h/0h/0h/2h]$XPUB2/<0;1>/*))"
+        assertEquals(expected, DescriptorUtils.parseMultisigSetupFile(BLUEWALLET_FILE))
+    }
+
+    @Test
+    fun `extractDescriptor routes a BlueWallet setup file through the parser`() {
+        assertTrue(
+            DescriptorUtils.extractDescriptor(BLUEWALLET_FILE)!!.startsWith("wsh(sortedmulti(2,"),
+        )
+    }
+
+    @Test
+    fun `parseMultisigSetupFile honours P2SH-P2WSH format`() {
+        val file = BLUEWALLET_FILE.replace("Format: P2WSH", "Format: P2SH-P2WSH")
+        assertTrue(DescriptorUtils.parseMultisigSetupFile(file)!!.startsWith("sh(wsh(sortedmulti(2,"))
+    }
+
+    @Test
+    fun `parseMultisigSetupFile honours P2SH format`() {
+        val file = BLUEWALLET_FILE.replace("Format: P2WSH", "Format: P2SH")
+        assertTrue(DescriptorUtils.parseMultisigSetupFile(file)!!.startsWith("sh(sortedmulti(2,"))
+    }
+
+    @Test
+    fun `parseMultisigSetupFile converts multisig Zpub keys to xpub`() {
+        val result = DescriptorUtils.parseMultisigSetupFile(BLUEWALLET_FILE)!!
+        assertTrue("expected converted xpub keys, got: $result", result.contains(XPUB1))
+        assertFalse(result.contains("Zpub"))
+    }
+
+    @Test
+    fun `parseMultisigSetupFile returns null without a policy`() {
+        val file = BLUEWALLET_FILE.lineSequence().filterNot { it.startsWith("Policy") }
+            .joinToString("\n")
+        assertEquals(null, DescriptorUtils.parseMultisigSetupFile(file))
+    }
+
+    // --- summarize ---
+
+    @Test
+    fun `summarize reports native segwit and key origin`() {
+        val summary = DescriptorUtils.summarize("wpkh([abcd1234/84h/0h/0h]$XPUB1/<0;1>/*)")
+        assertEquals("Native SegWit (P2WPKH)", summary.scriptType)
+        assertEquals("abcd1234", summary.fingerprint)
+        assertEquals("84h/0h/0h", summary.derivationPath)
+        assertEquals(null, summary.multisig)
+    }
+
+    @Test
+    fun `summarize reports nested segwit`() {
+        val summary = DescriptorUtils.summarize("sh(wpkh($XPUB1/<0;1>/*))")
+        assertEquals("Nested SegWit (P2SH-P2WPKH)", summary.scriptType)
+    }
+
+    @Test
+    fun `summarize reports taproot`() {
+        assertEquals("Taproot (P2TR)", DescriptorUtils.summarize("tr($XPUB1/<0;1>/*)").scriptType)
+    }
+
+    @Test
+    fun `summarize reports multisig policy and cosigner count`() {
+        val descriptor = DescriptorUtils.parseMultisigSetupFile(BLUEWALLET_FILE)!!
+        val summary = DescriptorUtils.summarize(descriptor)
+        assertEquals("Multisig Native SegWit (P2WSH)", summary.scriptType)
+        assertEquals("2-of-2", summary.multisig)
+    }
+
+    private companion object {
+        const val XPUB1 = "xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj"
+        const val XPUB2 = "xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39HjUYTz"
+        const val ZPUB1 = "Zpub72NVPmrzYKbwP7Q4bnm59GjzZCCrqoCAmR4yzKbcdHHsKKMUtn8UqggU6VUMgRTqcAubyQ9bn3Tb9n4LB4RnPiEnCqysjCSZY2MCWUMfNsx"
+        const val ZPUB2 = "Zpub72NVPmrzYKbwP7Q4bnm59GjzZCCrqoCAmR4yzKbcdHHsKKMUtn8UqggU6VUMgRTqcAubyQ9bn3Tb9n4LB4RnPiEnCqysjCSZY2MCWPY9XYe"
+
+        val BLUEWALLET_FILE = """
+            # BlueWallet Multisig setup file
+            # this file contains only public keys and is safe to
+            # distribute among cosigners
+            #
+            Name: Test Vault
+            Policy: 2 of 2
+            Derivation: m/48'/0'/0'/2'
+            Format: P2WSH
+
+            ABCD1234: $ZPUB1
+            DEAD5678: $ZPUB2
+        """.trimIndent()
+    }
 }

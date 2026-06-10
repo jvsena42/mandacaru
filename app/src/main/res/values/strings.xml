@@ -146,6 +146,18 @@
     <string name="scan_paste_placeholder">0200000001… / cHNidP8B… / ur:crypto-psbt/…</string>
     <string name="scan_submit">Decode</string>
 
+    <string name="scan_descriptor">Scan QR</string>
+    <string name="scan_descriptor_title">Scan wallet descriptor</string>
+    <string name="scan_descriptor_hint">Point the camera at a descriptor QR from your signer (Krux, BlueWallet, Coldcard, Sparrow…). Single-frame and animated (UR/BBQr) QR codes are supported.</string>
+    <string name="scan_descriptor_paste_hint">Paste a wallet descriptor, an extended public key (xpub, zpub…), or a multisig coordination file.</string>
+    <string name="scan_descriptor_paste_placeholder">wpkh([…]xpub…/&lt;0;1&gt;/*) / zpub… / # BlueWallet Multisig setup file…</string>
+    <string name="confirm_descriptor_title">Load this descriptor?</string>
+    <string name="confirm_descriptor_script_type">Script type</string>
+    <string name="confirm_descriptor_multisig">Policy</string>
+    <string name="confirm_descriptor_fingerprint">Fingerprint</string>
+    <string name="confirm_descriptor_derivation">Derivation</string>
+    <string name="confirm_descriptor_action_load">Load</string>
+
     <string name="confirm_broadcast_title">Broadcast this transaction?</string>
     <string name="confirm_decoded_from">Decoded from %1$s (%2$s)</string>
     <string name="confirm_source_psbt">PSBT</string>

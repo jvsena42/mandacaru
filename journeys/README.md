@@ -121,8 +121,15 @@ action) on open. The snackbar is part of the Scaffold subtree, so its text and a
 |-----------------------------|----------------------------------------|
 | `input_descriptor`          | wallet descriptor field                |
 | `button_update_descriptor`  | "Update descriptor"                    |
+| `button_scan_descriptor`    | "Scan QR" (opens the descriptor scanner)|
 | `input_network`             | network selector field                 |
 | `toggle_mobile_data`        | "Also use mobile data" switch          |
+
+`button_scan_descriptor` opens `DescriptorScanSheet` (a `ModalBottomSheet`) and, on a
+successful scan, `DescriptorScanConfirmDialog` (an `AlertDialog`). Both render in a
+separate window (per the popup caveat below), so their controls — "Paste instead",
+"Decode", "Load", "Cancel", the decoded descriptor and its script type — are targeted by
+**text**, not `resource-id`.
 
 The Data usage section's `toggle_mobile_data` switch is off by default (Wi-Fi only);
 turning it on persists the preference and restarts the app. Expand the "Data usage"
