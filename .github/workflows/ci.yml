@@ -76,10 +76,13 @@ jobs:
 
   integration-tests:
     name: Integration tests (instrumented)
-    # ARM64 host: the app ships arm64-v8a-only native libs, so the APK only
-    # installs on an arm64 emulator (an x86_64 emulator rejects it with
-    # INSTALL_FAILED_NO_MATCHING_ABIS). An arm64 runner lets the emulator use KVM.
-    runs-on: ubuntu-24.04-arm
+    # The app ships arm64-v8a-only native libs, so the APK only installs on an
+    # arm64 emulator (an x86_64 emulator rejects it with
+    # INSTALL_FAILED_NO_MATCHING_ABIS). GitHub's hosted Linux arm64 runners
+    # don't expose /dev/kvm, so the accelerated emulator runs on an Apple
+    # Silicon macOS runner (HVF acceleration). macOS minutes are free for this
+    # public repo.
+    runs-on: macos-15
     if: github.event_name == 'push' || github.event.pull_request.draft == false
     steps:
       - name: Checkout
@@ -93,13 +96,6 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-
-      - name: Enable KVM
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
-            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
 
       - name: Run instrumented tests
         uses: reactivecircus/android-emulator-runner@v2
