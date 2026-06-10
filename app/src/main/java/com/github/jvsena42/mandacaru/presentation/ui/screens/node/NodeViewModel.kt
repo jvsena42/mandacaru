@@ -31,6 +31,7 @@ import java.text.NumberFormat
 import kotlin.time.Duration.Companion.seconds
 import com.florestad.Network as FlorestaNetwork
 
+@Suppress("TooManyFunctions")
 class NodeViewModel(
     private val florestaRpc: FlorestaRpc,
     private val snapshotService: UtreexoSnapshotService,
@@ -195,7 +196,9 @@ class NodeViewModel(
 
     fun onClickPaste() {
         if (!_uiState.value.ibd) return
-        _uiState.update { it.copy(isPasteSheetOpen = true) }
+        _uiState.update {
+            it.copy(isPasteSheetOpen = true, pasteSheetText = "", pasteSheetError = null)
+        }
     }
 
     fun onDismissScanSheet() {
@@ -203,13 +206,73 @@ class NodeViewModel(
     }
 
     fun onDismissPasteSheet() {
-        _uiState.update { it.copy(isPasteSheetOpen = false) }
+        _uiState.update {
+            it.copy(isPasteSheetOpen = false, pasteSheetText = "", pasteSheetError = null)
+        }
+    }
+
+    fun onPasteSheetTextChanged(text: String) {
+        _uiState.update { it.copy(pasteSheetText = text, pasteSheetError = null) }
+    }
+
+    fun onClickPasteFromClipboard(clip: String?) {
+        if (!_uiState.value.ibd) return
+        val text = clip?.trim().orEmpty()
+        if (text.isEmpty()) {
+            _uiState.update { it.copy(pasteSheetError = CLIPBOARD_INVALID_MESSAGE) }
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            val currentNetworkEnum = currentNetwork()
+            snapshotService.validate(text, currentNetworkEnum)
+                .onSuccess {
+                    _uiState.update { it.copy(pasteSheetText = text, pasteSheetError = null) }
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(pasteSheetError = errorToMessage(error, currentNetworkEnum))
+                    }
+                }
+        }
+    }
+
+    fun onCheckClipboardForImport(clip: String?) {
+        if (!_uiState.value.ibd) return
+        val text = clip?.trim().orEmpty()
+        if (text.isEmpty()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            snapshotService.validate(text, currentNetwork()).onSuccess {
+                _uiState.update { it.copy(clipboardImportPayload = text) }
+            }
+        }
+    }
+
+    fun onAcceptClipboardHint() {
+        val payload = _uiState.value.clipboardImportPayload ?: return
+        if (!_uiState.value.ibd) return
+        _uiState.update {
+            it.copy(
+                isPasteSheetOpen = true,
+                pasteSheetText = payload,
+                pasteSheetError = null,
+                clipboardImportPayload = null,
+            )
+        }
+    }
+
+    fun onDismissClipboardHint() {
+        _uiState.update { it.copy(clipboardImportPayload = null) }
     }
 
     fun onAccumulatorReceived(payload: String) {
         if (!_uiState.value.ibd) return
         _uiState.update {
-            it.copy(isScanSheetOpen = false, isPasteSheetOpen = false)
+            it.copy(
+                isScanSheetOpen = false,
+                isPasteSheetOpen = false,
+                pasteSheetText = "",
+                pasteSheetError = null,
+            )
         }
         viewModelScope.launch(Dispatchers.IO) {
             val currentNetworkEnum = currentNetwork()
@@ -402,6 +465,7 @@ class NodeViewModel(
         const val SECONDS_PER_HOUR = 3600L
         const val SECONDS_PER_MINUTE = 60L
         const val COPIED_MESSAGE = "Copied to clipboard"
+        const val CLIPBOARD_INVALID_MESSAGE = "Clipboard does not contain a valid accumulator."
         const val DIGEST_PREFIX_BYTES = 4
     }
 }

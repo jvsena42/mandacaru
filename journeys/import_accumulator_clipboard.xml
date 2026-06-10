@@ -1,0 +1,29 @@
+<journey name="Import accumulator from clipboard">
+    <description>
+        Exercises the clipboard-aware Utreexo accumulator import (issue #67): the on-open
+        "Accumulator found on clipboard" snackbar and the "Paste from clipboard" button in
+        the paste sheet.
+
+        PRECONDITION: a valid Utreexo accumulator payload (JSON or "utreexo1…" compact form)
+        FOR THE CURRENT NETWORK must be on the device clipboard, and the node must still be
+        in initial block download (IBD) so the import card/sheet are available.
+
+        There is no stable cross-version `adb` command to set the system clipboard. If the
+        agent cannot place the payload on the clipboard (and cannot copy one from within the
+        app), mark every clipboard-dependent action SKIPPED rather than FAILED.
+    </description>
+    <actions>
+        <action>Launch the Mandacaru app and wait for the splash screen to dismiss (poll until nav_node is present)</action>
+        <action>Verify the Node navigation item (nav_node) is selected and the node is in IBD (a sync progress percentage node_sync_percentage below 100% is shown)</action>
+        <action>Best-effort: place a valid accumulator payload for the current network on the device clipboard (try `adb shell` clipboard helpers; if none work, SKIP the remaining clipboard steps)</action>
+        <action>Relaunch the app (cold start) and wait until nav_node is present</action>
+        <action>Verify an "Accumulator found on clipboard" snackbar with an "Import" action is shown (target by text); if no payload could be set, SKIP this step</action>
+        <action>Tap the "Import" action on the snackbar (by text)</action>
+        <action>Verify the paste sheet opens with its payload field pre-filled (the snapshot text is visible in the sheet)</action>
+        <action>Dismiss the sheet by tapping "Cancel" (by text)</action>
+        <action>Open the import card on the Node screen and tap its "Paste" entry to reopen the paste sheet</action>
+        <action>Tap the "Paste from clipboard" button inside the sheet (by text)</action>
+        <action>Verify the payload field becomes populated (valid clipboard) or an inline error "Clipboard does not contain a valid accumulator" is shown (empty/invalid clipboard), and the app has not crashed</action>
+        <action>Tap the "Import" button (by text) and verify the import confirmation dialog appears showing the snapshot network and height</action>
+    </actions>
+</journey>

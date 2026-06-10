@@ -35,6 +35,9 @@ data class NodeUiState(
 
     val isScanSheetOpen: Boolean = false,
     val isPasteSheetOpen: Boolean = false,
+    val pasteSheetText: String = "",
+    val pasteSheetError: String? = null,
+    val clipboardImportPayload: String? = null,
     val isExportQrSheetOpen: Boolean = false,
     val isImportCardExpanded: Boolean = true,
     val isExportCardExpanded: Boolean = false,

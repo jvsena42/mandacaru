@@ -39,10 +39,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -139,6 +142,31 @@ fun ScreenNode(
         }
     }
 
+    var clipboardChecked by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(uiState.ibd) {
+        if (uiState.ibd && !clipboardChecked) {
+            clipboardChecked = true
+            viewModel.onCheckClipboardForImport(clipboard.getText()?.text)
+        }
+    }
+
+    val hintPayload = uiState.clipboardImportPayload
+    val hintMessage = stringResource(R.string.utreexo_clipboard_hint)
+    val hintAction = stringResource(R.string.utreexo_clipboard_hint_action)
+    LaunchedEffect(hintPayload) {
+        if (hintPayload != null) {
+            val result = snackbarHostState.showSnackbar(
+                message = hintMessage,
+                actionLabel = hintAction,
+                duration = SnackbarDuration.Long,
+            )
+            when (result) {
+                SnackbarResult.ActionPerformed -> viewModel.onAcceptClipboardHint()
+                SnackbarResult.Dismissed -> viewModel.onDismissClipboardHint()
+            }
+        }
+    }
+
     Scaffold(
         modifier = modifier,
         snackbarHost = {
@@ -219,6 +247,10 @@ fun ScreenNode(
                 onClickPaste = viewModel::onClickPaste,
                 onDismissScanSheet = viewModel::onDismissScanSheet,
                 onDismissPasteSheet = viewModel::onDismissPasteSheet,
+                onPasteSheetTextChanged = viewModel::onPasteSheetTextChanged,
+                onPasteFromClipboard = {
+                    viewModel.onClickPasteFromClipboard(clipboard.getText()?.text)
+                },
                 onAccumulatorReceived = viewModel::onAccumulatorReceived,
                 onDismissImportConfirm = viewModel::onDismissImportConfirm,
                 onConfirmImport = viewModel::onConfirmImport,
@@ -249,6 +281,8 @@ fun ScreenNode(
     onClickPaste: () -> Unit = {},
     onDismissScanSheet: () -> Unit = {},
     onDismissPasteSheet: () -> Unit = {},
+    onPasteSheetTextChanged: (String) -> Unit = {},
+    onPasteFromClipboard: () -> Unit = {},
     onAccumulatorReceived: (String) -> Unit = {},
     onDismissImportConfirm: () -> Unit = {},
     onConfirmImport: () -> Unit = {},
@@ -303,6 +337,8 @@ fun ScreenNode(
         onDismissScanSheet = onDismissScanSheet,
         onClickPaste = onClickPaste,
         onDismissPasteSheet = onDismissPasteSheet,
+        onPasteSheetTextChanged = onPasteSheetTextChanged,
+        onPasteFromClipboard = onPasteFromClipboard,
         onConfirmImport = onConfirmImport,
         onDismissImportConfirm = onDismissImportConfirm,
         onDismissExportQrSheet = onDismissExportQrSheet,
@@ -502,6 +538,8 @@ private fun ScreenNodeOverlays(
     onDismissScanSheet: () -> Unit,
     onClickPaste: () -> Unit,
     onDismissPasteSheet: () -> Unit,
+    onPasteSheetTextChanged: (String) -> Unit,
+    onPasteFromClipboard: () -> Unit,
     onConfirmImport: () -> Unit,
     onDismissImportConfirm: () -> Unit,
     onDismissExportQrSheet: () -> Unit,
@@ -518,7 +556,11 @@ private fun ScreenNodeOverlays(
     }
     if (uiState.ibd && uiState.isPasteSheetOpen) {
         UtreexoPasteSheet(
-            onPayloadSubmitted = onAccumulatorReceived,
+            text = uiState.pasteSheetText,
+            errorMessage = uiState.pasteSheetError,
+            onTextChange = onPasteSheetTextChanged,
+            onPasteFromClipboard = onPasteFromClipboard,
+            onPayloadSubmitted = { onAccumulatorReceived(uiState.pasteSheetText.trim()) },
             onDismiss = onDismissPasteSheet,
         )
     }

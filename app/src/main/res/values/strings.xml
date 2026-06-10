@@ -104,6 +104,9 @@
     <string name="utreexo_scan_qr">Scan QR</string>
 <string name="utreexo_paste_payload">Paste</string>
     <string name="utreexo_paste_hint">Paste the snapshot JSON produced by another synced Floresta node.</string>
+    <string name="utreexo_paste_from_clipboard">Paste from clipboard</string>
+    <string name="utreexo_clipboard_hint">Accumulator found on clipboard</string>
+    <string name="utreexo_clipboard_hint_action">Import</string>
     <string name="utreexo_show_qr">Show QR</string>
     <string name="utreexo_copy">Copy</string>
     <string name="utreexo_share">Share</string>

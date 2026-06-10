@@ -80,6 +80,24 @@ when adding or renaming a tag.
 | `node_difficulty`       | difficulty value                |
 | `node_disconnect_peer`  | per-peer disconnect button      |
 
+#### Utreexo paste sheet (`node/UtreexoPasteSheet.kt`)
+
+| resource-id              | element                                  |
+|-------------------------|------------------------------------------|
+| `input_utreexo_payload` | snapshot payload text field              |
+| `button_paste_clipboard`| "Paste from clipboard" button            |
+| `button_import_payload` | "Import" submit button                   |
+
+These ids are declared for the instrumented Compose tests. The paste sheet is a
+`ModalBottomSheet`, so (per the popup caveat below) its tags do **not** surface as
+`resource-id` in `android layout` — in journeys, target its controls by **text**
+("Paste from clipboard", "Import") instead.
+
+When a valid accumulator for the current network is on the clipboard, the Node screen
+shows a clipboard-import **snackbar** ("Accumulator found on clipboard" + an "Import"
+action) on open. The snackbar is part of the Scaffold subtree, so its text and action
+**are** targetable by text in `android layout`.
+
 ### Blockchain screen (`blockchain/ScreenBlockchain.kt`)
 
 | resource-id                  | element                  |

@@ -1,25 +1,29 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.node
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.github.jvsena42.mandacaru.R
@@ -27,15 +31,40 @@ import com.github.jvsena42.mandacaru.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UtreexoPasteSheet(
-    onPayloadSubmitted: (String) -> Unit,
+    text: String,
+    errorMessage: String?,
+    onTextChange: (String) -> Unit,
+    onPasteFromClipboard: () -> Unit,
+    onPayloadSubmitted: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var text by remember { mutableStateOf("") }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        UtreexoPasteSheetContent(
+            text = text,
+            errorMessage = errorMessage,
+            onTextChange = onTextChange,
+            onPasteFromClipboard = onPasteFromClipboard,
+            onPayloadSubmitted = onPayloadSubmitted,
+            onDismiss = onDismiss,
+        )
+    }
+}
+
+@Composable
+internal fun UtreexoPasteSheetContent(
+    text: String,
+    errorMessage: String?,
+    onTextChange: (String) -> Unit,
+    onPasteFromClipboard: () -> Unit,
+    onPayloadSubmitted: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
         Column(
             modifier = Modifier
+                .widthIn(max = MAX_CONTENT_WIDTH)
                 .fillMaxWidth()
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -48,13 +77,27 @@ fun UtreexoPasteSheet(
                 stringResource(R.string.utreexo_paste_hint),
                 style = MaterialTheme.typography.bodyMedium,
             )
+            TextButton(
+                onClick = onPasteFromClipboard,
+                modifier = Modifier.testTag("button_paste_clipboard"),
+            ) {
+                Icon(Icons.Outlined.ContentPaste, contentDescription = null)
+                Text(
+                    text = stringResource(R.string.utreexo_paste_from_clipboard),
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
             OutlinedTextField(
                 value = text,
-                onValueChange = { text = it },
-                modifier = Modifier.fillMaxWidth(),
+                onValueChange = onTextChange,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("input_utreexo_payload"),
                 shape = RoundedCornerShape(12.dp),
                 minLines = 4,
                 maxLines = 10,
+                isError = errorMessage != null,
+                supportingText = errorMessage?.let { { Text(it) } },
                 placeholder = { Text("{\"version\":1, …}") },
             )
             Row(
@@ -68,9 +111,11 @@ fun UtreexoPasteSheet(
                     Text(stringResource(R.string.cancel))
                 }
                 Button(
-                    onClick = { onPayloadSubmitted(text.trim()) },
+                    onClick = onPayloadSubmitted,
                     enabled = text.isNotBlank(),
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("button_import_payload"),
                 ) {
                     Text(stringResource(R.string.utreexo_confirm_action_import))
                 }
@@ -78,3 +123,5 @@ fun UtreexoPasteSheet(
         }
     }
 }
+
+private val MAX_CONTENT_WIDTH = 560.dp
