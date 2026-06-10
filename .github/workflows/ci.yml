@@ -74,46 +74,10 @@ jobs:
             app/build/test-results/
           if-no-files-found: ignore
 
-  integration-tests:
-    name: Integration tests (instrumented)
-    # The app ships arm64-v8a-only native libs, so the APK only installs on an
-    # arm64 emulator (an x86_64 emulator rejects it with
-    # INSTALL_FAILED_NO_MATCHING_ABIS). GitHub's hosted Linux arm64 runners
-    # don't expose /dev/kvm, so the accelerated emulator runs on an Apple
-    # Silicon macOS runner (HVF acceleration). macOS minutes are free for this
-    # public repo.
-    runs-on: macos-15
-    if: github.event_name == 'push' || github.event.pull_request.draft == false
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Run instrumented tests
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 29
-          arch: arm64-v8a
-          target: default
-          force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          disable-animations: true
-          script: ./gradlew connectedDebugAndroidTest --no-daemon
-
-      - name: Upload instrumented test reports
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: instrumented-test-reports
-          path: |
-            app/build/reports/androidTests/
-            app/build/outputs/androidTest-results/
-          if-no-files-found: ignore
+  # NOTE: The instrumented (androidTest) suite is intentionally not run in CI.
+  # The app ships arm64-v8a-only native libs, so its APK only installs on an
+  # arm64 emulator — and no GitHub-hosted runner can run an accelerated arm64
+  # emulator (Linux arm64 has no /dev/kvm; macOS Apple Silicon reports
+  # HVF HV_UNSUPPORTED; x86_64 runners can't install the arm64-only APK).
+  # Run the instrumented tests locally or on a device/self-hosted arm64 runner:
+  #   ./gradlew connectedDebugAndroidTest
