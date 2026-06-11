@@ -72,7 +72,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -95,13 +94,13 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.window.core.layout.WindowSizeClass
 import java.text.NumberFormat
 import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.PeerInfoResult
 import com.github.jvsena42.mandacaru.presentation.ui.components.ExpandableHeader
 import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
 import com.github.jvsena42.mandacaru.presentation.utils.RequestNotificationPermissions
+import com.github.jvsena42.mandacaru.presentation.utils.rememberAdaptiveLayout
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -181,26 +180,16 @@ fun ScreenNode(
         // Match the inner content's adaptive width/padding so the banner lines
         // up with the centered, width-capped layout on tablets instead of
         // spanning full-bleed above it.
-        val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-        val isMediumOrWider = windowSizeClass.isWidthAtLeastBreakpoint(
-            WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND
-        )
-        val isExpandedWidth = windowSizeClass.isWidthAtLeastBreakpoint(
-            WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND
-        )
-        val bannerHorizontalPadding = when {
-            isExpandedWidth -> 32.dp
-            isMediumOrWider -> 24.dp
-            else -> 16.dp
-        }
-        // The expanded (tablet) dashboard fills the full pager width, while the
+        val layout = rememberAdaptiveLayout()
+        val bannerHorizontalPadding = layout.horizontalPadding
+        // The two-pane (tablet) dashboard fills the full pager width, while the
         // compact/medium layouts cap and center their content; mirror that so the
         // banner always spans the same width as the content beneath it.
-        val bannerWidth = if (isExpandedWidth) {
+        val bannerWidth = if (layout.useTwoPane) {
             Modifier.fillMaxWidth()
         } else {
             Modifier
-                .widthIn(max = if (isMediumOrWider) 1200.dp else 600.dp)
+                .widthIn(max = layout.maxContentWidth)
                 .fillMaxWidth()
         }
         Column(
@@ -344,20 +333,10 @@ fun ScreenNode(
         onDismissExportQrSheet = onDismissExportQrSheet,
     )
 
-    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-    val isMediumOrWider = windowSizeClass.isWidthAtLeastBreakpoint(
-        WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND
-    )
-    val isExpandedWidth = windowSizeClass.isWidthAtLeastBreakpoint(
-        WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND
-    )
-    val horizontalPadding = when {
-        isExpandedWidth -> 32.dp
-        isMediumOrWider -> 24.dp
-        else -> 16.dp
-    }
-    val maxContentWidth = if (isMediumOrWider) 1200.dp else 600.dp
-    val columns = if (isMediumOrWider) {
+    val layout = rememberAdaptiveLayout()
+    val horizontalPadding = layout.horizontalPadding
+    val maxContentWidth = layout.maxContentWidth
+    val columns = if (layout.isMediumOrWider) {
         StaggeredGridCells.Adaptive(minSize = 360.dp)
     } else {
         StaggeredGridCells.Fixed(1)
@@ -370,7 +349,7 @@ fun ScreenNode(
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.TopCenter,
     ) {
-        if (isExpandedWidth) {
+        if (layout.useTwoPane) {
             TabletNodeDashboard(
                 uiState = uiState,
                 isHeaderSync = isHeaderSync,

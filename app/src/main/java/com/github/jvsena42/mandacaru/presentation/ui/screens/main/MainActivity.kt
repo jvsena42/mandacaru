@@ -41,7 +41,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -64,7 +63,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.window.core.layout.WindowSizeClass
 import com.github.jvsena42.mandacaru.presentation.service.FlorestaService
 import com.github.jvsena42.mandacaru.presentation.ui.screens.blockchain.ScreenBlockchain
 import com.github.jvsena42.mandacaru.presentation.ui.screens.node.ScreenNode
@@ -73,6 +71,7 @@ import com.github.jvsena42.mandacaru.presentation.ui.screens.splash.SplashScreen
 import com.github.jvsena42.mandacaru.presentation.ui.screens.transaction.ScreenTransaction
 import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
 import com.github.jvsena42.mandacaru.presentation.utils.NotificationPermissionHelper
+import com.github.jvsena42.mandacaru.presentation.utils.rememberAdaptiveLayout
 import com.github.jvsena42.mandacaru.presentation.utils.restartApplication
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
@@ -256,10 +255,7 @@ private fun MainScreen(
         }
     }
 
-    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-    val useRail = windowSizeClass.isWidthAtLeastBreakpoint(
-        WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND
-    )
+    val useRail = rememberAdaptiveLayout().useRail
     val onSelectDestination: (Int) -> Unit = { index ->
         coroutineScope.launch {
             pagerState.animateScrollToPage(index)
