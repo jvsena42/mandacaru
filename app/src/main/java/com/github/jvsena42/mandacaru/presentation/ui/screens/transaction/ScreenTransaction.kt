@@ -52,7 +52,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarVisuals
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -77,11 +76,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.widthIn
-import androidx.window.core.layout.WindowSizeClass
 import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetTransactionResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.TransactionResult
 import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
+import com.github.jvsena42.mandacaru.presentation.utils.rememberAdaptiveLayout
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
@@ -160,19 +159,9 @@ fun ScreenTransactionContent(
         },
         contentWindowInsets = WindowInsets(0),
     ) { contentPadding ->
-        val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-        val isMediumOrWider = windowSizeClass.isWidthAtLeastBreakpoint(
-            WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND
-        )
-        val isExpandedWidth = windowSizeClass.isWidthAtLeastBreakpoint(
-            WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND
-        )
-        val horizontalPadding = when {
-            isExpandedWidth -> 32.dp
-            isMediumOrWider -> 24.dp
-            else -> 16.dp
-        }
-        val maxContentWidth = if (isMediumOrWider) 1200.dp else 600.dp
+        val layout = rememberAdaptiveLayout()
+        val horizontalPadding = layout.horizontalPadding
+        val maxContentWidth = layout.maxContentWidth
 
         Box(
             modifier = Modifier
@@ -181,7 +170,7 @@ fun ScreenTransactionContent(
                 .padding(contentPadding),
             contentAlignment = Alignment.TopCenter,
         ) {
-            if (isExpandedWidth) {
+            if (layout.useTwoPane) {
                 TransactionTabletDashboard(
                     uiState = uiState,
                     onAction = onAction,

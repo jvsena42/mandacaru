@@ -57,7 +57,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -97,7 +96,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.window.core.layout.WindowSizeClass
 import com.florestad.Network
 import com.github.jvsena42.mandacaru.BuildConfig
 import com.github.jvsena42.mandacaru.R
@@ -106,6 +104,7 @@ import com.github.jvsena42.mandacaru.domain.model.UpdateStatus
 import com.github.jvsena42.mandacaru.presentation.ui.components.ExpandableHeader
 import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
 import com.github.jvsena42.mandacaru.presentation.utils.WalletBirthday
+import com.github.jvsena42.mandacaru.presentation.utils.rememberAdaptiveLayout
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import java.time.Year
@@ -182,20 +181,11 @@ private fun ScreenSettings(
         },
         contentWindowInsets = WindowInsets(0),
     ) { contentPadding ->
-        val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-        val isMediumOrWider = windowSizeClass.isWidthAtLeastBreakpoint(
-            WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND
-        )
-        val isExpandedWidth = windowSizeClass.isWidthAtLeastBreakpoint(
-            WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND
-        )
-        val horizontalPadding = when {
-            isExpandedWidth -> 32.dp
-            isMediumOrWider -> 24.dp
-            else -> 16.dp
-        }
-        val maxContentWidth = if (isMediumOrWider) 1200.dp else 600.dp
-        val columns = if (isMediumOrWider) {
+        val layout = rememberAdaptiveLayout()
+        val isExpandedWidth = layout.isExpandedWidth
+        val horizontalPadding = layout.horizontalPadding
+        val maxContentWidth = layout.maxContentWidth
+        val columns = if (layout.isMediumOrWider) {
             StaggeredGridCells.Adaptive(minSize = 360.dp)
         } else {
             StaggeredGridCells.Fixed(1)
