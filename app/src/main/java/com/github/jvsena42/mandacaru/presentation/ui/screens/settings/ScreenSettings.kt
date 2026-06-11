@@ -307,24 +307,46 @@ private fun ScreenSettings(
                         onToggle = { onAction(SettingsAction.ToggleDescriptorsExpanded) },
                         modifier = Modifier.animateItem(),
                     ) {
+                        val clipboardManager = LocalClipboardManager.current
                         Column(modifier = Modifier.fillMaxWidth()) {
                             if (uiState.descriptors.isNotEmpty()) {
                                 uiState.descriptors.forEach { descriptor ->
                                     Surface(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(vertical = 4.dp),
+                                            .padding(vertical = 4.dp)
+                                            .clickable {
+                                                clipboardManager.setText(AnnotatedString(descriptor))
+                                                onAction(SettingsAction.OnDescriptorCopied(descriptor))
+                                            }
+                                            .testTag("button_copy_descriptor"),
                                         shape = RoundedCornerShape(8.dp),
                                         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
                                     ) {
-                                        Text(
-                                            text = descriptor,
-                                            fontFamily = FontFamily.Monospace,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            maxLines = 2,
-                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                            modifier = Modifier.padding(12.dp)
-                                        )
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(12.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = descriptor,
+                                                fontFamily = FontFamily.Monospace,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                maxLines = 2,
+                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                            Icon(
+                                                Icons.Outlined.ContentCopy,
+                                                contentDescription = "Copy",
+                                                modifier = Modifier
+                                                    .padding(start = 12.dp)
+                                                    .size(20.dp),
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                     }
                                 }
                                 Spacer(modifier = Modifier.height(8.dp))
