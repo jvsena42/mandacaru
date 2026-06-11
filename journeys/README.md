@@ -122,8 +122,14 @@ action) on open. The snackbar is part of the Scaffold subtree, so its text and a
 | `input_descriptor`          | wallet descriptor field                |
 | `button_update_descriptor`  | "Update descriptor"                    |
 | `button_scan_descriptor`    | "Scan QR" (opens the descriptor scanner)|
+| `button_copy_descriptor`    | a loaded descriptor row — tap to copy the full descriptor to the clipboard |
 | `input_network`             | network selector field                 |
 | `toggle_mobile_data`        | "Also use mobile data" switch          |
+
+`button_copy_descriptor` is applied to each loaded descriptor row, so the tag repeats once
+per descriptor — target the first when more than one is present. Tapping a row copies the
+**full** descriptor (not the truncated two-line display) and shows a
+"Descriptor copied to clipboard" snackbar.
 
 `button_scan_descriptor` opens `DescriptorScanSheet` (a `ModalBottomSheet`) and, on a
 successful scan, `DescriptorScanConfirmDialog` (an `AlertDialog`). Both render in a

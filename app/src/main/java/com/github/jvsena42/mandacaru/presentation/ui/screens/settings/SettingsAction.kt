@@ -12,6 +12,7 @@ sealed interface SettingsAction {
     data class OnDescriptorQrFrameScanned(val raw: String): SettingsAction
     object OnConfirmScannedDescriptor: SettingsAction
     object OnDismissScannedDescriptor: SettingsAction
+    data class OnDescriptorCopied(val descriptor: String): SettingsAction
     object OnClickConnectNode: SettingsAction
     object OnClickRescan: SettingsAction
     object ClearSnackBarMessage: SettingsAction

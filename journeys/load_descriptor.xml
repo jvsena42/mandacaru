@@ -1,7 +1,8 @@
 <journey name="Load descriptor">
     <description>
-        Pastes a wallet descriptor in Settings, submits it, and verifies the descriptor
-        list updates without the app crashing.
+        Pastes a wallet descriptor in Settings, submits it, verifies the descriptor list
+        updates, then copies the loaded descriptor back to the clipboard (issue #113), all
+        without the app crashing.
     </description>
     <actions>
         <action>Launch the Mandacaru app and wait for the splash screen to dismiss (poll until nav_node is present)</action>
@@ -11,5 +12,7 @@
         <action>Type "wpkh([73c5da0a/84h/1h/0h]tpubDC8msFGeGuwnKG9Upg7DM2b4DaRqg3CUZa5g8v2SRQ6K4NSkxUgd7HsL2XVWbVm39yBA4LgAFKvDsdsBPzMw3RGYbjeMs9dGcTLeUw6f7c/0/*)" into the descriptor field (input_descriptor)</action>
         <action>Tap the Update descriptor button (button_update_descriptor)</action>
         <action>Verify the descriptors list shows the loaded descriptor or a confirmation, and the app has not crashed</action>
+        <action>Tap the loaded descriptor row (button_copy_descriptor; if more than one row is present, target the first) to copy it to the clipboard</action>
+        <action>Verify a "Descriptor copied to clipboard" snackbar appears (target by text) and the app has not crashed</action>
     </actions>
 </journey>

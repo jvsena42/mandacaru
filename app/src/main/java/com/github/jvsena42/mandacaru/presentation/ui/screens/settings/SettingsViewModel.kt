@@ -136,6 +136,10 @@ class SettingsViewModel(
                 it.copy(pendingScannedDescriptor = null)
             }
 
+            is SettingsAction.OnDescriptorCopied -> _uiState.update {
+                it.copy(snackBarMessage = "Descriptor copied to clipboard")
+            }
+
             SettingsAction.OnClickRescan -> rescan()
             SettingsAction.ClearSnackBarMessage -> _uiState.update { it.copy(snackBarMessage = "") }
             SettingsAction.OnClickConnectNode -> connectNode()
