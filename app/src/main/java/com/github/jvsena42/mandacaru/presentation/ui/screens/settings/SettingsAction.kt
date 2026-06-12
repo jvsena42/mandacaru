@@ -32,4 +32,7 @@ sealed interface SettingsAction {
     object OnCancelBirthdayRestart: SettingsAction
     object ToggleDataUsageExpanded: SettingsAction
     data class OnToggleMobileData(val enabled: Boolean): SettingsAction
+    data class OnToggleAdvancedFeatures(val enabled: Boolean): SettingsAction
+    object ToggleDeveloperToolsExpanded: SettingsAction
+    object OnClickViewLogs: SettingsAction
 }

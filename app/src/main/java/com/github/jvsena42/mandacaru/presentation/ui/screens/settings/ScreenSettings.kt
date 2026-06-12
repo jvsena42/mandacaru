@@ -37,6 +37,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
@@ -115,10 +116,12 @@ fun ScreenSettings(
     restartApplication: () -> Unit,
     modifier: Modifier = Modifier,
     bottomContentPadding: Dp = 0.dp,
+    onOpenLogs: () -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currentRestartApplication by rememberUpdatedState(restartApplication)
+    val currentOnOpenLogs by rememberUpdatedState(onOpenLogs)
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val shareLogsTitle = stringResource(R.string.share_logs)
@@ -145,6 +148,7 @@ fun ScreenSettings(
                     )
                 }
                 is SettingsEvents.OpenReleasePage -> uriHandler.openUri(event.url)
+                is SettingsEvents.OpenDeveloperLogs -> currentOnOpenLogs()
             }
         }
     }
@@ -718,56 +722,6 @@ private fun ScreenSettings(
                     }
                 }
 
-                // Export Logs
-                item {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .animateItem(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    Icons.Outlined.Description,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(24.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    stringResource(R.string.logs),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                            FilledTonalButton(
-                                onClick = { onAction(SettingsAction.OnClickExportLogs) },
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Icon(
-                                    Icons.Outlined.Share,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.size(8.dp))
-                                Text(stringResource(R.string.export_logs))
-                            }
-                        }
-                    }
-                }
-
                 // Donate Section
                 item {
                     val clipboardManager = LocalClipboardManager.current
@@ -881,6 +835,97 @@ private fun ScreenSettings(
                                 updateStatus = uiState.updateStatus,
                                 onAction = onAction,
                             )
+                        }
+                    }
+                }
+
+                // Advanced Features toggle
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .animateItem(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.advanced_features),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                )
+                                Text(
+                                    text = stringResource(R.string.advanced_features_subtitle),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Switch(
+                                checked = uiState.enableAdvancedFeatures,
+                                onCheckedChange = {
+                                    onAction(SettingsAction.OnToggleAdvancedFeatures(it))
+                                },
+                                modifier = Modifier
+                                    .padding(start = 12.dp)
+                                    .testTag("toggle_advanced_features"),
+                            )
+                        }
+                    }
+                }
+
+                // Developer Tools Section
+                if (uiState.enableAdvancedFeatures) {
+                    item {
+                        SectionCard(
+                            title = stringResource(R.string.developer_tools),
+                            icon = Icons.Outlined.Code,
+                            isExpanded = uiState.isDeveloperToolsExpanded,
+                            onToggle = { onAction(SettingsAction.ToggleDeveloperToolsExpanded) },
+                            modifier = Modifier.animateItem(),
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Button(
+                                    onClick = { onAction(SettingsAction.OnClickViewLogs) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .testTag("button_view_logs"),
+                                    shape = RoundedCornerShape(12.dp),
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.Description,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Spacer(modifier = Modifier.size(8.dp))
+                                    Text(stringResource(R.string.view_logs))
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                FilledTonalButton(
+                                    onClick = { onAction(SettingsAction.OnClickExportLogs) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .testTag("button_export_logs"),
+                                    shape = RoundedCornerShape(12.dp),
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.Share,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Spacer(modifier = Modifier.size(8.dp))
+                                    Text(stringResource(R.string.export_logs))
+                                }
+                            }
                         }
                     }
                 }

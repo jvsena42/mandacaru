@@ -42,4 +42,6 @@ data class SettingsUiState(
     val rescanBlocksTotal: Int? = null,
     val useAlsoMobileData: Boolean = false,
     val isDataUsageExpanded: Boolean = false,
+    val enableAdvancedFeatures: Boolean = false,
+    val isDeveloperToolsExpanded: Boolean = false,
 )

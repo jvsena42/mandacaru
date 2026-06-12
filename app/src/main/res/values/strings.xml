@@ -90,6 +90,15 @@
     <string name="logs">Logs</string>
     <string name="export_logs">Export</string>
     <string name="share_logs">Share Logs</string>
+    <string name="advanced_features">Advanced features</string>
+    <string name="advanced_features_subtitle">Show developer tools such as the node log viewer</string>
+    <string name="developer_tools">Developer Tools</string>
+    <string name="view_logs">View logs</string>
+    <string name="copy_logs">Copy logs</string>
+    <string name="logs_copied_to_clipboard">Logs copied to clipboard</string>
+    <string name="no_logs_available">No logs available yet</string>
+    <string name="log_file_not_found">Log file not found</string>
+    <string name="logs_back">Back</string>
     <string name="utreexo_warning_title">No Utreexo peers connected</string>
     <string name="utreexo_warning_message">Sync requires a Utreexo peer. Connecting to known bridges…</string>
 

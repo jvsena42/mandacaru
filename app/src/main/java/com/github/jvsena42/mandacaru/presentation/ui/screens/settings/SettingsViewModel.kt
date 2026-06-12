@@ -61,6 +61,8 @@ class SettingsViewModel(
                 ?: WalletBirthday.defaultYear()
             val useAlsoMobileData = preferencesDataSource
                 .getBoolean(PreferenceKeys.USE_ALSO_MOBILE_DATA, false)
+            val enableAdvancedFeatures = preferencesDataSource
+                .getBoolean(PreferenceKeys.ENABLE_ADVANCED_FEATURES, false)
             _uiState.update {
                 it.copy(
                     selectedNetwork = preferencesDataSource.getString(
@@ -69,6 +71,7 @@ class SettingsViewModel(
                     ),
                     walletBirthdayYear = birthdayYear,
                     useAlsoMobileData = useAlsoMobileData,
+                    enableAdvancedFeatures = enableAdvancedFeatures,
                 )
             }
             updateElectrumAddress()
@@ -204,6 +207,29 @@ class SettingsViewModel(
             SettingsAction.OnConfirmBirthdayRestart -> applyBirthdayYearAndRestart()
             SettingsAction.ToggleDataUsageExpanded -> toggleDataUsageExpanded()
             is SettingsAction.OnToggleMobileData -> handleMobileDataToggled(action)
+            is SettingsAction.OnToggleAdvancedFeatures -> handleAdvancedFeaturesToggled(action)
+            SettingsAction.ToggleDeveloperToolsExpanded -> _uiState.update {
+                it.copy(isDeveloperToolsExpanded = !it.isDeveloperToolsExpanded)
+            }
+
+            SettingsAction.OnClickViewLogs -> viewModelScope.sendEvent(
+                SettingsEvents.OpenDeveloperLogs
+            )
+        }
+    }
+
+    private fun handleAdvancedFeaturesToggled(action: SettingsAction.OnToggleAdvancedFeatures) {
+        viewModelScope.launch(Dispatchers.IO) {
+            preferencesDataSource.setBoolean(
+                PreferenceKeys.ENABLE_ADVANCED_FEATURES,
+                action.enabled
+            )
+            _uiState.update {
+                it.copy(
+                    enableAdvancedFeatures = action.enabled,
+                    isDeveloperToolsExpanded = action.enabled && it.isDeveloperToolsExpanded,
+                )
+            }
         }
     }
 
@@ -498,7 +524,9 @@ class SettingsViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val logFile = File(context.filesDir, "debug.log")
             if (!logFile.exists()) {
-                _uiState.update { it.copy(snackBarMessage = "Log file not found") }
+                _uiState.update {
+                    it.copy(snackBarMessage = context.getString(R.string.log_file_not_found))
+                }
                 return@launch
             }
 

@@ -125,6 +125,9 @@ action) on open. The snackbar is part of the Scaffold subtree, so its text and a
 | `button_copy_descriptor`    | a loaded descriptor row — tap to copy the full descriptor to the clipboard |
 | `input_network`             | network selector field                 |
 | `toggle_mobile_data`        | "Also use mobile data" switch          |
+| `toggle_advanced_features`  | "Advanced features" switch (gates the Developer Tools section) |
+| `button_view_logs`          | "View logs" (opens the full-screen log viewer) |
+| `button_export_logs`        | "Export" (share the full debug.log) — inside Developer Tools |
 
 `button_copy_descriptor` is applied to each loaded descriptor row, so the tag repeats once
 per descriptor — target the first when more than one is present. Tapping a row copies the
@@ -140,6 +143,14 @@ separate window (per the popup caveat below), so their controls — "Paste inste
 The Data usage section's `toggle_mobile_data` switch is off by default (Wi-Fi only);
 turning it on persists the preference and restarts the app. Expand the "Data usage"
 section by text before asserting on it.
+
+`toggle_advanced_features` is off by default. The **Developer Tools** section (and its
+`button_view_logs` / `button_export_logs`) only renders once the toggle is on. Expand
+"Developer Tools" by text, then tap `button_view_logs` to open `ScreenDeveloperLogs` — a
+full-screen Nav3 destination in the root subtree, so its tags surface normally (the popup
+caveat does **not** apply). There: `button_back_logs` returns to Settings, `button_copy_logs`
+copies the displayed tail, and the share action reuses `button_export_logs`. Each log line
+is colored by level (ERROR/WARN/INFO/DEBUG/TRACE).
 
 Tapping `input_network` opens the network dropdown. Its options are **targeted by text**
 (`BITCOIN`, `SIGNET`, `TESTNET`, `REGTEST`, `TESTNET4`) — see the popup caveat below.

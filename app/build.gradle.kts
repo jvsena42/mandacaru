@@ -110,6 +110,8 @@ dependencies {
     implementation(libs.androidx.compose.material3.adaptive)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.compose.navigation)
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
     implementation(libs.gson)
     implementation(libs.jna) { artifact { type = "aar" } }
 

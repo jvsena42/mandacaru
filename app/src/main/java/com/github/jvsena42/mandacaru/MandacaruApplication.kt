@@ -25,6 +25,7 @@ import com.github.jvsena42.mandacaru.domain.scan.DescriptorQrScanner
 import com.github.jvsena42.mandacaru.domain.scan.QrTransactionScanner
 import com.github.jvsena42.mandacaru.domain.scan.TransactionDecoder
 import com.github.jvsena42.mandacaru.presentation.ui.screens.blockchain.BlockchainViewModel
+import com.github.jvsena42.mandacaru.presentation.ui.screens.logs.DeveloperLogsViewModel
 import com.github.jvsena42.mandacaru.presentation.ui.screens.main.MainViewModel
 import com.github.jvsena42.mandacaru.presentation.ui.screens.node.NodeViewModel
 import com.github.jvsena42.mandacaru.presentation.ui.screens.transaction.TransactionViewModel
@@ -84,6 +85,7 @@ val presentationModule = module {
         )
     }
     viewModel { MainViewModel(appUpdateRepository = get()) }
+    viewModel { DeveloperLogsViewModel(context = androidContext()) }
     viewModel {
         TransactionViewModel(
             florestaRpc = get(),

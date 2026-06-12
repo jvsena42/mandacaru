@@ -63,8 +63,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.ui.NavDisplay
 import com.github.jvsena42.mandacaru.presentation.service.FlorestaService
 import com.github.jvsena42.mandacaru.presentation.ui.screens.blockchain.ScreenBlockchain
+import com.github.jvsena42.mandacaru.presentation.ui.screens.logs.ScreenDeveloperLogs
 import com.github.jvsena42.mandacaru.presentation.ui.screens.node.ScreenNode
 import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.ScreenSettings
 import com.github.jvsena42.mandacaru.presentation.ui.screens.splash.SplashScreen
@@ -198,14 +201,34 @@ private fun MandacaruRoot(
             .fillMaxSize()
             .semantics { testTagsAsResourceId = true }
     ) {
-        MainScreen(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-            restartApplication = restartApplication,
-            requestNotificationPermission = requestNotificationPermission,
-            hasNotificationPermission = hasNotificationPermission,
-            isSettingsBadgeVisible = isUpdateBadgeVisible,
+        NavDisplay(
+            backStack = mainViewModel.backStack,
+            onBack = { if (mainViewModel.backStack.size > 1) mainViewModel.navigateBack() },
+            entryProvider = { route ->
+                when (route) {
+                    AppRoute.Home -> NavEntry(route) {
+                        MainScreen(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.background),
+                            restartApplication = restartApplication,
+                            requestNotificationPermission = requestNotificationPermission,
+                            hasNotificationPermission = hasNotificationPermission,
+                            isSettingsBadgeVisible = isUpdateBadgeVisible,
+                            onOpenLogs = { mainViewModel.navigateTo(AppRoute.DeveloperLogs) },
+                        )
+                    }
+
+                    AppRoute.DeveloperLogs -> NavEntry(route) {
+                        ScreenDeveloperLogs(
+                            onBack = { mainViewModel.navigateBack() },
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.background),
+                        )
+                    }
+                }
+            },
         )
         AnimatedVisibility(
             visible = showSplash,
@@ -227,6 +250,7 @@ private fun MainScreen(
     requestNotificationPermission: () -> Unit = {},
     hasNotificationPermission: Boolean = true,
     isSettingsBadgeVisible: Boolean = false,
+    onOpenLogs: () -> Unit = {},
 ) {
     val pages = Destinations.entries
     val pagerState = rememberPagerState(
@@ -308,6 +332,7 @@ private fun MainScreen(
                     Destinations.SETTINGS -> ScreenSettings(
                         restartApplication = restartApplication,
                         bottomContentPadding = bottomBarPadding,
+                        onOpenLogs = onOpenLogs,
                     )
                 }
             }
