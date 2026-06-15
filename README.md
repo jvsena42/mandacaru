@@ -103,6 +103,19 @@ If you want zero trust assumptions, a from-genesis IBD (initial block download) 
 ### Releases
 Download the latest APK from [GitHub Releases](https://github.com/jvsena42/mandacaru/releases).
 
+> ⚠️ The APK is **ARM64-only** (`arm64-v8a`). It will not install on x86/x86_64 emulators or devices.
+
+### Obtainium (recommended for auto-updates)
+[Obtainium](https://github.com/ImranR98/Obtainium) installs and auto-updates apps directly from their GitHub releases — no Play Store or F-Droid required.
+
+**One tap:** with Obtainium installed, open this link on your device to pre-fill the app:
+
+```
+obtainium://app/{"id":"com.github.jvsena42.mandacaru","url":"https://github.com/jvsena42/mandacaru","author":"jvsena42","name":"Mandacaru"}
+```
+
+**Manual:** in Obtainium, tap **Add App**, paste `https://github.com/jvsena42/mandacaru` into the *App Source URL* field, then tap **Add**.
+
 ### From Source
 1. Clone the repository:
 ```bash
