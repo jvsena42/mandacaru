@@ -105,7 +105,7 @@ Download the latest APK from [GitHub Releases](https://github.com/jvsena42/manda
 
 > ⚠️ The APK is **ARM64-only** (`arm64-v8a`). It will not install on x86/x86_64 emulators or devices.
 
-### Obtainium (recommended for auto-updates)
+### Obtainium
 [Obtainium](https://github.com/ImranR98/Obtainium) installs and auto-updates apps directly from their GitHub releases — no Play Store or F-Droid required.
 
 **One tap:** with Obtainium installed, open this link on your device to pre-fill the app:
