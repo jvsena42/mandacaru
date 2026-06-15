@@ -133,10 +133,10 @@ dependencies {
     implementation(libs.koin.viewmodel)
     implementation(libs.koin.compose)
     implementation(libs.koin.android)
-    implementation(libs.koin.test)
     implementation(libs.androidx.compose.material.icons.extended)
 
     testImplementation(libs.junit)
+    testImplementation(libs.koin.test)
     testImplementation(libs.org.json)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockito.core)
