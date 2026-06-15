@@ -1,5 +1,6 @@
 package com.github.jvsena42.mandacaru.presentation.ui.components
 
+import androidx.annotation.OptIn as AndroidXOptIn
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
@@ -68,7 +69,7 @@ fun QrCameraPreview(
                 val provider = providerFuture.get()
                 cameraProvider.set(provider)
                 val preview = Preview.Builder().build().also {
-                    it.setSurfaceProvider(previewView.surfaceProvider)
+                    it.surfaceProvider = previewView.surfaceProvider
                 }
                 val analysis = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
@@ -82,7 +83,7 @@ fun QrCameraPreview(
                             }
                         }
                     }
-                try {
+                runCatching {
                     provider.unbindAll()
                     provider.bindToLifecycle(
                         lifecycleOwner,
@@ -90,15 +91,14 @@ fun QrCameraPreview(
                         preview,
                         analysis,
                     )
-                } catch (_: IllegalStateException) {
-                }
+                }.onFailure { if (it !is IllegalStateException) throw it }
             }, ContextCompat.getMainExecutor(ctx))
             previewView
         },
     )
 }
 
-@androidx.annotation.OptIn(ExperimentalGetImage::class)
+@AndroidXOptIn(ExperimentalGetImage::class)
 private fun processFrame(
     proxy: ImageProxy,
     scanner: BarcodeScanner,

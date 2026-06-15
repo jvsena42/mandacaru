@@ -49,6 +49,11 @@ Mandacaru is an Android application that runs a lightweight Bitcoin validation n
 
 Lint configuration lives at `app/lint.xml`; detekt configuration lives at `config/detekt/detekt.yml`. When a rule fires on generated code or on an intentional project decision (e.g. ARM64-only build), prefer tuning the config over disabling the rule globally.
 
+### Kotlin Conventions
+
+- Prefer `runCatching { ... }` over `try`/`catch` for error handling. When the original code only swallowed a specific exception type, preserve that by re-throwing others in `onFailure` (e.g. `.onFailure { if (it !is IllegalStateException) throw it }`).
+- Import types and use the short name rather than fully-qualified names inline (e.g. import `androidx.annotation.OptIn` instead of writing `@androidx.annotation.OptIn(...)`). When the simple name collides with an auto-imported one (`androidx.annotation.OptIn` vs `kotlin.OptIn`), use an import alias (e.g. `import androidx.annotation.OptIn as AndroidXOptIn`).
+
 ### Development Setup
 - Requires Android 10 (API 29) minimum
 - ARM64 device only (arm64-v8a) - the Rust library is compiled for ARM64 only
