@@ -3,12 +3,6 @@ package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ExperimentalGetImage
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ImageProxy
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,11 +28,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,18 +39,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.github.jvsena42.mandacaru.R
+import com.github.jvsena42.mandacaru.presentation.ui.components.QrCameraPreview
 import com.github.jvsena42.mandacaru.presentation.utils.RequestCameraPermission
-import com.google.mlkit.vision.barcode.BarcodeScanner
-import com.google.mlkit.vision.barcode.BarcodeScannerOptions
-import com.google.mlkit.vision.barcode.BarcodeScanning
-import com.google.mlkit.vision.barcode.common.Barcode
-import com.google.mlkit.vision.common.InputImage
-import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicReference
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,7 +96,7 @@ fun DescriptorScanSheet(
                                 .weight(1f),
                             contentAlignment = Alignment.Center,
                         ) {
-                            ContinuousCameraPreview(
+                            QrCameraPreview(
                                 enabled = error.isEmpty(),
                                 onPayloadScanned = onFrameScanned,
                                 modifier = Modifier
@@ -239,88 +222,6 @@ private fun CameraDeniedFallback() {
             Text(stringResource(R.string.open_app_settings))
         }
     }
-}
-
-@Composable
-private fun ContinuousCameraPreview(
-    enabled: Boolean,
-    onPayloadScanned: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val lastPayload = remember { AtomicReference<String?>(null) }
-    val isEnabled = rememberUpdatedState(enabled)
-    val scanner = remember {
-        BarcodeScanning.getClient(
-            BarcodeScannerOptions.Builder()
-                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
-                .build()
-        )
-    }
-    val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
-
-    LaunchedEffect(enabled) {
-        if (enabled) lastPayload.set(null)
-    }
-
-    AndroidView(
-        modifier = modifier,
-        factory = { ctx ->
-            val previewView = PreviewView(ctx).apply {
-                scaleType = PreviewView.ScaleType.FILL_CENTER
-                implementationMode = PreviewView.ImplementationMode.COMPATIBLE
-            }
-            val providerFuture = ProcessCameraProvider.getInstance(ctx)
-            providerFuture.addListener({
-                val provider = providerFuture.get()
-                val preview = androidx.camera.core.Preview.Builder().build().also {
-                    it.setSurfaceProvider(previewView.surfaceProvider)
-                }
-                val analysis = ImageAnalysis.Builder()
-                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                    .build()
-                    .also {
-                        it.setAnalyzer(analysisExecutor) { proxy ->
-                            processFrame(proxy, scanner) { payload ->
-                                if (isEnabled.value && lastPayload.getAndSet(payload) != payload) {
-                                    onPayloadScanned(payload)
-                                }
-                            }
-                        }
-                    }
-                try {
-                    provider.unbindAll()
-                    provider.bindToLifecycle(
-                        lifecycleOwner,
-                        CameraSelector.DEFAULT_BACK_CAMERA,
-                        preview,
-                        analysis,
-                    )
-                } catch (_: IllegalStateException) {
-                }
-            }, ContextCompat.getMainExecutor(ctx))
-            previewView
-        },
-    )
-}
-
-@androidx.annotation.OptIn(ExperimentalGetImage::class)
-private fun processFrame(
-    proxy: ImageProxy,
-    scanner: BarcodeScanner,
-    onPayload: (String) -> Unit,
-) {
-    val mediaImage = proxy.image
-    if (mediaImage == null) {
-        proxy.close()
-        return
-    }
-    val image = InputImage.fromMediaImage(mediaImage, proxy.imageInfo.rotationDegrees)
-    scanner.process(image)
-        .addOnSuccessListener { barcodes ->
-            barcodes.firstOrNull { it.rawValue != null }?.rawValue?.let(onPayload)
-        }
-        .addOnCompleteListener { proxy.close() }
 }
 
 private const val SHEET_HEIGHT_FRACTION = 0.92f

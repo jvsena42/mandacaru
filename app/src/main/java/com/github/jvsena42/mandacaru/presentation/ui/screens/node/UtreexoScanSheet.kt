@@ -3,12 +3,6 @@ package com.github.jvsena42.mandacaru.presentation.ui.screens.node
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ExperimentalGetImage
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ImageProxy
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,18 +36,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.github.jvsena42.mandacaru.R
+import com.github.jvsena42.mandacaru.presentation.ui.components.QrCameraPreview
 import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
 import com.github.jvsena42.mandacaru.presentation.utils.RequestCameraPermission
-import com.google.mlkit.vision.barcode.BarcodeScanner
-import com.google.mlkit.vision.barcode.BarcodeScannerOptions
-import com.google.mlkit.vision.barcode.BarcodeScanning
-import com.google.mlkit.vision.barcode.common.Barcode
-import com.google.mlkit.vision.common.InputImage
-import java.util.concurrent.Executors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,6 +50,7 @@ fun UtreexoScanSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var hasCamera by remember { mutableStateOf(false) }
+    var alreadyFired by remember { mutableStateOf(false) }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
@@ -88,8 +75,14 @@ fun UtreexoScanSheet(
                         .weight(1f),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CameraPreview(
-                        onPayloadScanned = onPayloadScanned,
+                    QrCameraPreview(
+                        enabled = !alreadyFired,
+                        onPayloadScanned = {
+                            if (!alreadyFired) {
+                                alreadyFired = true
+                                onPayloadScanned(it)
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(RoundedCornerShape(16.dp)),
@@ -106,83 +99,6 @@ fun UtreexoScanSheet(
             }
         }
     }
-}
-
-@Composable
-private fun CameraPreview(
-    onPayloadScanned: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val lifecycleOwner = LocalLifecycleOwner.current
-    var alreadyFired by remember { mutableStateOf(false) }
-    val scanner = remember {
-        BarcodeScanning.getClient(
-            BarcodeScannerOptions.Builder()
-                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
-                .build()
-        )
-    }
-    val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
-
-    AndroidView(
-        modifier = modifier,
-        factory = { ctx ->
-            val previewView = PreviewView(ctx).apply {
-                scaleType = PreviewView.ScaleType.FILL_CENTER
-                implementationMode = PreviewView.ImplementationMode.COMPATIBLE
-            }
-            val providerFuture = ProcessCameraProvider.getInstance(ctx)
-            providerFuture.addListener({
-                val provider = providerFuture.get()
-                val preview = androidx.camera.core.Preview.Builder().build().also {
-                    it.setSurfaceProvider(previewView.surfaceProvider)
-                }
-                val analysis = ImageAnalysis.Builder()
-                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                    .build()
-                    .also {
-                        it.setAnalyzer(analysisExecutor) { proxy ->
-                            processFrame(proxy, scanner) { payload ->
-                                if (!alreadyFired) {
-                                    alreadyFired = true
-                                    onPayloadScanned(payload)
-                                }
-                            }
-                        }
-                    }
-                try {
-                    provider.unbindAll()
-                    provider.bindToLifecycle(
-                        lifecycleOwner,
-                        CameraSelector.DEFAULT_BACK_CAMERA,
-                        preview,
-                        analysis,
-                    )
-                } catch (_: IllegalStateException) {
-                }
-            }, ContextCompat.getMainExecutor(ctx))
-            previewView
-        },
-    )
-}
-
-@androidx.annotation.OptIn(ExperimentalGetImage::class)
-private fun processFrame(
-    proxy: ImageProxy,
-    scanner: BarcodeScanner,
-    onPayload: (String) -> Unit,
-) {
-    val mediaImage = proxy.image
-    if (mediaImage == null) {
-        proxy.close()
-        return
-    }
-    val image = InputImage.fromMediaImage(mediaImage, proxy.imageInfo.rotationDegrees)
-    scanner.process(image)
-        .addOnSuccessListener { barcodes ->
-            barcodes.firstOrNull { it.rawValue != null }?.rawValue?.let(onPayload)
-        }
-        .addOnCompleteListener { proxy.close() }
 }
 
 @Composable
