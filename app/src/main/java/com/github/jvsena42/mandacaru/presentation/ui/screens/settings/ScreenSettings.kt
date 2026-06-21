@@ -310,7 +310,14 @@ private fun ScreenSettings(
                                             .fillMaxWidth()
                                             .padding(vertical = 4.dp)
                                             .clickable {
-                                                clipboardManager.setText(AnnotatedString(descriptor))
+                                                // Extracts standard public keys (xpub, ypub, zpub, tpub, upub, vpub)
+                                                val keyRegex = """([xyzvtu]pub[a-zA-Z0-9]{100,115})""".toRegex()
+                                                val match = keyRegex.find(descriptor)
+                                                
+                                                // If a raw key is found, copy it. Otherwise, fallback to the full string.
+                                                val cleanKey = match?.value ?: descriptor
+                                                
+                                                clipboardManager.setText(AnnotatedString(cleanKey))
                                                 onAction(SettingsAction.OnDescriptorCopied(descriptor))
                                             }
                                             .testTag("button_copy_descriptor"),
