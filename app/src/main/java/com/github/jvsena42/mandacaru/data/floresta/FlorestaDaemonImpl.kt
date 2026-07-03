@@ -1,6 +1,8 @@
 package com.github.jvsena42.mandacaru.data.floresta
 
 import android.util.Log
+import com.florestad.AssumeUtreexoValue
+import com.florestad.AssumeValidArg
 import com.florestad.Config
 import com.florestad.Florestad
 import com.github.jvsena42.mandacaru.BuildConfig
@@ -12,6 +14,7 @@ import com.github.jvsena42.mandacaru.presentation.utils.SnapshotCodec
 import com.github.jvsena42.mandacaru.presentation.utils.WalletBirthday
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.io.File
 
 import com.florestad.Network as FlorestaNetwork
@@ -51,29 +54,31 @@ class FlorestaDaemonImpl(
                 else -> "floresta-default"
             }
             val effectiveDataDir = dataDirFor(network)
+            val rpcPort = rpcPortFor(network)
+            val assumeUtreexoValue = startupSnapshotJson?.let { toAssumeUtreexoValue(it) }
             Log.i(
                 TAG,
                 "start: snapshotSource=$snapshotSource, " +
-                    "snapshotLen=${startupSnapshotJson?.length ?: 0}, " +
-                    "network=$network, datadir=$effectiveDataDir, " +
+                    "snapshotApplied=${assumeUtreexoValue != null}, " +
+                    "network=$network, datadir=$effectiveDataDir, rpcPort=$rpcPort, " +
                     "filtersStartHeight=$filtersStartHeight, userAgent=$userAgent",
             )
             val config = Config(
-                dataDir = effectiveDataDir,
+                datadir = effectiveDataDir,
                 network = network,
-                assumeUtreexo = true,
-                userUtreexoSnapshotJson = startupSnapshotJson,
+                assumeValid = AssumeValidArg.Hardcoded,
+                cfilters = true,
                 filtersStartHeight = filtersStartHeight,
+                jsonRpcAddress = "127.0.0.1:$rpcPort",
+                logToFile = true,
+                assumeUtreexo = true,
+                assumeutreexoValue = assumeUtreexoValue,
                 userAgent = userAgent,
             )
             daemon = Florestad.fromConfig(config)
-            daemon?.start()?.also {
-                Log.i(
-                    TAG,
-                    "start: Floresta running (snapshotSource=$snapshotSource)",
-                )
-                isRunning = true
-            }
+            daemon?.start()
+            Log.i(TAG, "start: Floresta running (snapshotSource=$snapshotSource)")
+            isRunning = true
         } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
             Log.e(TAG, "start error: ", e)
             isRunning = false
@@ -134,6 +139,30 @@ class FlorestaDaemonImpl(
             Log.w(TAG, "builtin snapshot decode failed; falling back to Floresta default", it)
         }.getOrNull()
     }
+
+    private fun rpcPortFor(network: FlorestaNetwork): String = when (network) {
+        FlorestaNetwork.BITCOIN -> Constants.RPC_PORT_MAINNET
+        FlorestaNetwork.SIGNET -> Constants.RPC_PORT_SIGNET
+        FlorestaNetwork.TESTNET -> Constants.RPC_PORT_TESTNET
+        FlorestaNetwork.TESTNET4 -> Constants.RPC_PORT_TESTNET_4
+        FlorestaNetwork.REGTEST -> Constants.RPC_PORT_REGTEST
+    }
+
+    // Decode a normalized snapshot JSON payload (network/block_hash/height/leaves/
+    // roots) into the FFI's structured assume-utreexo value.
+    private fun toAssumeUtreexoValue(json: String): AssumeUtreexoValue? = runCatching {
+        val obj = JSONObject(json)
+        val rootsArray = obj.getJSONArray("roots")
+        val roots = List(rootsArray.length()) { rootsArray.getString(it) }
+        AssumeUtreexoValue(
+            blockHash = obj.getString("block_hash"),
+            height = obj.getLong("height").toUInt(),
+            roots = roots,
+            leaves = obj.getLong("leaves").toULong(),
+        )
+    }.onFailure {
+        Log.w(TAG, "failed to decode snapshot JSON to AssumeUtreexoValue", it)
+    }.getOrNull()
 
     // Each network needs its own chain data. Mainnet keeps the flat base dir for
     // backward compatibility with already-synced installs; other networks live in a
