@@ -6,7 +6,7 @@ val localProperties = Properties().apply {
     if (file.exists()) load(file.inputStream())
 }
 
-val appVersionName = "0.13.1"
+val appVersionName = "0.13.2"
 
 plugins {
     alias(libs.plugins.android.application)
@@ -22,7 +22,7 @@ android {
         applicationId = "com.github.jvsena42.mandacaru"
         minSdk = 29
         targetSdk = 36
-        versionCode = 31
+        versionCode = 32
         versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
