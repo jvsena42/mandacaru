@@ -51,7 +51,8 @@ Lint configuration lives at `app/lint.xml`; detekt configuration lives at `confi
 
 ### Kotlin Conventions
 
-- Prefer `runCatching { ... }` over `try`/`catch` for error handling. When the original code only swallowed a specific exception type, preserve that by re-throwing others in `onFailure` (e.g. `.onFailure { if (it !is IllegalStateException) throw it }`).
+- Prefer `runCatching { ... }` over `try`/`catch` for error handling. When the original code only swallowed a specific exception type, preserve that by re-throwing others in `onFailure` (e.g. `.onFailure { if (it !is IllegalStateException) throw it }`). Reserve `try`/`finally` for guaranteed resource cleanup — that has no `runCatching` equivalent.
+- Inside `suspend` functions or coroutine builders (`launch`/`withContext`/`flow`), use `runSuspendCatching { ... }` (in `com.github.jvsena42.mandacaru.common`) instead of `runCatching` or a generic `try`/`catch` — plain `runCatching` swallows `CancellationException` and breaks structured-concurrency cancellation. `runSuspendCatching` rethrows it.
 - Import types and use the short name rather than fully-qualified names inline (e.g. import `androidx.annotation.OptIn` instead of writing `@androidx.annotation.OptIn(...)`). When the simple name collides with an auto-imported one (`androidx.annotation.OptIn` vs `kotlin.OptIn`), use an import alias (e.g. `import androidx.annotation.OptIn as AndroidXOptIn`).
 
 ### Development Setup
