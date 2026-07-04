@@ -1,6 +1,7 @@
 package com.github.jvsena42.mandacaru.data.floresta
 
 import android.util.Log
+import com.github.jvsena42.mandacaru.common.runSuspendCatching
 import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
@@ -18,7 +19,6 @@ import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetTransa
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.ListDescriptorsResponse
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.UptimeResponse
 import com.google.gson.Gson
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -126,18 +126,18 @@ class FlorestaRpcImpl(
 
         val emission = result.fold(
             onSuccess = { json ->
-                try {
-                    val response = when (T::class) {
+                runSuspendCatching {
+                    when (T::class) {
                         JSONObject::class -> json as T
                         else -> gson.fromJson(json.toString(), T::class.java)
                     }
-                    Result.success(response)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
-                    Log.e(TAG, "${method.method} parse error: ${e.message}")
-                    Result.failure(Exception("Failed to parse response: ${e.message}"))
-                }
+                }.fold(
+                    onSuccess = { Result.success(it) },
+                    onFailure = { e ->
+                        Log.e(TAG, "${method.method} parse error: ${e.message}")
+                        Result.failure(Exception("Failed to parse response: ${e.message}"))
+                    }
+                )
             },
             onFailure = { e ->
                 Log.e(TAG, "${method.method} failure: ${e.message}")

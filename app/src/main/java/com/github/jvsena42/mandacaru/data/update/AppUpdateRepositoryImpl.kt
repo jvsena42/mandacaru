@@ -2,6 +2,7 @@ package com.github.jvsena42.mandacaru.data.update
 
 import android.util.Log
 import com.github.jvsena42.mandacaru.BuildConfig
+import com.github.jvsena42.mandacaru.common.runSuspendCatching
 import com.github.jvsena42.mandacaru.data.AppUpdateRepository
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
@@ -37,7 +38,7 @@ class AppUpdateRepositoryImpl(
         emitCachedStatus()
         if (!force && !isCheckDue()) return@withContext
         _updateStatus.update { it.copy(isChecking = true, checkFailed = false) }
-        runCatching { fetchLatestRelease() }
+        runSuspendCatching { fetchLatestRelease() }
             .onSuccess { release -> applyRelease(release) }
             .onFailure { error ->
                 Log.w(TAG, "refresh: failed to check for updates", error)

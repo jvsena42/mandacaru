@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.florestad.UtreexoImportException
+import com.github.jvsena42.mandacaru.common.runSuspendCatching
 import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
@@ -317,7 +318,7 @@ class NodeViewModel(
                 "onConfirmImport: payload len=${payload.length} " +
                     "compact=${SnapshotCodec.isCompact(payload)}",
             )
-            val payloadToPersist = runCatching { SnapshotCodec.normalizeToJson(payload) }
+            val payloadToPersist = runSuspendCatching { SnapshotCodec.normalizeToJson(payload) }
                 .getOrElse { error ->
                     Log.e(TAG, "normalizeToJson failed", error)
                     _uiState.update {

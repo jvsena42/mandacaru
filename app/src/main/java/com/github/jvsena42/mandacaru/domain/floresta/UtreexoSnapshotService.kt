@@ -2,6 +2,7 @@ package com.github.jvsena42.mandacaru.domain.floresta
 
 import com.florestad.Network
 import com.florestad.validateUtreexoSnapshotJson
+import com.github.jvsena42.mandacaru.common.runSuspendCatching
 import com.github.jvsena42.mandacaru.presentation.utils.SnapshotCodec
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -22,7 +23,7 @@ open class UtreexoSnapshotService(
 
     open suspend fun validate(payload: String, expectedNetwork: Network) =
         withContext(Dispatchers.IO) {
-            runCatching {
+            runSuspendCatching {
                 val json = SnapshotCodec.normalizeToJson(payload)
                 validateUtreexoSnapshotJson(json, expectedNetwork)
             }

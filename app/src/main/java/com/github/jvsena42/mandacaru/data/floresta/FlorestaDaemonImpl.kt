@@ -6,6 +6,7 @@ import com.florestad.AssumeValidArg
 import com.florestad.Config
 import com.florestad.Florestad
 import com.github.jvsena42.mandacaru.BuildConfig
+import com.github.jvsena42.mandacaru.common.runSuspendCatching
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
@@ -29,7 +30,7 @@ class FlorestaDaemonImpl(
 
     override suspend fun start() {
         if (isRunning) return
-        try {
+        runSuspendCatching {
             val pendingSnapshot = preferencesDataSource
                 .getString(PreferenceKeys.PENDING_UTREEXO_SNAPSHOT, "")
                 .takeIf { it.isNotEmpty() }
@@ -79,7 +80,7 @@ class FlorestaDaemonImpl(
             daemon?.start()
             Log.i(TAG, "start: Floresta running (snapshotSource=$snapshotSource)")
             isRunning = true
-        } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+        }.onFailure { e ->
             Log.e(TAG, "start error: ", e)
             isRunning = false
         }
@@ -104,7 +105,7 @@ class FlorestaDaemonImpl(
         if (!isRunning || d == null) {
             return@withContext Result.failure(IllegalStateException("Daemon not running"))
         }
-        runCatching { d.dumpUtreexoState() }
+        runSuspendCatching { d.dumpUtreexoState() }
     }
 
     override suspend fun prepareForSnapshotImport(): Result<Unit> = withContext(Dispatchers.IO) {

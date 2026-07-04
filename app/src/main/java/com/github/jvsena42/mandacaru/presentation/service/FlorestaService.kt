@@ -11,6 +11,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.toColorInt
 import com.github.jvsena42.mandacaru.R
+import com.github.jvsena42.mandacaru.common.runSuspendCatching
 import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
@@ -146,14 +147,14 @@ class FlorestaService : Service() {
                 return START_NOT_STICKY
             }
             else -> {
-                try {
+                runCatching {
                     ioScope.launch {
                         Log.d(TAG, "Starting Floresta daemon")
                         florestaDaemon.start()
                     }
                     startNotificationPolling()
                     observeWifiState()
-                } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                }.onFailure { e ->
                     Log.e(TAG, "onStartCommand error: ", e)
                 }
             }
@@ -184,7 +185,7 @@ class FlorestaService : Service() {
         notificationPollingJob = ioScope.launch {
             while (true) {
                 delay(NOTIFICATION_POLL_INTERVAL_MS)
-                try {
+                runSuspendCatching {
                     florestaRpc.getBlockchainInfo().collect { result ->
                         result.onSuccess { data ->
                             val peers = florestaRpc.getPeerInfo().firstOrNull()
@@ -224,7 +225,7 @@ class FlorestaService : Service() {
                             )
                         }
                     }
-                } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                }.onFailure { e ->
                     Log.d(TAG, "Notification poll failed: ${e.message}")
                 }
             }
@@ -409,7 +410,7 @@ class FlorestaService : Service() {
 
     private suspend fun stopDaemonWithTimeout() {
         Log.d(TAG, "Stopping Floresta daemon")
-        runCatching {
+        runSuspendCatching {
             withTimeoutOrNull(STOP_TIMEOUT_MS) {
                 florestaDaemon.stop()
             }
