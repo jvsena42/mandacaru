@@ -97,13 +97,13 @@ If you want zero trust assumptions, a from-genesis IBD (initial block download) 
 
 ### Requirements
 - Android 10 (API 29) or higher
-- ARM64 device (arm64-v8a architecture)
+- ARM64 device (`arm64-v8a`) or x86_64 (`x86_64`, e.g. emulators)
 - Internet connection
 
 ### Releases
 Download the latest APK from [GitHub Releases](https://github.com/jvsena42/mandacaru/releases).
 
-> ⚠️ The APK is **ARM64-only** (`arm64-v8a`). It will not install on x86/x86_64 emulators or devices.
+> ℹ️ The APK ships native libraries for **`arm64-v8a`** (physical devices) and **`x86_64`** (emulators/CI). 32-bit ABIs (`x86`, `armeabi-v7a`) are not supported.
 
 ### Obtainium
 [Obtainium](https://github.com/ImranR98/Obtainium) installs and auto-updates apps directly from their GitHub releases — no Play Store or F-Droid required.

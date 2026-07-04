@@ -47,7 +47,7 @@ Mandacaru is an Android application that runs a lightweight Bitcoin validation n
 ./gradlew dependencyUpdates
 ```
 
-Lint configuration lives at `app/lint.xml`; detekt configuration lives at `config/detekt/detekt.yml`. When a rule fires on generated code or on an intentional project decision (e.g. ARM64-only build), prefer tuning the config over disabling the rule globally.
+Lint configuration lives at `app/lint.xml`; detekt configuration lives at `config/detekt/detekt.yml`. When a rule fires on generated code or on an intentional project decision (e.g. shipping only `arm64-v8a` + `x86_64`, no 32-bit ABIs), prefer tuning the config over disabling the rule globally.
 
 ### Kotlin Conventions
 
@@ -57,7 +57,7 @@ Lint configuration lives at `app/lint.xml`; detekt configuration lives at `confi
 
 ### Development Setup
 - Requires Android 10 (API 29) minimum
-- ARM64 device only (arm64-v8a) - the Rust library is compiled for ARM64 only
+- ARM64 device (arm64-v8a) or x86_64 emulator - the Rust library is cross-compiled for both `arm64-v8a` and `x86_64` (see `update-bindings.sh`); 32-bit ABIs are not built
 - Java 11 language target
 - Android Studio with Compose support recommended
 
@@ -102,7 +102,7 @@ data/                 # Data layer
 
 The app communicates with Rust code via UniFFI-generated bindings:
 
-- **Native Library**: `libuniffi_floresta.so` (ARM64 only)
+- **Native Library**: `libflorestad_ffi.so` (built for `arm64-v8a` and `x86_64`)
 - **Kotlin Bindings**: `com.florestad.florestad.kt` (auto-generated)
 - **Main Classes**:
   - `Florestad`: Rust daemon wrapper with `start()`/`stop()` methods
@@ -231,7 +231,7 @@ When loading wallet descriptors via Settings, use standard Bitcoin descriptor fo
 - RPC tests require running Rust daemon
 
 ### Agentic UI Tests (android-cli journeys)
-- Journey tests live in `journeys/` — natural-language XML steps an AI agent runs via the `android-cli` skill (`android layout`, `adb shell input`) against an installed debug build on an ARM64 device.
+- Journey tests live in `journeys/` — natural-language XML steps an AI agent runs via the `android-cli` skill (`android layout`, `adb shell input`) against an installed debug build on an ARM64 device or x86_64 emulator.
 - `journeys/README.md` is the canonical **testTag contract**: it lists every `testTag` and what it maps to. Keep it in sync when adding/renaming a tag.
 - Compose `testTag`s surface under the `resource-id` key in `android layout` because the root composable (`MainActivity.MandacaruRoot`) sets `testTagsAsResourceId = true`. Prefer targeting these stable ids over localized text or bounds. Two caveats learned from real runs: (1) a `testTag` only surfaces on a node that already emits semantics (interactive controls, text, nav items) — a plain container `Box` with only a `testTag` does not appear, so identify the active screen by the selected nav item's `"state":["selected"]`; (2) dropdowns/dialogs/bottom sheets render in a separate window outside the root subtree, so their `testTag`s do not surface — target items inside them by text.
 - Tags are **inline string literals** at each call site (no shared constants file) to avoid cross-branch merge conflicts. When adding UI an agent must drive, tag it and document it in `journeys/README.md`.
