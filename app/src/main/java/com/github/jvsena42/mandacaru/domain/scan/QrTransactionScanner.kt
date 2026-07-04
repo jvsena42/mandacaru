@@ -48,15 +48,13 @@ class DefaultQrTransactionScanner : QrTransactionScanner {
     }
 
     private fun completeWith(ur: UR, transport: ScanTransport): ScanState =
-        try {
+        runCatching {
             ScanState.Complete(ur.toBytes(), transport).also { reset() }
-        } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
-            failWith(e.message ?: "Unsupported QR payload")
-        }
+        }.getOrElse { failWith(it.message ?: "Unsupported QR payload") }
 
     private fun ingestBbqr(part: String): ScanState {
         val joiner = bbqrJoiner ?: BbqrJoiner().also { bbqrJoiner = it }
-        return try {
+        return runCatching {
             when (val result = joiner.addPart(part)) {
                 is BbqrJoiner.Result.InProgress -> {
                     val progress = result.received.toFloat() / result.total
@@ -65,9 +63,7 @@ class DefaultQrTransactionScanner : QrTransactionScanner {
                 is BbqrJoiner.Result.Complete ->
                     ScanState.Complete(result.data, ScanTransport.BBQR).also { reset() }
             }
-        } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
-            failWith(e.message ?: "Failed to decode the BBQr code")
-        }
+        }.getOrElse { failWith(it.message ?: "Failed to decode the BBQr code") }
     }
 
     private fun ingestSingleFrame(text: String): ScanState {

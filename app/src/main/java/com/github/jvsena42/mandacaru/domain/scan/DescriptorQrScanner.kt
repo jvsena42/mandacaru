@@ -62,9 +62,8 @@ class DefaultDescriptorQrScanner : DescriptorQrScanner {
         }
     }
 
-    @Suppress("TooGenericExceptionCaught")
     private fun decodeUr(ur: UR): DescriptorScanState =
-        try {
+        runCatching {
             when (val decoded = ur.decodeFromRegistry()) {
                 is UROutputDescriptor -> completeWith(decoded.source)
                 is URAccountDescriptor ->
@@ -73,13 +72,11 @@ class DefaultDescriptorQrScanner : DescriptorQrScanner {
                 is CryptoOutput, is CryptoAccount -> failWith(LEGACY_UR_ERROR)
                 else -> failWith("This QR code doesn't contain a wallet descriptor")
             }
-        } catch (e: Exception) {
-            failWith(e.message ?: "Failed to decode the wallet descriptor")
-        }
+        }.getOrElse { failWith(it.message ?: "Failed to decode the wallet descriptor") }
 
     private fun ingestBbqr(part: String): DescriptorScanState {
         val joiner = bbqrJoiner ?: BbqrJoiner().also { bbqrJoiner = it }
-        return try {
+        return runCatching {
             when (val result = joiner.addPart(part)) {
                 is BbqrJoiner.Result.InProgress -> {
                     val progress = result.received.toFloat() / result.total
@@ -88,9 +85,7 @@ class DefaultDescriptorQrScanner : DescriptorQrScanner {
                 is BbqrJoiner.Result.Complete ->
                     completeWith(DescriptorUtils.extractDescriptor(String(result.data)))
             }
-        } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
-            failWith(e.message ?: "Failed to decode the BBQr code")
-        }
+        }.getOrElse { failWith(it.message ?: "Failed to decode the BBQr code") }
     }
 
     private fun ingestSingleFrame(text: String): DescriptorScanState =
