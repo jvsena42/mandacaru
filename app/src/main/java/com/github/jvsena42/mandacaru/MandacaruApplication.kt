@@ -82,6 +82,7 @@ val presentationModule = module {
             preferencesDataSource = get(),
             appUpdateRepository = get(),
             descriptorScanner = get(),
+            updateRegistry = get(),
             context = androidContext(),
         )
     }
