@@ -18,16 +18,17 @@ import com.github.jvsena42.mandacaru.data.update.UpdateDownloadRegistry
             context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
     
         fun resolve(
-            val downloadManager = dm ?: return UpdateState.Available
             status: com.github.jvsena42.mandacaru.domain.model.UpdateStatus,
             downloadId: Long?
         ): UpdateState {
-    
+        
+            val downloadManager = dm ?: return UpdateState.Available
+        
             // No update available at all
             if (!status.isUpdateAvailable) {
                 return UpdateState.Idle
             }
-    
+        
             // Already fully downloaded (persistent state)
             if (registry.isDownloaded(status.latestVersion)) {
                 val uri = registry.getCompletedUri(status.latestVersion)
