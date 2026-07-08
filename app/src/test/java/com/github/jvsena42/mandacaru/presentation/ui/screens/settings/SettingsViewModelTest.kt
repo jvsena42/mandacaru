@@ -4,6 +4,7 @@ import android.content.Context
 import com.github.jvsena42.mandacaru.data.AppUpdateRepository
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
+import com.github.jvsena42.mandacaru.data.update.UpdateDownloadRegistry
 import com.github.jvsena42.mandacaru.domain.model.UpdateStatus
 import com.github.jvsena42.mandacaru.domain.scan.DescriptorQrScanner
 import com.github.jvsena42.mandacaru.domain.scan.DescriptorScanState
@@ -55,6 +56,7 @@ class SettingsViewModelTest {
             preferencesDataSource = preferences,
             appUpdateRepository = appUpdateRepository,
             descriptorScanner = descriptorScanner,
+            updateRegistry = mock(UpdateDownloadRegistry::class.java),
             context = mock(Context::class.java),
         )
         // runCurrent (not advanceUntilIdle): observeRescanState is an infinite delay loop
