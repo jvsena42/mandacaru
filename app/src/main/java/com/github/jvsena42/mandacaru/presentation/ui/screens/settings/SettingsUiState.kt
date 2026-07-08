@@ -3,6 +3,7 @@ package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 import androidx.compose.runtime.Stable
 import com.florestad.Network
 import com.github.jvsena42.mandacaru.domain.model.UpdateStatus
+import com.github.jvsena42.mandacaru.domain.update.UpdateState
 import com.github.jvsena42.mandacaru.presentation.utils.DescriptorUtils
 import com.github.jvsena42.mandacaru.presentation.utils.WalletBirthday
 
@@ -37,6 +38,8 @@ data class SettingsUiState(
     val isBirthdayPickerOpen: Boolean = false,
     val pendingBirthdayYear: Int? = null,
     val updateStatus: UpdateStatus = UpdateStatus(),
+    val updateUiState: UpdateState = UpdateState.Available,
+    val isUpdateDownloading: Boolean = false,
     val isRescanning: Boolean = false,
     val rescanBlocksProcessed: Int? = null,
     val rescanBlocksTotal: Int? = null,
