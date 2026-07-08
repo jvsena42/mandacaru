@@ -2,6 +2,7 @@ package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Environment
 import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
@@ -303,10 +304,9 @@ class SettingsViewModel(
                     DownloadManager.Request.VISIBILITY_VISIBLE
                 )
                 .setAllowedOverMetered(true)
-                .setDestinationInExternalFilesDir(
-                    context,
-                    "updates",
-                    "mandacaru-$version.apk"
+                .setDestinationInExternalPublicDir(
+                    Environment.DIRECTORY_DOWNLOADS,
+                    "Mandacaru-v$version.apk"
                 )
     
             val id = dm.enqueue(request)
