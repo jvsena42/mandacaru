@@ -306,7 +306,7 @@ class SettingsViewModel(
                 .setAllowedOverMetered(true)
                 .setDestinationInExternalPublicDir(
                     Environment.DIRECTORY_DOWNLOADS,
-                    "Mandacaru-v$version.apk"
+                    "Mandacaru-$version.apk"
                 )
     
             val id = dm.enqueue(request)
