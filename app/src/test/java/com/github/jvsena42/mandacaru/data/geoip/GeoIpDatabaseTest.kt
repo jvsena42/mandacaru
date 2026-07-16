@@ -25,6 +25,11 @@ class GeoIpDatabaseTest {
         checkNotNull(javaClass.getResource(FIXTURE)) { "test fixture missing: $FIXTURE" }.toURI()
     )
 
+    /** A second, valid country database of a different size, so a replacement is provable. */
+    private fun otherFixture(): File = File(
+        checkNotNull(javaClass.getResource(OTHER_FIXTURE)) { "test fixture missing: $OTHER_FIXTURE" }.toURI()
+    )
+
     private fun databaseAt(file: File) = GeoIpDatabase(file)
 
     private fun ip(value: String): InetAddress =
@@ -37,6 +42,7 @@ class GeoIpDatabaseTest {
 
     private companion object {
         const val FIXTURE = "/geoip/GeoIP2-Country-Test.mmdb"
+        const val OTHER_FIXTURE = "/geoip/GeoLite2-Country-Test.mmdb"
     }
 
     @Test
@@ -97,6 +103,44 @@ class GeoIpDatabaseTest {
         assertFalse(database.install(truncated))
         assertFalse("candidate should be cleaned up", truncated.exists())
         // The working database still resolves.
+        assertEquals("GB", database.countryCode(ip("81.2.69.160")))
+    }
+
+    // --- Replacement: a refresh must overwrite the database, never pile up alongside it ---
+
+    @Test
+    fun `install over an existing database replaces it without leaving a second file`() = runTest {
+        val dir = temporaryFolder.newFolder()
+        val target = File(dir, "live.mmdb")
+        fixture().copyTo(target, overwrite = true)
+        val database = databaseAt(target)
+        // Open the reader so the old file is memory-mapped, as it is in a running app.
+        assertEquals("GB", database.countryCode(ip("81.2.69.160")))
+
+        val candidate = File(dir, "candidate.mmdb")
+        otherFixture().copyTo(candidate, overwrite = true)
+        assertTrue(database.install(candidate))
+
+        assertEquals("exactly one database must remain", listOf("live.mmdb"), dir.list()!!.sorted())
+        assertEquals("target must hold the new bytes", otherFixture().length(), target.length())
+        assertFalse("candidate must not survive", candidate.exists())
+        assertEquals("GB", database.countryCode(ip("81.2.69.160")))
+    }
+
+    @Test
+    fun `repeated installs keep exactly one database file`() = runTest {
+        val dir = temporaryFolder.newFolder()
+        val target = File(dir, "live.mmdb")
+        val database = databaseAt(target)
+
+        repeat(4) { round ->
+            val source = if (round % 2 == 0) fixture() else otherFixture()
+            val candidate = File(dir, "candidate-$round.mmdb")
+            source.copyTo(candidate, overwrite = true)
+            assertTrue(database.install(candidate))
+            assertEquals(listOf("live.mmdb"), dir.list()!!.sorted())
+            assertEquals(source.length(), target.length())
+        }
         assertEquals("GB", database.countryCode(ip("81.2.69.160")))
     }
 
