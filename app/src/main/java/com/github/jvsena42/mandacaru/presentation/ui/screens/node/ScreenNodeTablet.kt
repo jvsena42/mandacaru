@@ -447,7 +447,7 @@ private fun TabletPeersCard(
                     uiState.peers.forEachIndexed { index, peer ->
                         PeerItem(
                             peer = peer,
-                            onDisconnect = { onRequestDisconnect(peer.address) },
+                            onDisconnect = { onRequestDisconnect(peer.peer.address) },
                         )
                         if (index < uiState.peers.lastIndex) {
                             HorizontalDivider(

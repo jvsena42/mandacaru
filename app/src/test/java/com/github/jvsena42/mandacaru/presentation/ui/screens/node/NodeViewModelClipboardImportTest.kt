@@ -60,6 +60,7 @@ class NodeViewModelClipboardImportTest {
             florestaDaemon = daemon,
             preferencesDataSource = preferences,
             networkPolicyManager = networkPolicy,
+            peerCountryLookup = { null },
             ioDispatcher = dispatcher,
         )
         // Let the init poll settle to its first delay (RPC fakes emit nothing).

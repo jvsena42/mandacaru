@@ -117,6 +117,7 @@ dependencies {
     implementation(libs.jna) { artifact { type = "aar" } }
 
     implementation(libs.okhttp)
+    implementation(libs.maxmind.db)
     implementation(libs.androidx.datastore.preferences)
 
     implementation(libs.zxing.core)

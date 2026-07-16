@@ -18,6 +18,7 @@ materialIconsExtended = "1.7.8"
 nav-version = "2.9.7"
 nav3Core = "1.1.2"
 okhttp = "5.3.2"
+maxmindDb = "3.1.1"
 jetbrainsKotlinJvm = "2.3.20"
 datastorePreferences = "1.2.1"
 detekt = "1.23.7"
@@ -65,6 +66,7 @@ koin-compose = { module = "io.insert-koin:koin-androidx-compose" }
 koin-test = { module = "io.insert-koin:koin-test-junit4" }
 
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+maxmind-db = { module = "com.maxmind.db:maxmind-db", version.ref = "maxmindDb" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
 detekt-compose-rules = { module = "io.nlopez.compose.rules:detekt", version.ref = "detektComposeRules" }
 

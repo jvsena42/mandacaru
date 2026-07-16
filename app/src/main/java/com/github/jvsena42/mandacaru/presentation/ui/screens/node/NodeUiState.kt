@@ -2,7 +2,6 @@ package com.github.jvsena42.mandacaru.presentation.ui.screens.node
 
 import androidx.compose.runtime.Stable
 import com.github.jvsena42.mandacaru.domain.floresta.SnapshotPreview
-import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.PeerInfoResult
 
 @Stable
 data class NodeUiState(
@@ -27,7 +26,7 @@ data class NodeUiState(
     val rescanBlocksProcessed: Int = 0,
     val rescanBlocksTotal: Int = 0,
     val validatedBLocks: Int = 0,
-    val peers: List<PeerInfoResult> = emptyList(),
+    val peers: List<PeerUi> = emptyList(),
     val utreexoPeerCount: Int = 0,
     val isPeersExpanded: Boolean = false,
     val uptime: String = "",

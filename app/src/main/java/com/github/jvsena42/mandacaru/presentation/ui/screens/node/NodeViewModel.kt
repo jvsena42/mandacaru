@@ -15,10 +15,12 @@ import com.github.jvsena42.mandacaru.domain.floresta.UtreexoSnapshotService
 import com.github.jvsena42.mandacaru.domain.floresta.computeHeaderSyncProgress
 import com.github.jvsena42.mandacaru.domain.floresta.hasUtreexoServiceFlag
 import com.github.jvsena42.mandacaru.domain.floresta.isLikelyStalled
+import com.github.jvsena42.mandacaru.domain.geoip.PeerCountryLookup
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlowImpl
 import com.github.jvsena42.mandacaru.presentation.utils.HexUtils
 import com.github.jvsena42.mandacaru.presentation.utils.SnapshotCodec
+import com.github.jvsena42.mandacaru.presentation.utils.countryCodeToFlagEmoji
 import com.github.jvsena42.mandacaru.presentation.utils.toHumanReadableDifficulty
 import com.github.jvsena42.mandacaru.presentation.utils.toSyncPercentageString
 import kotlinx.coroutines.CoroutineDispatcher
@@ -33,13 +35,14 @@ import java.text.NumberFormat
 import kotlin.time.Duration.Companion.seconds
 import com.florestad.Network as FlorestaNetwork
 
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LongParameterList")
 class NodeViewModel(
     private val florestaRpc: FlorestaRpc,
     private val snapshotService: UtreexoSnapshotService,
     private val florestaDaemon: FlorestaDaemon,
     private val preferencesDataSource: PreferencesDataSource,
     private val networkPolicyManager: NetworkPolicy,
+    private val peerCountryLookup: PeerCountryLookup,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel(), EventFlow<NodeEvents> by EventFlowImpl() {
 
@@ -166,6 +169,15 @@ class NodeViewModel(
         florestaRpc.getPeerInfo().collect { result ->
             result.onSuccess { data ->
                 val peers = data.result.orEmpty()
+                // Resolved out here: the update block below is not a suspend context.
+                val peerUis = peers.map { peer ->
+                    val countryCode = peerCountryLookup.countryCode(peer.address)
+                    PeerUi(
+                        peer = peer,
+                        countryCode = countryCode,
+                        flag = countryCode?.let(::countryCodeToFlagEmoji),
+                    )
+                }
                 _uiState.update { current ->
                     val isHeaderSync = current.ibd && current.syncDecimal == 0f
                     val decimal = if (isHeaderSync) {
@@ -181,7 +193,7 @@ class NodeViewModel(
                     )
                     current.copy(
                         numberOfPeers = peers.size.toString(),
-                        peers = peers,
+                        peers = peerUis,
                         utreexoPeerCount = peers.count { p -> p.services.hasUtreexoServiceFlag() },
                         headerSyncDecimal = decimal,
                         headerSyncPercentage = decimal?.toSyncPercentageString() ?: "0.00",

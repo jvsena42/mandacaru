@@ -79,6 +79,24 @@ when adding or renaming a tag.
 | `node_peer_count`       | number-of-peers value           |
 | `node_difficulty`       | difficulty value                |
 | `node_disconnect_peer`  | per-peer disconnect button      |
+| `node_peer_flag`        | per-peer country flag (see below) |
+
+`node_peer_flag` repeats once per peer, but **only for peers whose IP resolves to a country** —
+it is absent for private/LAN, onion and unknown peers, and absent for *every* peer until the
+GeoIP database has downloaded (see "Peer country flags" below). Do not treat a missing flag as a
+failure. It surfaces in `android layout` because it carries a `contentDescription` (the localized
+country name, e.g. "Ukraine"), which is also what TalkBack announces.
+
+##### Peer country flags
+
+The flags come from a DB-IP database the app downloads on first launch (~4 MB, WiFi-gated,
+refreshed at most monthly), not from anything bundled in the APK. On a fresh install expect **no
+flags at all** until that download lands; they then appear on the next 10-second poll without a
+restart. To check whether the database is present:
+
+```bash
+adb shell run-as com.github.jvsena42.mandacaru ls -l files/dbip-country.mmdb   # ~8.2 MB when installed
+```
 
 #### Utreexo paste sheet (`node/UtreexoPasteSheet.kt`)
 
