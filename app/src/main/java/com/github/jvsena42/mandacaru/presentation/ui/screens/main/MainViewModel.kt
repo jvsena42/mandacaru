@@ -5,6 +5,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.jvsena42.mandacaru.data.AppUpdateRepository
+import com.github.jvsena42.mandacaru.data.GeoIpDatabaseRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -12,6 +13,7 @@ import kotlinx.coroutines.launch
 
 class MainViewModel(
     private val appUpdateRepository: AppUpdateRepository,
+    private val geoIpDatabaseRepository: GeoIpDatabaseRepository,
 ) : ViewModel() {
 
     val isUpdateBadgeVisible = appUpdateRepository.updateStatus
@@ -22,6 +24,8 @@ class MainViewModel(
 
     init {
         viewModelScope.launch { appUpdateRepository.refresh(force = true) }
+        // Throttled to ~30 days internally, so this is a no-op on almost every launch.
+        viewModelScope.launch { geoIpDatabaseRepository.refresh() }
     }
 
     fun navigateTo(route: AppRoute) {

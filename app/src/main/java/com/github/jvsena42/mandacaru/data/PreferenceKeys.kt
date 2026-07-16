@@ -13,6 +13,8 @@ enum class PreferenceKeys(val dataStoreKey: Preferences.Key<String>) {
     UPDATE_LATEST_VERSION(stringPreferencesKey("UPDATE_LATEST_VERSION")),
     UPDATE_LATEST_APK_URL(stringPreferencesKey("UPDATE_LATEST_APK_URL")),
     UPDATE_SEEN_VERSION(stringPreferencesKey("UPDATE_SEEN_VERSION")),
+    GEOIP_LAST_CHECK(stringPreferencesKey("GEOIP_LAST_CHECK")),
+    GEOIP_DB_MONTH(stringPreferencesKey("GEOIP_DB_MONTH")),
     USE_ALSO_MOBILE_DATA(stringPreferencesKey("USE_ALSO_MOBILE_DATA")),
     ENABLE_ADVANCED_FEATURES(stringPreferencesKey("ENABLE_ADVANCED_FEATURES"))
 }

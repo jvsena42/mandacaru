@@ -144,7 +144,7 @@ cd mandacaru
 Monitor your node's status:
 - **Sync Progress**: Current blockchain synchronization percentage
 - **Network Info**: Connected network, peer count, and difficulty
-- **Peers** (expandable): View connected peers, connect to new nodes, disconnect, or ping
+- **Peers** (expandable): View connected peers with their country flag, connect to new nodes, disconnect, or ping
 - **Diagnostics** (expandable): Node uptime and memory usage
 
 ### Transaction Screen
@@ -181,6 +181,18 @@ Built with modern Android development practices:
 - **Koin**: Lightweight dependency injection
 - **OkHttp**: Network communication
 - **JSON-RPC**: Bitcoin Core compatible RPC interface
+
+## Peer geolocation data
+
+The country flag next to each peer is resolved **entirely on-device** — a peer's IP address is
+never sent to any geolocation service. The app downloads the
+[DB-IP Lite Country](https://db-ip.com/db/download/ip-to-country-lite) database (~4 MB, over WiFi,
+refreshed at most once a month) and reads it locally with
+[maxmind-db](https://github.com/maxmind/MaxMind-DB-Reader-java). Until that download completes,
+peers simply show no flag.
+
+IP Geolocation by [DB-IP](https://db-ip.com), licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 ## Related Projects
 

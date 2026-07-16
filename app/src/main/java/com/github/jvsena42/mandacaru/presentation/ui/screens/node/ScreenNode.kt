@@ -85,6 +85,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -99,7 +101,10 @@ import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.PeerInfoResult
 import com.github.jvsena42.mandacaru.presentation.ui.components.ExpandableHeader
 import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
+import com.github.jvsena42.mandacaru.presentation.utils.FlagGlyphSupport
 import com.github.jvsena42.mandacaru.presentation.utils.RequestNotificationPermissions
+import com.github.jvsena42.mandacaru.presentation.utils.countryCodeToDisplayName
+import com.github.jvsena42.mandacaru.presentation.utils.countryCodeToFlagEmoji
 import com.github.jvsena42.mandacaru.presentation.utils.rememberAdaptiveLayout
 import org.koin.androidx.compose.koinViewModel
 
@@ -700,7 +705,7 @@ private fun PeersCard(
                         uiState.peers.forEachIndexed { index, peer ->
                             PeerItem(
                                 peer = peer,
-                                onDisconnect = { onRequestDisconnect(peer.address) }
+                                onDisconnect = { onRequestDisconnect(peer.peer.address) }
                             )
                             if (index < uiState.peers.lastIndex) {
                                 HorizontalDivider(
@@ -1247,7 +1252,7 @@ internal fun UtreexoWarningCard() {
 
 @Composable
 internal fun PeerItem(
-    peer: PeerInfoResult,
+    peer: PeerUi,
     onDisconnect: () -> Unit = {}
 ) {
     Column(
@@ -1258,8 +1263,10 @@ internal fun PeerItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            PeerFlag(countryCode = peer.countryCode, flag = peer.flag)
+
             Text(
-                peer.address,
+                peer.peer.address,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
                 fontFamily = FontFamily.Monospace,
@@ -1283,7 +1290,7 @@ internal fun PeerItem(
         }
 
         Text(
-            peer.userAgent,
+            peer.peer.userAgent,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -1294,7 +1301,7 @@ internal fun PeerItem(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
-                peer.services
+                peer.peer.services
                     .removePrefix("ServiceFlags(")
                     .removeSuffix(")"),
                 style = MaterialTheme.typography.bodySmall,
@@ -1309,11 +1316,12 @@ internal fun PeerItem(
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            PeerChip(peer.state)
-            PeerChip(peer.kind)
+            PeerChip(peer.peer.state)
+            PeerChip(peer.peer.kind)
         }
     }
 }
+
 
 @Composable
 private fun PeerChip(text: String) {
@@ -1393,7 +1401,7 @@ private fun Preview() {
                             services = "ServiceFlags(NETWORK|WITNESS|COMPACT_FILTERS|NETWORK_LIMITED|P2P_V2)",
                             state = "Ready",
                             userAgent = "/Satoshi:30.0.0/"
-                        ),
+                        ).withCountry("UA"),
                         PeerInfoResult(
                             address = "59.3.9.212:8333",
                             initialHeight = 943609,
@@ -1401,7 +1409,7 @@ private fun Preview() {
                             services = "ServiceFlags(NETWORK|WITNESS|COMPACT_FILTERS|NETWORK_LIMITED|P2P_V2)",
                             state = "Ready",
                             userAgent = "/Satoshi:28.1.0/"
-                        )
+                        ).withCountry("KR")
                     )
                 )
             )
@@ -1436,7 +1444,7 @@ private fun StalledPreview() {
                             services = "ServiceFlags(NETWORK|WITNESS|COMPACT_FILTERS|UTREEXO)",
                             state = "Ready",
                             userAgent = "/Satoshi:30.0.0/"
-                        ),
+                        ).withCountry("UA"),
                     )
                 )
             )
@@ -1478,7 +1486,7 @@ private fun WalletScanningPreview() {
                             services = "ServiceFlags(NETWORK|WITNESS|COMPACT_FILTERS|UTREEXO)",
                             state = "Ready",
                             userAgent = "/Satoshi:30.0.0/"
-                        ),
+                        ).withCountry("UA"),
                     )
                 )
             )
@@ -1514,7 +1522,7 @@ private fun TabletPreview() {
                             services = "ServiceFlags(NETWORK|WITNESS|COMPACT_FILTERS|NETWORK_LIMITED|P2P_V2)",
                             state = "Ready",
                             userAgent = "/Satoshi:30.0.0/"
-                        ),
+                        ).withCountry("UA"),
                         PeerInfoResult(
                             address = "59.3.9.212:8333",
                             initialHeight = 943609,
@@ -1522,7 +1530,7 @@ private fun TabletPreview() {
                             services = "ServiceFlags(NETWORK|WITNESS|COMPACT_FILTERS|NETWORK_LIMITED|P2P_V2)",
                             state = "Ready",
                             userAgent = "/Satoshi:28.1.0/"
-                        )
+                        ).withCountry("KR")
                     )
                 )
             )

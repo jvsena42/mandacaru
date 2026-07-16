@@ -825,6 +825,18 @@ private fun ScreenSettings(
                                 }
                             )
 
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // Required by the CC BY 4.0 license of the peer geolocation database.
+                            Text(
+                                text = stringResource(R.string.geoip_attribution),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.clickable {
+                                    uriHandler.openUri("https://db-ip.com")
+                                }
+                            )
+
                             Spacer(modifier = Modifier.height(16.dp))
 
                             HorizontalDivider()
