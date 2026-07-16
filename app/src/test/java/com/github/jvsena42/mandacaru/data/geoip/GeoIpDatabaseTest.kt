@@ -101,6 +101,40 @@ class GeoIpDatabaseTest {
     }
 
     @Test
+    fun `delete removes the database and lookups fall back to null`() = runTest {
+        val target = File(temporaryFolder.root, "live.mmdb")
+        fixture().copyTo(target, overwrite = true)
+        val database = databaseAt(target)
+        // Resolve once so the reader is open and the file is memory-mapped before deleting.
+        assertEquals("GB", database.countryCode(ip("81.2.69.160")))
+
+        assertTrue(database.delete())
+        assertFalse(target.exists())
+        assertFalse(database.exists())
+        assertNull(database.countryCode(ip("81.2.69.160")))
+    }
+
+    @Test
+    fun `delete on an absent database is a no-op`() = runTest {
+        val database = databaseAt(File(temporaryFolder.root, "never-downloaded.mmdb"))
+        assertTrue(database.delete())
+    }
+
+    @Test
+    fun `a database installed after delete resolves again`() = runTest {
+        val target = File(temporaryFolder.root, "live.mmdb")
+        val database = databaseAt(target)
+        fixture().copyTo(target, overwrite = true)
+        assertEquals("GB", database.countryCode(ip("81.2.69.160")))
+        database.delete()
+
+        val candidate = temporaryFolder.newFile("again.mmdb")
+        fixture().copyTo(candidate, overwrite = true)
+        assertTrue(database.install(candidate))
+        assertEquals("GB", database.countryCode(ip("81.2.69.160")))
+    }
+
+    @Test
     fun `install rejects a non-database payload`() = runTest {
         val target = File(temporaryFolder.root, "live.mmdb")
         val database = databaseAt(target)

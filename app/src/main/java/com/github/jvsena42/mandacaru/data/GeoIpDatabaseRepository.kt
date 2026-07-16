@@ -6,4 +6,7 @@ package com.github.jvsena42.mandacaru.data
  */
 interface GeoIpDatabaseRepository {
     suspend fun refresh(force: Boolean = false)
+
+    /** Removes the local database and forgets it was ever downloaded. */
+    suspend fun deleteDatabase()
 }

@@ -61,6 +61,23 @@ class GeoIpDatabase(private val databaseFile: File) {
         }
     }
 
+    /**
+     * Removes the database and reclaims its ~8 MB.
+     *
+     * The reader is closed first and deliberately: the file is memory-mapped, and unlinking a
+     * mapped file does not free its pages — the data stays alive until the last mapping goes,
+     * so deleting without closing would reclaim nothing.
+     */
+    suspend fun delete(): Boolean = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            closeReader()
+            openFailed = false
+            val gone = !databaseFile.exists() || databaseFile.delete()
+            if (!gone) Log.w(TAG, "delete: could not remove database")
+            gone
+        }
+    }
+
     fun exists(): Boolean = databaseFile.exists()
 
     /**

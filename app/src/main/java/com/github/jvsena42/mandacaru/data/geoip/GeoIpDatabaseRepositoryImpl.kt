@@ -45,6 +45,9 @@ class GeoIpDatabaseRepositoryImpl(
         object Installed : Outcome
         object NotFound : Outcome
         object Rejected : Outcome
+
+        /** The user turned the feature off while the download was in flight. */
+        object Disabled : Outcome
     }
 
     override suspend fun refresh(force: Boolean) = withContext(Dispatchers.IO) {
@@ -82,6 +85,9 @@ class GeoIpDatabaseRepositoryImpl(
                 }
                 .getOrNull()
 
+            // Turned off mid-download: leave the throttle alone and drop the payload.
+            if (outcome == Outcome.Disabled) return@withContext
+
             if (outcome == Outcome.Installed) {
                 preferencesDataSource.setString(
                     PreferenceKeys.GEOIP_DB_MONTH,
@@ -97,12 +103,22 @@ class GeoIpDatabaseRepositoryImpl(
         if (!transportFailed) markChecked()
     }
 
+    override suspend fun deleteDatabase() = withContext(Dispatchers.IO) {
+        database.delete()
+        // Forget the stamp *and* the throttle. Keeping the throttle would leave a user who
+        // turns the feature back on without flags until the 30-day window elapsed.
+        preferencesDataSource.setString(PreferenceKeys.GEOIP_DB_MONTH, "")
+        preferencesDataSource.setString(PreferenceKeys.GEOIP_LAST_CHECK, "")
+    }
+
     private suspend fun attempt(month: YearMonth): Outcome {
         val temp = File.createTempFile(TEMP_PREFIX, TEMP_SUFFIX, cacheDir)
         var installed = false
         try {
             if (!downloadTo(GeoIpUrl.forMonth(month), temp)) return Outcome.NotFound
-            // install() validates the candidate and moves it into place only if it is usable.
+            // A 4 MB download takes a while; the user may have turned the feature off (and had
+            // the database deleted) meanwhile. Installing now would resurrect the file.
+            if (!preferencesDataSource.isPeerFlagsEnabled()) return Outcome.Disabled
             installed = database.install(temp)
             return if (installed) Outcome.Installed else Outcome.Rejected
         } finally {
