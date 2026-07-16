@@ -893,6 +893,50 @@ private fun ScreenSettings(
                     }
                 }
 
+                // Peer country flags Section
+                if (uiState.enableAdvancedFeatures) {
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateItem(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.peer_country_flags),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.peer_country_flags_subtitle),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                Switch(
+                                    checked = uiState.isPeerFlagsEnabled,
+                                    onCheckedChange = {
+                                        onAction(SettingsAction.OnTogglePeerFlags(it))
+                                    },
+                                    modifier = Modifier
+                                        .padding(start = 12.dp)
+                                        .testTag("toggle_peer_flags"),
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // Developer Tools Section
                 if (uiState.enableAdvancedFeatures) {
                     item {

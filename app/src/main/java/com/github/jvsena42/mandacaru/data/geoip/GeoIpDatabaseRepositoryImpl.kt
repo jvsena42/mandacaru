@@ -7,6 +7,7 @@ import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.data.network.NetworkPolicy
 import com.github.jvsena42.mandacaru.domain.geoip.GeoIpUrl
+import com.github.jvsena42.mandacaru.domain.geoip.isPeerFlagsEnabled
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -47,6 +48,12 @@ class GeoIpDatabaseRepositoryImpl(
     }
 
     override suspend fun refresh(force: Boolean) = withContext(Dispatchers.IO) {
+        // Before everything else, including the WiFi wait below — which would otherwise park
+        // this coroutine indefinitely for a user who has turned the feature off.
+        if (!preferencesDataSource.isPeerFlagsEnabled()) {
+            Log.i(TAG, "refresh: skipped, peer flags disabled")
+            return@withContext
+        }
         val month = currentMonth()
         if (isUpToDate(month)) return@withContext
         if (!force && !isCheckDue()) return@withContext

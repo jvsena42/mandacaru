@@ -143,6 +143,7 @@ action) on open. The snackbar is part of the Scaffold subtree, so its text and a
 | `button_copy_descriptor`    | a loaded descriptor row — tap to copy the full descriptor to the clipboard |
 | `input_network`             | network selector field                 |
 | `toggle_mobile_data`        | "Also use mobile data" switch          |
+| `toggle_peer_flags`         | "Peer country flags" switch — own card, only when advanced features are on |
 | `toggle_advanced_features`  | "Advanced features" switch (gates the Developer Tools section) |
 | `button_view_logs`          | "View logs" (opens the full-screen log viewer) |
 | `button_export_logs`        | "Export" (share the full debug.log) — inside Developer Tools |
@@ -161,6 +162,12 @@ separate window (per the popup caveat below), so their controls — "Paste inste
 The Data usage section's `toggle_mobile_data` switch is off by default (Wi-Fi only);
 turning it on persists the preference and restarts the app. Expand the "Data usage"
 section by text before asserting on it.
+
+`toggle_peer_flags` sits in its own card directly below the "Advanced features" card and only
+renders when `toggle_advanced_features` is on — turn that on first. It needs no expanding, and
+unlike the other two switches it is **on** by default. Turning it off stops the monthly database
+download and removes `node_peer_flag` from every peer row within one 10-second poll, with no
+restart.
 
 `toggle_advanced_features` is off by default. The **Developer Tools** section (and its
 `button_view_logs` / `button_export_logs`) only renders once the toggle is on. Expand
