@@ -45,5 +45,6 @@ data class SettingsUiState(
     val isDataUsageExpanded: Boolean = false,
     val enableAdvancedFeatures: Boolean = false,
     val isPeerFlagsEnabled: Boolean = PEER_FLAGS_ENABLED_BY_DEFAULT,
+    val isPeerFlagsExpanded: Boolean = false,
     val isDeveloperToolsExpanded: Boolean = false,
 )
