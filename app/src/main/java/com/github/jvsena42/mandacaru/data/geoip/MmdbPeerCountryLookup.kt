@@ -30,11 +30,15 @@ class MmdbPeerCountryLookup(
             if (cache.containsKey(address)) return cache[address]
         }
 
+        // Sampled *before* the lookup: reading it afterwards would let a lookup that started
+        // with no database — and so could not resolve — observe the just-installed file and
+        // cache its miss forever, which is the very thing this guard exists to prevent.
+        val hadDatabase = database.exists()
         val resolved = PeerAddressParser.parse(address)?.let { database.countryCode(it) }
 
         // Only remember misses once the database is actually present, otherwise every peer
         // seen before the first download would be pinned to "no flag" for the session.
-        if (resolved != null || database.exists()) {
+        if (resolved != null || hadDatabase) {
             cacheMutex.withLock { cache[address] = resolved }
         }
         return resolved
