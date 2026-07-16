@@ -15,6 +15,7 @@ import com.github.jvsena42.mandacaru.data.floresta.FlorestaRpcImpl
 import com.github.jvsena42.mandacaru.data.network.NetworkPolicy
 import com.github.jvsena42.mandacaru.data.network.NetworkPolicyManager
 import com.github.jvsena42.mandacaru.data.update.AppUpdateRepositoryImpl
+import com.github.jvsena42.mandacaru.data.update.UpdateDownloadRegistry
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.floresta.UtreexoBridgeAutoConnect
 import com.github.jvsena42.mandacaru.domain.floresta.UtreexoSnapshotService
@@ -81,6 +82,7 @@ val presentationModule = module {
             preferencesDataSource = get(),
             appUpdateRepository = get(),
             descriptorScanner = get(),
+            updateRegistry = get(),
             context = androidContext(),
         )
     }
@@ -107,6 +109,11 @@ val dataModule = module {
     single<AppUpdateRepository> {
         AppUpdateRepositoryImpl(gson = Gson(), preferencesDataSource = get())
     }
+    
+    single {
+        UpdateDownloadRegistry(androidContext())
+    }
+    
     single<PreferencesDataSource> {
         PreferencesDataSourceImpl(
             dataStore = androidContext().florestaDataStore

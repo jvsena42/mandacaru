@@ -2,10 +2,16 @@ package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Environment
 import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.app.DownloadManager
+import android.net.Uri
+import com.github.jvsena42.mandacaru.data.update.UpdateDownloadRegistry
+import com.github.jvsena42.mandacaru.domain.update.UpdateState
+import com.github.jvsena42.mandacaru.domain.update.UpdateStateResolver
 import com.github.jvsena42.mandacaru.data.AppUpdateRepository
 import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
@@ -42,11 +48,13 @@ class SettingsViewModel(
     private val preferencesDataSource: PreferencesDataSource,
     private val appUpdateRepository: AppUpdateRepository,
     private val descriptorScanner: DescriptorQrScanner,
+    private val updateRegistry: UpdateDownloadRegistry,
     @field:SuppressLint("StaticFieldLeak") private val context: Context,
 ) : ViewModel(), EventFlow<SettingsEvents> by EventFlowImpl() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState = _uiState.asStateFlow()
+    private val updateResolver = UpdateStateResolver(context, updateRegistry)
 
     private var nodeAddressValidationJob: Job? = null
     private var descriptorScanErrorJob: Job? = null
@@ -112,10 +120,30 @@ class SettingsViewModel(
     }
 
     private fun observeUpdateStatus() {
-        viewModelScope.launch { appUpdateRepository.refresh(force = true) }
+        viewModelScope.launch {
+            appUpdateRepository.refresh(force = true)
+        }
+    
         viewModelScope.launch {
             appUpdateRepository.updateStatus.collect { status ->
-                _uiState.update { it.copy(updateStatus = status) }
+    
+                val resolved = updateResolver.resolve(
+                    status = status,
+                    downloadId = updateRegistry.getActiveDownloadId()
+                )
+    
+                _uiState.update {
+                    it.copy(
+                        updateStatus = status,
+                        updateUiState = resolved
+                    )
+                }
+    
+                if (resolved is UpdateState.ReadyToInstall) {
+                    viewModelScope.sendEvent(
+                        SettingsEvents.OpenInstallPrompt(resolved.uri)
+                    )
+                }
             }
         }
     }
@@ -259,7 +287,32 @@ class SettingsViewModel(
 
     private fun getUpdate() {
         val status = _uiState.value.updateStatus
-        viewModelScope.sendEvent(SettingsEvents.OpenReleasePage(status.releasePageUrl))
+        val url = status.apkDownloadUrl ?: return
+        val version = status.latestVersion
+    
+        viewModelScope.launch {
+    
+            if (updateRegistry.isDownloaded(version)) return@launch
+            if (updateRegistry.isDownloading(version)) return@launch
+    
+            val dm =
+                context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+    
+            val request = DownloadManager.Request(Uri.parse(url))
+                .setTitle("Mandacaru update $version")
+                .setNotificationVisibility(
+                    DownloadManager.Request.VISIBILITY_VISIBLE
+                )
+                .setAllowedOverMetered(true)
+                .setDestinationInExternalPublicDir(
+                    Environment.DIRECTORY_DOWNLOADS,
+                    "Mandacaru-$version.apk"
+                )
+    
+            val id = dm.enqueue(request)
+    
+            updateRegistry.markDownloading(version, id)
+        }
     }
 
     private fun checkForUpdates() {

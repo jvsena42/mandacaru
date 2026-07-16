@@ -102,6 +102,7 @@ import com.github.jvsena42.mandacaru.BuildConfig
 import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.domain.model.Constants
 import com.github.jvsena42.mandacaru.domain.model.UpdateStatus
+import com.github.jvsena42.mandacaru.domain.update.UpdateState
 import com.github.jvsena42.mandacaru.presentation.ui.components.ExpandableHeader
 import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
 import com.github.jvsena42.mandacaru.presentation.utils.WalletBirthday
@@ -149,6 +150,20 @@ fun ScreenSettings(
                 }
                 is SettingsEvents.OpenReleasePage -> uriHandler.openUri(event.url)
                 is SettingsEvents.OpenDeveloperLogs -> currentOnOpenLogs()
+                is SettingsEvents.OpenInstallPrompt -> {
+                    val intent = android.content.Intent(
+                        android.content.Intent.ACTION_VIEW
+                    ).apply {
+                        setDataAndType(
+                            event.uri,
+                            "application/vnd.android.package-archive"
+                        )
+                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+
+    context.startActivity(intent)
+}
             }
         }
     }
@@ -833,6 +848,7 @@ private fun ScreenSettings(
 
                             UpdateRow(
                                 updateStatus = uiState.updateStatus,
+                                updateUiState = uiState.updateUiState,
                                 onAction = onAction,
                             )
                         }
@@ -1058,6 +1074,7 @@ private fun BirthdayRestartConfirmDialog(
 @Composable
 private fun UpdateRow(
     updateStatus: UpdateStatus,
+    updateUiState: UpdateState,
     onAction: (SettingsAction) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -1077,25 +1094,65 @@ private fun UpdateRow(
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.primary,
                 )
+            
                 Spacer(modifier = Modifier.height(4.dp))
+            
                 Text(
-                    text = stringResource(R.string.latest_version, updateStatus.latestVersion),
+                    text = stringResource(
+                        R.string.latest_version,
+                        updateStatus.latestVersion
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            
                 Spacer(modifier = Modifier.height(12.dp))
-                Button(
-                    onClick = { onAction(SettingsAction.OnClickGetUpdate) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Outlined.OpenInNew,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Spacer(modifier = Modifier.size(8.dp))
-                    Text(stringResource(R.string.get_update))
+            
+                when (updateUiState) {
+            
+                    UpdateState.Available -> {
+                        Button(
+                            onClick = {
+                                onAction(SettingsAction.OnClickGetUpdate)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Outlined.OpenInNew,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(modifier = Modifier.size(8.dp))
+                            Text(stringResource(R.string.get_update))
+                        }
+                    }
+            
+                    UpdateState.Downloading -> {
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth()
+                        )
+            
+                        Spacer(modifier = Modifier.height(8.dp))
+            
+                        Text(
+                            text = "Downloading update…",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+            
+                    is UpdateState.ReadyToInstall -> {
+                        Button(
+                            onClick = { },
+                            enabled = false,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text("Ready to install")
+                        }
+                    }
+            
+                    UpdateState.Idle -> Unit
                 }
             }
 
