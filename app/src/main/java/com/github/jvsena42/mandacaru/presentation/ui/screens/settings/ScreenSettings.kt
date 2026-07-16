@@ -1226,7 +1226,9 @@ private fun SectionCard(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp)
+                        // ExpandableHeader already pads 16.dp below the title, so a full
+                        // 20.dp here would stack into a 36.dp gap before the content.
+                        .padding(start = 20.dp, end = 20.dp, bottom = 20.dp, top = 4.dp)
                 ) {
                     content()
                 }
