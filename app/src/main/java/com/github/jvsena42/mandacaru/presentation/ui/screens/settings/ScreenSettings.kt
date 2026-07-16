@@ -42,6 +42,7 @@ import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.NetworkCheck
 import androidx.compose.material.icons.outlined.QrCodeScanner
@@ -613,6 +614,41 @@ private fun ScreenSettings(
                     }
                 }
 
+                // Peer country flags Section
+                if (uiState.enableAdvancedFeatures) {
+                    item {
+                        SectionCard(
+                            title = stringResource(R.string.peer_country_flags),
+                            icon = Icons.Outlined.Flag,
+                            isExpanded = uiState.isPeerFlagsExpanded,
+                            onToggle = { onAction(SettingsAction.TogglePeerFlagsExpanded) },
+                            modifier = Modifier.animateItem(),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.peer_country_flags_subtitle),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Switch(
+                                    checked = uiState.isPeerFlagsEnabled,
+                                    onCheckedChange = {
+                                        onAction(SettingsAction.OnTogglePeerFlags(it))
+                                    },
+                                    modifier = Modifier
+                                        .padding(start = 12.dp)
+                                        .testTag("toggle_peer_flags"),
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // Node Section
                 item {
                     SectionCard(
@@ -889,50 +925,6 @@ private fun ScreenSettings(
                                     .padding(start = 12.dp)
                                     .testTag("toggle_advanced_features"),
                             )
-                        }
-                    }
-                }
-
-                // Peer country flags Section
-                if (uiState.enableAdvancedFeatures) {
-                    item {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .animateItem(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainer
-                            ),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 20.dp, vertical = 12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = stringResource(R.string.peer_country_flags),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.peer_country_flags_subtitle),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                Switch(
-                                    checked = uiState.isPeerFlagsEnabled,
-                                    onCheckedChange = {
-                                        onAction(SettingsAction.OnTogglePeerFlags(it))
-                                    },
-                                    modifier = Modifier
-                                        .padding(start = 12.dp)
-                                        .testTag("toggle_peer_flags"),
-                                )
-                            }
                         }
                     }
                 }

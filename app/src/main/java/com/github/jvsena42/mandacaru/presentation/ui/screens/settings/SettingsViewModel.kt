@@ -210,6 +210,7 @@ class SettingsViewModel(
             SettingsAction.OnConfirmBirthdayRestart -> applyBirthdayYearAndRestart()
             SettingsAction.ToggleDataUsageExpanded -> toggleDataUsageExpanded()
             is SettingsAction.OnToggleMobileData -> handleMobileDataToggled(action)
+            SettingsAction.TogglePeerFlagsExpanded -> togglePeerFlagsExpanded()
             is SettingsAction.OnTogglePeerFlags -> handlePeerFlagsToggled(action)
             is SettingsAction.OnToggleAdvancedFeatures -> handleAdvancedFeaturesToggled(action)
             SettingsAction.ToggleDeveloperToolsExpanded -> _uiState.update {
@@ -220,6 +221,10 @@ class SettingsViewModel(
                 SettingsEvents.OpenDeveloperLogs
             )
         }
+    }
+
+    private fun togglePeerFlagsExpanded() = _uiState.update {
+        it.copy(isPeerFlagsExpanded = !it.isPeerFlagsExpanded)
     }
 
     private fun handlePeerFlagsToggled(action: SettingsAction.OnTogglePeerFlags) {
