@@ -20,7 +20,10 @@ class GeoIpDatabaseTest {
     @get:Rule
     val temporaryFolder = TemporaryFolder()
 
-    private fun fixture(): File = File("src/test/resources/geoip/GeoIP2-Country-Test.mmdb")
+    /** Resolved off the test classpath rather than the working directory. */
+    private fun fixture(): File = File(
+        checkNotNull(javaClass.getResource(FIXTURE)) { "test fixture missing: $FIXTURE" }.toURI()
+    )
 
     private fun databaseAt(file: File) = GeoIpDatabase(file)
 
@@ -30,6 +33,10 @@ class GeoIpDatabaseTest {
     @Test
     fun `fixture is present`() {
         assertTrue("test fixture missing: ${fixture().absolutePath}", fixture().exists())
+    }
+
+    private companion object {
+        const val FIXTURE = "/geoip/GeoIP2-Country-Test.mmdb"
     }
 
     @Test

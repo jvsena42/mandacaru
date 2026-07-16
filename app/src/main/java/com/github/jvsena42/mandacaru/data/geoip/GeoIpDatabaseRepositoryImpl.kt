@@ -8,6 +8,7 @@ import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.data.network.NetworkPolicy
 import com.github.jvsena42.mandacaru.domain.geoip.GeoIpUrl
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -48,21 +49,31 @@ class GeoIpDatabaseRepositoryImpl(
     override suspend fun refresh(force: Boolean) = withContext(Dispatchers.IO) {
         val month = currentMonth()
         if (isUpToDate(month)) return@withContext
-        if (networkPolicy.isWaitingForWifi.value) {
-            Log.i(TAG, "refresh: skipped, waiting for WiFi")
-            return@withContext
-        }
         if (!force && !isCheckDue()) return@withContext
 
+        // NetworkPolicyManager assumes "no WiFi" synchronously in Application.onCreate and only
+        // clears the flag from its async onAvailable callback, so this is true on essentially
+        // every cold start. Suspend until WiFi arrives rather than reading it once and giving
+        // up — refresh() is called once per process, so a skip here would mean never.
+        networkPolicy.isWaitingForWifi.first { !it }
+
+        val installedMonth = preferencesDataSource.getString(PreferenceKeys.GEOIP_DB_MONTH, "")
         // Early in a month the new file may not be published yet; fall back one month.
         val months = listOf(month, month.minusMonths(1))
+        var transportFailed = false
+
         for (candidate in months) {
+            // Never re-download the file we already hold (the fallback month can be exactly it).
+            if (database.exists() && GeoIpUrl.stamp(candidate) == installedMonth) {
+                markChecked()
+                return@withContext
+            }
             val outcome = runSuspendCatching { attempt(candidate) }
                 .onFailure {
-                    // Transport failure: leave the throttle untouched so the next launch retries.
                     Log.w(TAG, "refresh: download failed for ${GeoIpUrl.stamp(candidate)}", it)
+                    transportFailed = true
                 }
-                .getOrNull() ?: return@withContext
+                .getOrNull()
 
             if (outcome == Outcome.Installed) {
                 preferencesDataSource.setString(
@@ -74,8 +85,9 @@ class GeoIpDatabaseRepositoryImpl(
             }
         }
 
-        // Every candidate answered definitively (404 or unusable); don't hammer the server.
-        markChecked()
+        // Only throttle when the server actually answered (404 or an unusable body). A transport
+        // failure taught us nothing, so leave the throttle untouched and retry on the next launch.
+        if (!transportFailed) markChecked()
     }
 
     private suspend fun attempt(month: YearMonth): Outcome {

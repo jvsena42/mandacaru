@@ -88,6 +88,39 @@ class PeerAddressParserTest {
     }
 
     @Test
+    fun `IPv4-compatible IPv6 resolves`() {
+        // "::a.b.c.d" is the case where the "::" run doubles as the separator before the IPv4
+        // tail; slicing it in half used to leave a stray ":" and drop the address entirely.
+        val expected = ByteArray(16).also {
+            it[12] = 81; it[13] = 2; it[14] = 69; it[15] = 160.toByte()
+        }
+        assertArrayEquals(expected, PeerAddressParser.parse("[::81.2.69.160]:8333")?.address)
+    }
+
+    @Test
+    fun `IPv6 with a full set of groups before an embedded IPv4 resolves`() {
+        assertArrayEquals(
+            byteArrayOf(0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 1, 2, 3, 4),
+            PeerAddressParser.parse("[1:2:3:4:5:6:1.2.3.4]:8333")?.address,
+        )
+    }
+
+    @Test
+    fun `rejects a signed hex group`() {
+        // toIntOrNull(16) accepts "+abc"/"-1"; without an explicit digit check these would
+        // parse into a plausible-looking address for a malformed literal.
+        assertNull(PeerAddressParser.parse("[+abc:2:3:4:5:6:7:8]:8333"))
+        assertNull(PeerAddressParser.parse("[-1:2:3:4:5:6:7:8]:8333"))
+        assertNull(PeerAddressParser.parse("[2001:db8::+1]:8333"))
+    }
+
+    @Test
+    fun `rejects a signed IPv4 octet`() {
+        assertNull(PeerAddressParser.parse("+1.2.3.4:8333"))
+        assertNull(PeerAddressParser.parse("1.-2.3.4:8333"))
+    }
+
+    @Test
     fun `rejects IPv6 with two compression runs`() {
         assertNull(PeerAddressParser.parse("[2001::db8::1]:8333"))
     }

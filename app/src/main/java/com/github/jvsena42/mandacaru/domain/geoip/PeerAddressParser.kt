@@ -62,7 +62,7 @@ object PeerAddressParser {
         val lastColon = host.lastIndexOf(':')
         val tail = host.substring(lastColon + 1)
         val embeddedV4 = if (tail.contains('.')) parseIpv4(tail) ?: return null else null
-        val hexPart = if (embeddedV4 != null) host.substring(0, lastColon) else host
+        val hexPart = if (embeddedV4 != null) hexPartBefore(host, lastColon) else host
 
         val groupBytes = IPV6_BYTES - (embeddedV4?.size ?: 0)
         val maxGroups = groupBytes / 2
@@ -84,6 +84,17 @@ object PeerAddressParser {
         rearBytes.copyInto(bytes, groupBytes - rearBytes.size)
         embeddedV4?.copyInto(bytes, groupBytes)
         return bytes
+    }
+
+    /**
+     * The hex groups preceding an embedded IPv4 tail, dropping the colon that separates them
+     * from it. In "::1.2.3.4" that separator is the second colon of the "::" run itself, so
+     * the run must be kept whole — slicing it would destroy the compression marker and leave
+     * a stray ":".
+     */
+    private fun hexPartBefore(host: String, lastColon: Int): String {
+        val prefix = host.substring(0, lastColon + 1)
+        return if (prefix.endsWith("::")) prefix else prefix.dropLast(1)
     }
 
     /**
@@ -115,12 +126,18 @@ object PeerAddressParser {
         val bytes = ByteArray(size * 2)
         for ((index, group) in withIndex()) {
             if (group.isEmpty() || group.length > MAX_GROUP_DIGITS) return null
+            // toIntOrNull(radix) accepts a leading '+'/'-', which would turn a malformed group
+            // into a plausible-looking address, so the digits are checked explicitly.
+            if (group.any { !it.isHexDigit() }) return null
             val value = group.toIntOrNull(HEX_RADIX) ?: return null
             bytes[index * 2] = (value shr Byte.SIZE_BITS).toByte()
             bytes[index * 2 + 1] = value.toByte()
         }
         return bytes
     }
+
+    private fun Char.isHexDigit(): Boolean =
+        this in '0'..'9' || this in 'a'..'f' || this in 'A'..'F'
 
     private fun countOccurrences(haystack: String, needle: String): Int {
         var count = 0

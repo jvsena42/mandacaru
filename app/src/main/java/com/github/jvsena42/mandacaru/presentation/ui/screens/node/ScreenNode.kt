@@ -85,8 +85,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -101,10 +99,7 @@ import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.PeerInfoResult
 import com.github.jvsena42.mandacaru.presentation.ui.components.ExpandableHeader
 import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
-import com.github.jvsena42.mandacaru.presentation.utils.FlagGlyphSupport
 import com.github.jvsena42.mandacaru.presentation.utils.RequestNotificationPermissions
-import com.github.jvsena42.mandacaru.presentation.utils.countryCodeToDisplayName
-import com.github.jvsena42.mandacaru.presentation.utils.countryCodeToFlagEmoji
 import com.github.jvsena42.mandacaru.presentation.utils.rememberAdaptiveLayout
 import org.koin.androidx.compose.koinViewModel
 

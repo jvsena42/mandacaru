@@ -23,12 +23,19 @@ class GeoIpDatabase(private val databaseFile: File) {
     private var reader: Reader? = null
     private var openFailed = false
 
+    /**
+     * The lookup runs while holding [mutex] — not just the reader hand-out — so that a
+     * concurrent [install] cannot close the reader mid-lookup. Lookups take microseconds and
+     * only run for a handful of peers per poll, so the serialization costs nothing.
+     */
     suspend fun countryCode(address: InetAddress): String? = withContext(Dispatchers.IO) {
-        val activeReader = reader() ?: return@withContext null
-        runSuspendCatching { activeReader.get(address, Map::class.java) }
-            .onFailure { Log.w(TAG, "countryCode: lookup failed", it) }
-            .getOrNull()
-            ?.isoCode()
+        mutex.withLock {
+            val activeReader = readerLocked() ?: return@withLock null
+            runSuspendCatching { activeReader.get(address, Map::class.java) }
+                .onFailure { Log.w(TAG, "countryCode: lookup failed", it) }
+                .getOrNull()
+                ?.isoCode()
+        }
     }
 
     /**
@@ -73,14 +80,15 @@ class GeoIpDatabase(private val databaseFile: File) {
         true
     }.onFailure { Log.w(TAG, "isUsable: rejecting downloaded database", it) }.getOrDefault(false)
 
-    private suspend fun reader(): Reader? = mutex.withLock {
-        reader?.let { return@withLock it }
-        if (openFailed || !databaseFile.exists()) return@withLock null
-        runSuspendCatching { Reader(databaseFile, Reader.FileMode.MEMORY_MAPPED) }
+    /** Callers must already hold [mutex]. */
+    private fun readerLocked(): Reader? {
+        reader?.let { return it }
+        if (openFailed || !databaseFile.exists()) return null
+        return runCatching { Reader(databaseFile, Reader.FileMode.MEMORY_MAPPED) }
             .onSuccess { reader = it }
             .onFailure {
                 // A corrupt file would fail on every poll; complain once and stay quiet.
-                Log.w(TAG, "reader: could not open database", it)
+                Log.w(TAG, "readerLocked: could not open database", it)
                 openFailed = true
             }
             .getOrNull()

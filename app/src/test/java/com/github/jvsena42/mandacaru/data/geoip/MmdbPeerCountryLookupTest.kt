@@ -13,7 +13,10 @@ class MmdbPeerCountryLookupTest {
     @get:Rule
     val temporaryFolder = TemporaryFolder()
 
-    private fun fixture(): File = File("src/test/resources/geoip/GeoIP2-Country-Test.mmdb")
+    /** Resolved off the test classpath rather than the working directory. */
+    private fun fixture(): File = File(
+        checkNotNull(javaClass.getResource("/geoip/GeoIP2-Country-Test.mmdb")).toURI()
+    )
 
     private fun lookup(file: File = fixture()) = MmdbPeerCountryLookup(GeoIpDatabase(file))
 
