@@ -89,6 +89,7 @@ val presentationModule = module {
             florestaRpc = get(),
             preferencesDataSource = get(),
             appUpdateRepository = get(),
+            geoIpDatabaseRepository = get(),
             descriptorScanner = get(),
             context = androidContext(),
         )

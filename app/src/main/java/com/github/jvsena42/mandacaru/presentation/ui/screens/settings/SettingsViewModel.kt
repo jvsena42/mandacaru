@@ -7,6 +7,7 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.jvsena42.mandacaru.data.AppUpdateRepository
+import com.github.jvsena42.mandacaru.data.GeoIpDatabaseRepository
 import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
@@ -42,6 +43,7 @@ class SettingsViewModel(
     private val florestaRpc: FlorestaRpc,
     private val preferencesDataSource: PreferencesDataSource,
     private val appUpdateRepository: AppUpdateRepository,
+    private val geoIpDatabaseRepository: GeoIpDatabaseRepository,
     private val descriptorScanner: DescriptorQrScanner,
     @field:SuppressLint("StaticFieldLeak") private val context: Context,
 ) : ViewModel(), EventFlow<SettingsEvents> by EventFlowImpl() {
@@ -229,11 +231,19 @@ class SettingsViewModel(
 
     private fun handlePeerFlagsToggled(action: SettingsAction.OnTogglePeerFlags) {
         viewModelScope.launch(Dispatchers.IO) {
+            // Persist first: both branches below read the preference back.
             preferencesDataSource.setBoolean(
                 PreferenceKeys.GEOIP_FLAGS_ENABLED,
                 action.enabled
             )
             _uiState.update { it.copy(isPeerFlagsEnabled = action.enabled) }
+
+            if (action.enabled) {
+                // Fetch now rather than leaving the user flagless until the next launch.
+                geoIpDatabaseRepository.refresh()
+            } else {
+                geoIpDatabaseRepository.deleteDatabase()
+            }
         }
     }
 

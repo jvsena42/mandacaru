@@ -3,6 +3,7 @@ package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 import android.content.Context
 import com.github.jvsena42.mandacaru.data.AppUpdateRepository
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
+import com.github.jvsena42.mandacaru.data.GeoIpDatabaseRepository
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.domain.model.UpdateStatus
 import com.github.jvsena42.mandacaru.domain.scan.DescriptorQrScanner
@@ -54,6 +55,7 @@ class SettingsViewModelTest {
             florestaRpc = rpc,
             preferencesDataSource = preferences,
             appUpdateRepository = appUpdateRepository,
+            geoIpDatabaseRepository = FakeGeoIpDatabaseRepository(),
             descriptorScanner = descriptorScanner,
             context = mock(Context::class.java),
         )
@@ -110,5 +112,10 @@ class SettingsViewModelTest {
     private companion object {
         const val DESCRIPTOR =
             "wpkh([73c5da0a/84h/1h/0h]tpubDC8msFGeGuwnKG9Upg7DM2b4DaRqg3CUZa5g8v2SRQ6K4NSkxUgd7HsL2XVWbVm39yBA4LgAFKvDsdsBPzMw3RGYbjeMs9dGcTLeUw6f7c/0/*)"
+    }
+
+    private class FakeGeoIpDatabaseRepository : GeoIpDatabaseRepository {
+        override suspend fun refresh(force: Boolean) = Unit
+        override suspend fun deleteDatabase() = Unit
     }
 }
