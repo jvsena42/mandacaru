@@ -60,10 +60,17 @@ class NodeViewModel(
 
     private fun getInLoop() {
         viewModelScope.launch(ioDispatcher) {
+            refreshAdvancedFeatures()
             getInfo()
             delay(10.seconds)
             getInLoop()
         }
+    }
+
+    private suspend fun refreshAdvancedFeatures() {
+        val enabled = preferencesDataSource
+            .getBoolean(PreferenceKeys.ENABLE_ADVANCED_FEATURES, false)
+        _uiState.update { it.copy(enableAdvancedFeatures = enabled) }
     }
 
     private fun getInfo() {
@@ -128,6 +135,7 @@ class NodeViewModel(
     }
 
     private suspend fun updateDiagnostics() {
+        if (!_uiState.value.enableAdvancedFeatures) return
         florestaRpc.getUptime().collect { result ->
             result.onSuccess { data ->
                 _uiState.update { it.copy(uptime = formatUptime(data.result)) }

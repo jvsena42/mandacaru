@@ -290,18 +290,18 @@ fun ScreenNode(
     val headerSyncDecimal = uiState.headerSyncDecimal
     val filterSyncDecimal = uiState.filterSyncDecimal
     val isFilterSync = !isHeaderSync
-        && !isStalled
-        && uiState.syncDecimal >= 1f
-        && filterSyncDecimal != null
-        && filterSyncDecimal < 1f
+            && !isStalled
+            && uiState.syncDecimal >= 1f
+            && filterSyncDecimal != null
+            && filterSyncDecimal < 1f
     // Filters reaching the tip doesn't mean the wallet is scanned; while a
     // rescan runs the node is still finding the wallet's transactions, so we
     // surface that instead of claiming "Synced".
     val isWalletScanning = !isHeaderSync
-        && !isStalled
-        && uiState.syncDecimal >= 1f
-        && (filterSyncDecimal == null || filterSyncDecimal >= 1f)
-        && uiState.rescanInProgress
+            && !isStalled
+            && uiState.syncDecimal >= 1f
+            && (filterSyncDecimal == null || filterSyncDecimal >= 1f)
+            && uiState.rescanInProgress
     val syncTitleRes = when {
         isHeaderSync -> R.string.syncing_headers_title
         isStalled -> R.string.sync_stalled_title
@@ -447,11 +447,13 @@ fun ScreenNode(
                         )
                     }
                 }
-                item {
-                    DiagnosticsCard(
-                        uiState = uiState,
-                        onToggle = onToggleDiagnostics,
-                    )
+                if (uiState.enableAdvancedFeatures) {
+                    item {
+                        DiagnosticsCard(
+                            uiState = uiState,
+                            onToggle = onToggleDiagnostics,
+                        )
+                    }
                 }
             }
         }
@@ -700,7 +702,8 @@ private fun PeersCard(
                         uiState.peers.forEachIndexed { index, peer ->
                             PeerItem(
                                 peer = peer,
-                                onDisconnect = { onRequestDisconnect(peer.peer.address) }
+                                onDisconnect = { onRequestDisconnect(peer.peer.address) },
+                                showAdvancedDetails = uiState.enableAdvancedFeatures,
                             )
                             if (index < uiState.peers.lastIndex) {
                                 HorizontalDivider(
@@ -861,11 +864,13 @@ private fun SyncProgressBar(
             color = MaterialTheme.colorScheme.error,
             trackColor = MaterialTheme.colorScheme.surfaceVariant,
         )
+
         rawDecimal == null -> LinearProgressIndicator(
             modifier = barModifier,
             color = MaterialTheme.colorScheme.primary,
             trackColor = MaterialTheme.colorScheme.surfaceVariant,
         )
+
         else -> LinearProgressIndicator(
             progress = { animatedDecimal },
             modifier = barModifier,
@@ -881,7 +886,7 @@ private fun SyncProgressTitleRow(titleRes: Int, percentageText: String?) {
         targetState = titleRes,
         transitionSpec = {
             fadeIn(animationSpec = tween(300)) togetherWith
-                fadeOut(animationSpec = tween(300))
+                    fadeOut(animationSpec = tween(300))
         },
         label = "syncTitle",
     ) { currentTitleRes ->
@@ -948,7 +953,8 @@ private fun SyncProgressCard(
         label = "syncProgress",
     )
     val percentageText = inputs.percentageText()
-    val steps = computeSyncStepStates(isHeaderSync, syncDecimal, filterSyncDecimal, rescanInProgress)
+    val steps =
+        computeSyncStepStates(isHeaderSync, syncDecimal, filterSyncDecimal, rescanInProgress)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -965,9 +971,9 @@ private fun SyncProgressCard(
             AnimatedVisibility(
                 visible = !isStalled && !steps.allDone,
                 enter = fadeIn(animationSpec = tween(300)) +
-                    expandVertically(animationSpec = tween(300)),
+                        expandVertically(animationSpec = tween(300)),
                 exit = fadeOut(animationSpec = tween(300)) +
-                    shrinkVertically(animationSpec = tween(300)),
+                        shrinkVertically(animationSpec = tween(300)),
             ) {
                 Column {
                     SyncStepper(
@@ -1230,7 +1236,7 @@ internal fun UtreexoWarningCard() {
             )
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                stringResource(R.string.utreexo_warning_title),
+                    stringResource(R.string.utreexo_warning_title),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onErrorContainer
@@ -1248,7 +1254,8 @@ internal fun UtreexoWarningCard() {
 @Composable
 internal fun PeerItem(
     peer: PeerUi,
-    onDisconnect: () -> Unit = {}
+    onDisconnect: () -> Unit = {},
+    showAdvancedDetails: Boolean = false,
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -1307,12 +1314,14 @@ internal fun PeerItem(
         }
 
         Spacer(modifier = Modifier.height(2.dp))
+        if (showAdvancedDetails) {
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            PeerChip(peer.peer.state)
-            PeerChip(peer.peer.kind)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                PeerChip(peer.peer.state)
+                PeerChip(peer.peer.kind)
+            }
         }
     }
 }
