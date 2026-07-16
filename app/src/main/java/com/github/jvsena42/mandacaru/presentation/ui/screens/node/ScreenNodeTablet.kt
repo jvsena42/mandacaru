@@ -133,7 +133,9 @@ internal fun TabletNodeDashboard(
                     onPingClick = onPingClick,
                     onRequestDisconnect = onRequestDisconnect,
                 )
-                TabletDiagnosticsCard(uiState = uiState)
+                if (uiState.enableAdvancedFeatures) {
+                    TabletDiagnosticsCard(uiState = uiState)
+                }
             }
         }
     }
@@ -448,6 +450,7 @@ private fun TabletPeersCard(
                         PeerItem(
                             peer = peer,
                             onDisconnect = { onRequestDisconnect(peer.peer.address) },
+                            showAdvancedDetails = uiState.enableAdvancedFeatures,
                         )
                         if (index < uiState.peers.lastIndex) {
                             HorizontalDivider(

@@ -29,6 +29,7 @@ data class NodeUiState(
     val peers: List<PeerUi> = emptyList(),
     val utreexoPeerCount: Int = 0,
     val isPeersExpanded: Boolean = false,
+    val enableAdvancedFeatures: Boolean = false,
     val uptime: String = "",
     val isDiagnosticsExpanded: Boolean = false,
 
