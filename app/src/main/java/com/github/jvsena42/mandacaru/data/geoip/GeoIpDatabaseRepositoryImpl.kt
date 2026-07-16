@@ -10,6 +10,8 @@ import com.github.jvsena42.mandacaru.domain.geoip.GeoIpUrl
 import com.github.jvsena42.mandacaru.domain.geoip.isPeerFlagsEnabled
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -32,7 +34,11 @@ class GeoIpDatabaseRepositoryImpl(
     private val networkPolicy: NetworkPolicy,
     private val cacheDir: File,
     private val currentMonth: () -> YearMonth = { YearMonth.now() },
+    private val urlForMonth: (YearMonth) -> String = GeoIpUrl::forMonth,
 ) : GeoIpDatabaseRepository {
+
+    /** Serializes refreshes: they share one scratch path, and two 4 MB fetches help nobody. */
+    private val refreshMutex = Mutex()
 
     private val client by lazy {
         OkHttpClient.Builder()
@@ -51,15 +57,19 @@ class GeoIpDatabaseRepositoryImpl(
     }
 
     override suspend fun refresh(force: Boolean) = withContext(Dispatchers.IO) {
+        refreshMutex.withLock { refreshLocked(force) }
+    }
+
+    private suspend fun refreshLocked(force: Boolean) {
         // Before everything else, including the WiFi wait below — which would otherwise park
         // this coroutine indefinitely for a user who has turned the feature off.
         if (!preferencesDataSource.isPeerFlagsEnabled()) {
             Log.i(TAG, "refresh: skipped, peer flags disabled")
-            return@withContext
+            return
         }
         val month = currentMonth()
-        if (isUpToDate(month)) return@withContext
-        if (!force && !isCheckDue()) return@withContext
+        if (isUpToDate(month)) return
+        if (!force && !isCheckDue()) return
 
         // NetworkPolicyManager assumes "no WiFi" synchronously in Application.onCreate and only
         // clears the flag from its async onAvailable callback, so this is true on essentially
@@ -76,7 +86,7 @@ class GeoIpDatabaseRepositoryImpl(
             // Never re-download the file we already hold (the fallback month can be exactly it).
             if (database.exists() && GeoIpUrl.stamp(candidate) == installedMonth) {
                 markChecked()
-                return@withContext
+                return
             }
             val outcome = runSuspendCatching { attempt(candidate) }
                 .onFailure {
@@ -86,7 +96,7 @@ class GeoIpDatabaseRepositoryImpl(
                 .getOrNull()
 
             // Turned off mid-download: leave the throttle alone and drop the payload.
-            if (outcome == Outcome.Disabled) return@withContext
+            if (outcome == Outcome.Disabled) return
 
             if (outcome == Outcome.Installed) {
                 preferencesDataSource.setString(
@@ -94,7 +104,7 @@ class GeoIpDatabaseRepositoryImpl(
                     GeoIpUrl.stamp(candidate),
                 )
                 markChecked()
-                return@withContext
+                return
             }
         }
 
@@ -103,8 +113,12 @@ class GeoIpDatabaseRepositoryImpl(
         if (!transportFailed) markChecked()
     }
 
+    /** The single scratch path every download writes to. Visible for tests. */
+    internal fun tempFile(): File = File(cacheDir, TEMP_FILE_NAME)
+
     override suspend fun deleteDatabase() = withContext(Dispatchers.IO) {
         database.delete()
+        tempFile().delete()
         // Forget the stamp *and* the throttle. Keeping the throttle would leave a user who
         // turns the feature back on without flags until the 30-day window elapsed.
         preferencesDataSource.setString(PreferenceKeys.GEOIP_DB_MONTH, "")
@@ -112,10 +126,13 @@ class GeoIpDatabaseRepositoryImpl(
     }
 
     private suspend fun attempt(month: YearMonth): Outcome {
-        val temp = File.createTempFile(TEMP_PREFIX, TEMP_SUFFIX, cacheDir)
+        // One fixed path rather than createTempFile's unique names: if the process is killed
+        // mid-download the finally below never runs, and a unique name would strand another
+        // ~8 MB in the cache on every kill. Writing here truncates whatever a previous run left.
+        val temp = tempFile()
         var installed = false
         try {
-            if (!downloadTo(GeoIpUrl.forMonth(month), temp)) return Outcome.NotFound
+            if (!downloadTo(urlForMonth(month), temp)) return Outcome.NotFound
             // A 4 MB download takes a while; the user may have turned the feature off (and had
             // the database deleted) meanwhile. Installing now would resurrect the file.
             if (!preferencesDataSource.isPeerFlagsEnabled()) return Outcome.Disabled
@@ -161,8 +178,7 @@ class GeoIpDatabaseRepositoryImpl(
 
     private companion object {
         const val TAG = "GeoIpDatabaseRepo"
-        const val TEMP_PREFIX = "geoip"
-        const val TEMP_SUFFIX = ".mmdb.tmp"
+        const val TEMP_FILE_NAME = "dbip-country.mmdb.tmp"
         const val HTTP_NOT_FOUND = 404
         const val CONNECT_TIMEOUT_SECONDS = 15L
         const val READ_TIMEOUT_SECONDS = 120L
