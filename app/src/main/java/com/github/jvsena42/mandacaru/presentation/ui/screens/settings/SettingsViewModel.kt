@@ -11,6 +11,7 @@ import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.R
+import com.github.jvsena42.mandacaru.domain.geoip.isPeerFlagsEnabled
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.AddNodeCommand
 import com.github.jvsena42.mandacaru.domain.scan.DescriptorQrScanner
 import com.github.jvsena42.mandacaru.domain.scan.DescriptorScanState
@@ -63,6 +64,7 @@ class SettingsViewModel(
                 .getBoolean(PreferenceKeys.USE_ALSO_MOBILE_DATA, false)
             val enableAdvancedFeatures = preferencesDataSource
                 .getBoolean(PreferenceKeys.ENABLE_ADVANCED_FEATURES, false)
+            val isPeerFlagsEnabled = preferencesDataSource.isPeerFlagsEnabled()
             _uiState.update {
                 it.copy(
                     selectedNetwork = preferencesDataSource.getString(
@@ -72,6 +74,7 @@ class SettingsViewModel(
                     walletBirthdayYear = birthdayYear,
                     useAlsoMobileData = useAlsoMobileData,
                     enableAdvancedFeatures = enableAdvancedFeatures,
+                    isPeerFlagsEnabled = isPeerFlagsEnabled,
                 )
             }
             updateElectrumAddress()
@@ -207,6 +210,7 @@ class SettingsViewModel(
             SettingsAction.OnConfirmBirthdayRestart -> applyBirthdayYearAndRestart()
             SettingsAction.ToggleDataUsageExpanded -> toggleDataUsageExpanded()
             is SettingsAction.OnToggleMobileData -> handleMobileDataToggled(action)
+            is SettingsAction.OnTogglePeerFlags -> handlePeerFlagsToggled(action)
             is SettingsAction.OnToggleAdvancedFeatures -> handleAdvancedFeaturesToggled(action)
             SettingsAction.ToggleDeveloperToolsExpanded -> _uiState.update {
                 it.copy(isDeveloperToolsExpanded = !it.isDeveloperToolsExpanded)
@@ -215,6 +219,16 @@ class SettingsViewModel(
             SettingsAction.OnClickViewLogs -> viewModelScope.sendEvent(
                 SettingsEvents.OpenDeveloperLogs
             )
+        }
+    }
+
+    private fun handlePeerFlagsToggled(action: SettingsAction.OnTogglePeerFlags) {
+        viewModelScope.launch(Dispatchers.IO) {
+            preferencesDataSource.setBoolean(
+                PreferenceKeys.GEOIP_FLAGS_ENABLED,
+                action.enabled
+            )
+            _uiState.update { it.copy(isPeerFlagsEnabled = action.enabled) }
         }
     }
 

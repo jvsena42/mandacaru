@@ -2,6 +2,7 @@ package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 
 import androidx.compose.runtime.Stable
 import com.florestad.Network
+import com.github.jvsena42.mandacaru.domain.geoip.PEER_FLAGS_ENABLED_BY_DEFAULT
 import com.github.jvsena42.mandacaru.domain.model.UpdateStatus
 import com.github.jvsena42.mandacaru.presentation.utils.DescriptorUtils
 import com.github.jvsena42.mandacaru.presentation.utils.WalletBirthday
@@ -43,5 +44,6 @@ data class SettingsUiState(
     val useAlsoMobileData: Boolean = false,
     val isDataUsageExpanded: Boolean = false,
     val enableAdvancedFeatures: Boolean = false,
+    val isPeerFlagsEnabled: Boolean = PEER_FLAGS_ENABLED_BY_DEFAULT,
     val isDeveloperToolsExpanded: Boolean = false,
 )

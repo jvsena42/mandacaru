@@ -1,5 +1,7 @@
 package com.github.jvsena42.mandacaru.data.geoip
 
+import com.github.jvsena42.mandacaru.data.PreferenceKeys
+import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -18,7 +20,10 @@ class MmdbPeerCountryLookupTest {
         checkNotNull(javaClass.getResource("/geoip/GeoIP2-Country-Test.mmdb")).toURI()
     )
 
-    private fun lookup(file: File = fixture()) = MmdbPeerCountryLookup(GeoIpDatabase(file))
+    private val preferences = FakePreferences()
+
+    private fun lookup(file: File = fixture()) =
+        MmdbPeerCountryLookup(GeoIpDatabase(file), preferences)
 
     @Test
     fun `resolves an IPv4 peer address with port`() = runTest {
@@ -54,10 +59,36 @@ class MmdbPeerCountryLookupTest {
     }
 
     @Test
+    fun `flags are on by default`() = runTest {
+        // Nothing stored: the feature must resolve without any preference being written.
+        assertEquals("GB", lookup().countryCode("81.2.69.160:8333"))
+    }
+
+    @Test
+    fun `disabling the setting suppresses lookups`() = runTest {
+        val lookup = lookup()
+        preferences.setBoolean(PreferenceKeys.GEOIP_FLAGS_ENABLED, false)
+        assertNull(lookup.countryCode("81.2.69.160:8333"))
+    }
+
+    @Test
+    fun `re-enabling restores flags without a restart`() = runTest {
+        val lookup = lookup()
+        assertEquals("GB", lookup.countryCode("81.2.69.160:8333"))
+
+        preferences.setBoolean(PreferenceKeys.GEOIP_FLAGS_ENABLED, false)
+        assertNull(lookup.countryCode("81.2.69.160:8333"))
+
+        // The disabled reads must not have poisoned the cache with nulls.
+        preferences.setBoolean(PreferenceKeys.GEOIP_FLAGS_ENABLED, true)
+        assertEquals("GB", lookup.countryCode("81.2.69.160:8333"))
+    }
+
+    @Test
     fun `misses are not cached while the database is absent, so flags appear after download`() = runTest {
         val target = File(temporaryFolder.root, "live.mmdb")
         val database = GeoIpDatabase(target)
-        val lookup = MmdbPeerCountryLookup(database)
+        val lookup = MmdbPeerCountryLookup(database, preferences)
 
         // Before the download there is no database: the peer has no flag.
         assertNull(lookup.countryCode("81.2.69.160:8333"))
@@ -68,5 +99,16 @@ class MmdbPeerCountryLookupTest {
 
         // The next poll must pick the country up rather than serve a cached miss.
         assertEquals("GB", lookup.countryCode("81.2.69.160:8333"))
+    }
+
+    private class FakePreferences : PreferencesDataSource {
+        private val strings = mutableMapOf<PreferenceKeys, String>()
+        private val booleans = mutableMapOf<PreferenceKeys, Boolean>()
+        override suspend fun setString(key: PreferenceKeys, value: String) { strings[key] = value }
+        override suspend fun getString(key: PreferenceKeys, defaultValue: String): String =
+            strings[key] ?: defaultValue
+        override suspend fun setBoolean(key: PreferenceKeys, value: Boolean) { booleans[key] = value }
+        override suspend fun getBoolean(key: PreferenceKeys, defaultValue: Boolean): Boolean =
+            booleans[key] ?: defaultValue
     }
 }

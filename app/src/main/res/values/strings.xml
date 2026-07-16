@@ -79,6 +79,8 @@
     <string name="suggestions_and_bugs">Suggestions and bugs</string>
     <string name="license">License</string>
     <string name="geoip_attribution">IP Geolocation by DB-IP</string>
+    <string name="peer_country_flags">Peer country flags</string>
+    <string name="peer_country_flags_subtitle">Show each peer\'s country on the node screen. Downloads a ~4 MB geolocation database once a month; peer addresses are never sent anywhere.</string>
     <string name="check_for_updates">Check for updates</string>
     <string name="checking_for_updates">Checking for updates…</string>
     <string name="update_available">Update available</string>

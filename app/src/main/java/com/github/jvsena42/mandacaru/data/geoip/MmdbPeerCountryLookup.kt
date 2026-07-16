@@ -1,7 +1,9 @@
 package com.github.jvsena42.mandacaru.data.geoip
 
+import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.domain.geoip.PeerAddressParser
 import com.github.jvsena42.mandacaru.domain.geoip.PeerCountryLookup
+import com.github.jvsena42.mandacaru.domain.geoip.isPeerFlagsEnabled
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -13,6 +15,7 @@ import kotlinx.coroutines.sync.withLock
  */
 class MmdbPeerCountryLookup(
     private val database: GeoIpDatabase,
+    private val preferencesDataSource: PreferencesDataSource,
 ) : PeerCountryLookup {
 
     private val cacheMutex = Mutex()
@@ -26,6 +29,10 @@ class MmdbPeerCountryLookup(
     }
 
     override suspend fun countryCode(address: String): String? {
+        // Checked before the cache is touched, so turning the feature off never writes nulls
+        // that would outlive it — switching back on restores flags on the next poll.
+        if (!preferencesDataSource.isPeerFlagsEnabled()) return null
+
         cacheMutex.withLock {
             if (cache.containsKey(address)) return cache[address]
         }

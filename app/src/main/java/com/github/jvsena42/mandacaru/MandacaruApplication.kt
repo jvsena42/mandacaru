@@ -122,7 +122,9 @@ val dataModule = module {
         AppUpdateRepositoryImpl(gson = Gson(), preferencesDataSource = get())
     }
     single { GeoIpDatabase(databaseFile = File(androidContext().filesDir, GEOIP_DATABASE_FILE)) }
-    single<PeerCountryLookup> { MmdbPeerCountryLookup(database = get()) }
+    single<PeerCountryLookup> {
+        MmdbPeerCountryLookup(database = get(), preferencesDataSource = get())
+    }
     single<GeoIpDatabaseRepository> {
         GeoIpDatabaseRepositoryImpl(
             database = get(),
