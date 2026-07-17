@@ -680,7 +680,7 @@ private fun PeersCard(
                         .padding(bottom = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    if (uiState.peers.isNotEmpty()) {
+                    if (uiState.peers.isNotEmpty() && uiState.enableAdvancedFeatures) {
                         TextButton(onClick = onPingClick) {
                             Icon(
                                 Icons.Outlined.NetworkPing,
