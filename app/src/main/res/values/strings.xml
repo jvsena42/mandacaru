@@ -105,6 +105,10 @@
     <string name="advanced_features_subtitle">Show developer tools such as the node log viewer</string>
     <string name="developer_tools">Developer Tools</string>
     <string name="view_logs">View logs</string>
+    <string name="clear_cache">Clear cache</string>
+    <string name="clearing_cache">Clearing cache…</string>
+    <string name="clear_cache_dialog_title">Clear wallet cache?</string>
+    <string name="clear_cache_dialog_body">This deletes the on-device wallet cache and restarts the app. Your descriptor is reloaded and history is rescanned; the block and filter data are kept, so no full resync is needed.</string>
     <string name="copy_logs">Copy logs</string>
     <string name="logs_copied_to_clipboard">Logs copied to clipboard</string>
     <string name="no_logs_available">No logs available yet</string>

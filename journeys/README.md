@@ -151,6 +151,7 @@ action) on open. The snackbar is part of the Scaffold subtree, so its text and a
 | `toggle_advanced_features`  | "Advanced features" switch (gates the Developer Tools section) |
 | `button_view_logs`          | "View logs" (opens the full-screen log viewer) |
 | `button_export_logs`        | "Export" (share the full debug.log) — inside Developer Tools |
+| `button_clear_cache`        | "Clear cache" (wipes the wallet cache + restarts) — inside Developer Tools |
 
 `button_share_descriptor` is applied to each loaded descriptor row, so the tag repeats once
 per descriptor — target the first when more than one is present. Tapping a row opens
@@ -179,12 +180,17 @@ switches it is **on** by default. Turning it off stops the monthly database down
 `node_peer_flag` from every peer row within one 10-second poll, with no restart.
 
 `toggle_advanced_features` is off by default. The **Developer Tools** section (and its
-`button_view_logs` / `button_export_logs`) only renders once the toggle is on. Expand
-"Developer Tools" by text, then tap `button_view_logs` to open `ScreenDeveloperLogs` — a
-full-screen Nav3 destination in the root subtree, so its tags surface normally (the popup
-caveat does **not** apply). There: `button_back_logs` returns to Settings, `button_copy_logs`
-copies the displayed tail, and the share action reuses `button_export_logs`. Each log line
-is colored by level (ERROR/WARN/INFO/DEBUG/TRACE).
+`button_view_logs` / `button_export_logs` / `button_clear_cache`) only renders once the toggle
+is on. Expand "Developer Tools" by text, then tap `button_view_logs` to open
+`ScreenDeveloperLogs` — a full-screen Nav3 destination in the root subtree, so its tags surface
+normally (the popup caveat does **not** apply). There: `button_back_logs` returns to Settings,
+`button_copy_logs` copies the displayed tail, and the share action reuses `button_export_logs`.
+Each log line is colored by level (ERROR/WARN/INFO/DEBUG/TRACE).
+
+`button_clear_cache` opens a confirmation `AlertDialog` (`ClearCacheConfirmDialog`) — per the
+popup caveat, target its "Clear cache" / "Cancel" buttons **by text**. Confirming wipes the
+on-device watch-only cache and restarts the app; the descriptor is replayed and history
+rescanned on the next boot, while chain + filter data are preserved.
 
 Tapping `input_network` opens the network dropdown. Its options are **targeted by text**
 (`BITCOIN`, `SIGNET`, `TESTNET`, `REGTEST`, `TESTNET4`) — see the popup caveat below.

@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
+import org.json.JSONArray
 import org.koin.android.ext.android.inject
 import java.text.NumberFormat
 import java.util.concurrent.atomic.AtomicBoolean
@@ -52,6 +53,7 @@ class FlorestaService : Service() {
     private var startupSeedDone = false
     private var fullySyncedSinceMs: Long? = null
     private val rescanInFlight = AtomicBoolean(false)
+    private val replayInFlight = AtomicBoolean(false)
 
     companion object {
         private const val TAG = "FlorestaService"
@@ -196,6 +198,7 @@ class FlorestaService : Service() {
                                 ibd = data.result.ibd,
                                 peers = peers,
                             )
+                            maybeReplayDescriptors()
                             if (!startupSeedDone) {
                                 startupSeedDone = true
                                 launch { utreexoBridgeAutoConnect.seedOnStartup() }
@@ -243,6 +246,49 @@ class FlorestaService : Service() {
      *
      * Skips while a rescan is already running so we never stack duplicates.
      */
+    /**
+     * After a "Clear cache" wipe, the descriptor(s) were snapshotted into
+     * [PreferenceKeys.PENDING_DESCRIPTOR_REPLAY] because Floresta stores them only in
+     * the deleted kv cache. Reload them as soon as the RPC responds so the wallet is
+     * repopulated; the post-tip rescan (via [PreferenceKeys.WALLET_NEEDS_RESCAN]) then
+     * fills in history. Clears the flag once every descriptor loads successfully.
+     */
+    private fun maybeReplayDescriptors() {
+        if (!replayInFlight.compareAndSet(false, true)) return
+        ioScope.launch {
+            try {
+                val raw = preferencesDataSource
+                    .getString(PreferenceKeys.PENDING_DESCRIPTOR_REPLAY, "")
+                if (raw.isEmpty()) return@launch
+                val descriptors = runSuspendCatching {
+                    val array = JSONArray(raw)
+                    List(array.length()) { array.getString(it) }
+                }.getOrDefault(emptyList())
+                if (descriptors.isEmpty()) {
+                    preferencesDataSource.setString(PreferenceKeys.PENDING_DESCRIPTOR_REPLAY, "")
+                    return@launch
+                }
+
+                Log.i(TAG, "Replaying ${descriptors.size} descriptor(s) after cache clear")
+                val allLoaded = descriptors.all { descriptor ->
+                    val result = florestaRpc.loadDescriptor(descriptor).firstOrNull()
+                    (result?.isSuccess == true).also { ok ->
+                        if (!ok) Log.w(TAG, "Descriptor replay failed: " +
+                            "${result?.exceptionOrNull()?.message}")
+                    }
+                }
+                if (allLoaded) {
+                    preferencesDataSource.setString(PreferenceKeys.PENDING_DESCRIPTOR_REPLAY, "")
+                    Log.i(TAG, "Descriptor replay complete; flag cleared")
+                }
+            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                Log.w(TAG, "Descriptor replay failed: ${e.message}")
+            } finally {
+                replayInFlight.set(false)
+            }
+        }
+    }
+
     private fun maybeTriggerWalletRescan(
         progress: Float,
         ibd: Boolean,

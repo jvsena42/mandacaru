@@ -127,6 +127,38 @@ class FlorestaDaemonImpl(
         Result.success(Unit)
     }
 
+    override suspend fun clearWalletCache(): Result<Unit> = withContext(Dispatchers.IO) {
+        if (isRunning) {
+            return@withContext Result.failure(
+                IllegalStateException("Daemon is still running; call stop() first")
+            )
+        }
+        runSuspendCatching {
+            val network = preferencesDataSource.getString(
+                PreferenceKeys.CURRENT_NETWORK,
+                FlorestaNetwork.BITCOIN.name
+            ).toFlorestaNetwork()
+            val base = File(dataDirFor(network))
+            // The watch-only cache is the only kv/sled store in the datadir; its
+            // files sit directly in the root, while chaindata/cfilters live in their
+            // own subdirs. Delete just the sled artifacts so chain + filters survive
+            // and no full resync is needed.
+            val walletFiles = base.listFiles { file ->
+                file.name in WALLET_CACHE_ENTRIES || file.name.startsWith(SNAPSHOT_PREFIX)
+            }.orEmpty()
+            if (walletFiles.isEmpty()) {
+                Log.w(TAG, "clearWalletCache: no wallet cache files found in ${base.absolutePath}")
+            }
+            walletFiles.forEach { file ->
+                val size = if (file.isDirectory) dirSize(file) else file.length()
+                val deleted = file.deleteRecursively()
+                Log.i(TAG, "clearWalletCache: deleted ${file.name} (size=$size, ok=$deleted)")
+            }
+        }.onFailure { e ->
+            Log.e(TAG, "clearWalletCache error: ", e)
+        }
+    }
+
     private fun dirSize(dir: File): Long =
         dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
 
@@ -185,5 +217,8 @@ class FlorestaDaemonImpl(
 
     companion object {
         private const val TAG = "FlorestaDaemonImpl"
+        // Files written by the kv/sled watch-only store in the datadir root.
+        private val WALLET_CACHE_ENTRIES = setOf("conf", "db", "blobs")
+        private const val SNAPSHOT_PREFIX = "snap."
     }
 }

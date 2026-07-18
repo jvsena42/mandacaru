@@ -47,6 +47,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.NetworkCheck
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.DataUsage
+import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Wallet
@@ -150,6 +151,7 @@ fun ScreenSettings(
                 }
                 is SettingsEvents.OpenReleasePage -> uriHandler.openUri(event.url)
                 is SettingsEvents.OpenDeveloperLogs -> currentOnOpenLogs()
+                is SettingsEvents.OnCacheCleared -> currentRestartApplication()
             }
         }
     }
@@ -971,6 +973,35 @@ private fun ScreenSettings(
                                     Spacer(modifier = Modifier.size(8.dp))
                                     Text(stringResource(R.string.export_logs))
                                 }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                FilledTonalButton(
+                                    onClick = { onAction(SettingsAction.OnClickClearCache) },
+                                    enabled = !uiState.isClearingCache,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .testTag("button_clear_cache"),
+                                    shape = RoundedCornerShape(12.dp),
+                                ) {
+                                    if (uiState.isClearingCache) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(18.dp),
+                                            strokeWidth = 2.dp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                        Spacer(modifier = Modifier.size(8.dp))
+                                        Text(stringResource(R.string.clearing_cache))
+                                    } else {
+                                        Icon(
+                                            Icons.Outlined.DeleteSweep,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp),
+                                        )
+                                        Spacer(modifier = Modifier.size(8.dp))
+                                        Text(stringResource(R.string.clear_cache))
+                                    }
+                                }
                             }
                         }
                     }
@@ -997,6 +1028,13 @@ private fun ScreenSettings(
                 year = year,
                 onConfirm = { currentOnAction(SettingsAction.OnConfirmBirthdayRestart) },
                 onDismiss = { currentOnAction(SettingsAction.OnCancelBirthdayRestart) },
+            )
+        }
+
+        if (uiState.showClearCacheConfirm) {
+            ClearCacheConfirmDialog(
+                onConfirm = { currentOnAction(SettingsAction.OnConfirmClearCache) },
+                onDismiss = { currentOnAction(SettingsAction.OnDismissClearCache) },
             )
         }
 
@@ -1098,6 +1136,29 @@ private fun BirthdayRestartConfirmDialog(
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text(stringResource(R.string.confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
+}
+
+@Composable
+private fun ClearCacheConfirmDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Outlined.DeleteSweep, contentDescription = null) },
+        title = { Text(stringResource(R.string.clear_cache_dialog_title)) },
+        text = { Text(stringResource(R.string.clear_cache_dialog_body)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(R.string.clear_cache))
             }
         },
         dismissButton = {

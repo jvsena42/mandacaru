@@ -7,4 +7,5 @@ sealed interface SettingsEvents {
     data class OnExportLogs(val uri: android.net.Uri) : SettingsEvents
     data class OpenReleasePage(val url: String) : SettingsEvents
     data object OpenDeveloperLogs : SettingsEvents
+    data object OnCacheCleared : SettingsEvents
 }

@@ -48,4 +48,6 @@ data class SettingsUiState(
     val isPeerFlagsEnabled: Boolean = PEER_FLAGS_ENABLED_BY_DEFAULT,
     val isPeerFlagsExpanded: Boolean = false,
     val isDeveloperToolsExpanded: Boolean = false,
+    val isClearingCache: Boolean = false,
+    val showClearCacheConfirm: Boolean = false,
 )

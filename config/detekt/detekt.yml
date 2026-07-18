@@ -10,6 +10,9 @@ naming:
 
 complexity:
   LongParameterList:
+    # ViewModels are constructor-injected by Koin; a handful of collaborators is
+    # normal DI, not a design smell. Keep the function limit at the default.
+    constructorThreshold: 8
     ignoreAnnotated:
       - 'Composable'
   LongMethod:

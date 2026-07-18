@@ -91,6 +91,7 @@ val presentationModule = module {
             appUpdateRepository = get(),
             geoIpDatabaseRepository = get(),
             descriptorScanner = get(),
+            florestaDaemon = get(),
             context = androidContext(),
         )
     }

@@ -142,6 +142,7 @@ class NodeViewModelClipboardImportTest {
             prepared = true
             return Result.success(Unit)
         }
+        override suspend fun clearWalletCache(): Result<Unit> = Result.success(Unit)
     }
 
     private class FakePreferences : PreferencesDataSource {

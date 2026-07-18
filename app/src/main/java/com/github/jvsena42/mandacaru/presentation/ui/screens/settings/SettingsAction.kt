@@ -38,4 +38,7 @@ sealed interface SettingsAction {
     data class OnToggleAdvancedFeatures(val enabled: Boolean): SettingsAction
     object ToggleDeveloperToolsExpanded: SettingsAction
     object OnClickViewLogs: SettingsAction
+    object OnClickClearCache: SettingsAction
+    object OnConfirmClearCache: SettingsAction
+    object OnDismissClearCache: SettingsAction
 }

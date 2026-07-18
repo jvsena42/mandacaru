@@ -14,6 +14,7 @@ import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.domain.geoip.isPeerFlagsEnabled
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.AddNodeCommand
+import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.scan.DescriptorQrScanner
 import com.github.jvsena42.mandacaru.domain.scan.DescriptorScanState
 import com.github.jvsena42.mandacaru.presentation.utils.DescriptorUtils
@@ -36,6 +37,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import org.json.JSONArray
 import com.florestad.Network as FlorestaNetwork
 
 
@@ -45,6 +47,7 @@ class SettingsViewModel(
     private val appUpdateRepository: AppUpdateRepository,
     private val geoIpDatabaseRepository: GeoIpDatabaseRepository,
     private val descriptorScanner: DescriptorQrScanner,
+    private val florestaDaemon: FlorestaDaemon,
     @field:SuppressLint("StaticFieldLeak") private val context: Context,
 ) : ViewModel(), EventFlow<SettingsEvents> by EventFlowImpl() {
 
@@ -226,6 +229,54 @@ class SettingsViewModel(
             SettingsAction.OnClickViewLogs -> viewModelScope.sendEvent(
                 SettingsEvents.OpenDeveloperLogs
             )
+
+            SettingsAction.OnClickClearCache -> _uiState.update {
+                it.copy(showClearCacheConfirm = true)
+            }
+
+            SettingsAction.OnDismissClearCache -> _uiState.update {
+                it.copy(showClearCacheConfirm = false)
+            }
+
+            SettingsAction.OnConfirmClearCache -> clearCache()
+        }
+    }
+
+    /**
+     * Wipes the on-device watch-only wallet cache and restarts. Floresta stores the
+     * loaded descriptor(s) only inside that cache, so they are snapshotted into a
+     * preference first and replayed by [FlorestaService][com.github.jvsena42.mandacaru.presentation.service.FlorestaService]
+     * on the next boot. Used to heal a corrupted cache (e.g. balances double-counted
+     * before the idempotency fix).
+     */
+    private fun clearCache() {
+        if (_uiState.value.isClearingCache) return
+        _uiState.update { it.copy(showClearCacheConfirm = false, isClearingCache = true) }
+        viewModelScope.launch(Dispatchers.IO) {
+            val descriptors = florestaRpc.listDescriptors().firstOrNull()?.getOrNull()?.result
+                ?: _uiState.value.descriptors
+            preferencesDataSource.setString(
+                PreferenceKeys.PENDING_DESCRIPTOR_REPLAY,
+                JSONArray(descriptors).toString(),
+            )
+            // Rescan history once filters reach the tip after the restart.
+            preferencesDataSource.setBoolean(PreferenceKeys.WALLET_NEEDS_RESCAN, true)
+
+            florestaDaemon.stop()
+            florestaDaemon.clearWalletCache()
+                .onSuccess {
+                    Log.i(TAG, "clearCache: cache wiped; restart pending")
+                    viewModelScope.sendEvent(SettingsEvents.OnCacheCleared)
+                }
+                .onFailure { error ->
+                    Log.e(TAG, "clearCache failed", error)
+                    _uiState.update {
+                        it.copy(
+                            isClearingCache = false,
+                            snackBarMessage = "Failed to clear cache: ${error.message}",
+                        )
+                    }
+                }
         }
     }
 

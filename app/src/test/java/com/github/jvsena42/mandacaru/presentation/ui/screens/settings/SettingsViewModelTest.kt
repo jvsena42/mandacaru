@@ -6,6 +6,7 @@ import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.GeoIpDatabaseRepository
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.domain.model.UpdateStatus
+import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.scan.DescriptorQrScanner
 import com.github.jvsena42.mandacaru.domain.scan.DescriptorScanState
 import com.github.jvsena42.mandacaru.fakes.FakeFlorestaRpc
@@ -58,6 +59,7 @@ class SettingsViewModelTest {
             appUpdateRepository = appUpdateRepository,
             geoIpDatabaseRepository = FakeGeoIpDatabaseRepository(),
             descriptorScanner = descriptorScanner,
+            florestaDaemon = FakeFlorestaDaemon(),
             context = mock(Context::class.java),
         )
         // runCurrent (not advanceUntilIdle): observeRescanState is an infinite delay loop
@@ -124,5 +126,14 @@ class SettingsViewModelTest {
     private class FakeGeoIpDatabaseRepository : GeoIpDatabaseRepository {
         override suspend fun refresh(force: Boolean) = Unit
         override suspend fun deleteDatabase() = Unit
+    }
+
+    private class FakeFlorestaDaemon : FlorestaDaemon {
+        override suspend fun start() = Unit
+        override suspend fun stop() = Unit
+        override fun isRunning(): Boolean = false
+        override suspend fun dumpUtreexoState(): Result<String> = Result.success("")
+        override suspend fun prepareForSnapshotImport(): Result<Unit> = Result.success(Unit)
+        override suspend fun clearWalletCache(): Result<Unit> = Result.success(Unit)
     }
 }
