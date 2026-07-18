@@ -15,13 +15,14 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -66,20 +67,40 @@ private fun DescriptorShareSheetContent(
     val electrumKey = remember(descriptor) { DescriptorUtils.electrumKeyFor(descriptor) }
     var selectedTab by remember { mutableIntStateOf(0) }
 
-    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-        PrimaryTabRow(selectedTabIndex = selectedTab) {
-            Tab(
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        val segmentColors = SegmentedButtonDefaults.colors(
+            activeContainerColor = MaterialTheme.colorScheme.primary,
+            activeContentColor = MaterialTheme.colorScheme.onPrimary,
+            activeBorderColor = MaterialTheme.colorScheme.primary,
+        )
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        ) {
+            SegmentedButton(
                 selected = selectedTab == 0,
                 onClick = { selectedTab = 0 },
-                text = { Text(stringResource(R.string.tab_descriptor)) },
+                shape = SegmentedButtonDefaults.itemShape(index = 0, count = SEGMENT_COUNT),
+                colors = segmentColors,
+                icon = {},
                 modifier = Modifier.testTag("tab_descriptor"),
-            )
-            Tab(
+            ) {
+                Text(stringResource(R.string.tab_descriptor))
+            }
+            SegmentedButton(
                 selected = selectedTab == 1,
                 onClick = { selectedTab = 1 },
-                text = { Text(stringResource(R.string.tab_extended_key)) },
+                shape = SegmentedButtonDefaults.itemShape(index = 1, count = SEGMENT_COUNT),
+                colors = segmentColors,
+                icon = {},
                 modifier = Modifier.testTag("tab_extended_key"),
-            )
+            ) {
+                Text(stringResource(R.string.tab_extended_key))
+            }
         }
 
         when (selectedTab) {
@@ -117,6 +138,13 @@ private fun ShareTabContent(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Text(
+            text = description,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+
         if (qr != null) {
             Box(
                 modifier = Modifier
@@ -148,7 +176,7 @@ private fun ShareTabContent(
             )
         }
 
-        FilledTonalButton(
+        OutlinedButton(
             onClick = onCopy,
             modifier = Modifier.fillMaxWidth().testTag(copyTestTag),
         ) {
@@ -156,13 +184,6 @@ private fun ShareTabContent(
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.utreexo_copy))
         }
-
-        Text(
-            text = description,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
     }
 }
 
@@ -181,6 +202,7 @@ private fun UnavailableNotice() {
     }
 }
 
+private const val SEGMENT_COUNT = 2
 private const val QR_SIZE_PX = 768
 private const val QR_DISPLAY_DP = 280
 
