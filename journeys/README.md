@@ -140,7 +140,11 @@ action) on open. The snackbar is part of the Scaffold subtree, so its text and a
 | `input_descriptor`          | wallet descriptor field                |
 | `button_update_descriptor`  | "Update descriptor"                    |
 | `button_scan_descriptor`    | "Scan QR" (opens the descriptor scanner)|
-| `button_copy_descriptor`    | a loaded descriptor row — tap to copy the full descriptor to the clipboard |
+| `button_share_descriptor`   | a loaded descriptor row — tap to open the share sheet |
+| `tab_descriptor`            | "Descriptor" tab inside the share sheet (see popup caveat) |
+| `tab_extended_key`         | "Extended key" tab inside the share sheet (see popup caveat) |
+| `button_copy_descriptor`    | Copy button on the share sheet's Descriptor tab |
+| `button_copy_extended_key`  | Copy button on the share sheet's Extended-key tab |
 | `input_network`             | network selector field                 |
 | `toggle_mobile_data`        | "Also use mobile data" switch          |
 | `toggle_peer_flags`         | "Peer country flags" switch — inside its own expandable section, only when advanced features are on |
@@ -148,10 +152,15 @@ action) on open. The snackbar is part of the Scaffold subtree, so its text and a
 | `button_view_logs`          | "View logs" (opens the full-screen log viewer) |
 | `button_export_logs`        | "Export" (share the full debug.log) — inside Developer Tools |
 
-`button_copy_descriptor` is applied to each loaded descriptor row, so the tag repeats once
-per descriptor — target the first when more than one is present. Tapping a row copies the
-**full** descriptor (not the truncated two-line display) and shows a
-"Descriptor copied to clipboard" snackbar.
+`button_share_descriptor` is applied to each loaded descriptor row, so the tag repeats once
+per descriptor — target the first when more than one is present. Tapping a row opens
+`DescriptorShareSheet` (a `ModalBottomSheet`) with two tabs: **Descriptor** (default — the full
+descriptor for modern wallets) and **Extended key** (the SLIP-132 `zpub`/`ypub`/`xpub` Electrum
+expects). Each tab shows a QR, the full key text, and a Copy button. Because the sheet renders in a
+separate window (per the popup caveat below), switch tabs **by text** ("Descriptor" / "Extended
+key"); the `tab_*` / `button_copy_*` tags are for instrumented Compose tests. For a multisig or
+taproot descriptor the Extended-key tab shows a "not available" notice instead of a key. Copying
+shows a "Descriptor copied to clipboard" / "Extended public key copied to clipboard" snackbar.
 
 `button_scan_descriptor` opens `DescriptorScanSheet` (a `ModalBottomSheet`) and, on a
 successful scan, `DescriptorScanConfirmDialog` (an `AlertDialog`). Both render in a
