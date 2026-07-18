@@ -66,19 +66,35 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `copying a descriptor surfaces the copied confirmation`() {
+    fun `sharing a descriptor opens the share sheet and dismissing closes it`() {
         val vm = buildViewModel()
 
-        vm.onAction(SettingsAction.OnDescriptorCopied(DESCRIPTOR))
+        vm.onAction(SettingsAction.OnClickShareDescriptor(DESCRIPTOR))
         dispatcher.scheduler.runCurrent()
+        assertEquals(DESCRIPTOR, vm.uiState.value.descriptorToShare)
 
+        vm.onAction(SettingsAction.OnDismissDescriptorShareSheet)
+        dispatcher.scheduler.runCurrent()
+        assertEquals(null, vm.uiState.value.descriptorToShare)
+    }
+
+    @Test
+    fun `copying surfaces the confirmation for descriptor and extended key`() {
+        val vm = buildViewModel()
+
+        vm.onAction(SettingsAction.OnDescriptorShareCopied(isDescriptor = true))
+        dispatcher.scheduler.runCurrent()
         assertEquals("Descriptor copied to clipboard", vm.uiState.value.snackBarMessage)
+
+        vm.onAction(SettingsAction.OnDescriptorShareCopied(isDescriptor = false))
+        dispatcher.scheduler.runCurrent()
+        assertEquals("Extended public key copied to clipboard", vm.uiState.value.snackBarMessage)
     }
 
     @Test
     fun `clearing the snackbar resets the message`() {
         val vm = buildViewModel()
-        vm.onAction(SettingsAction.OnDescriptorCopied(DESCRIPTOR))
+        vm.onAction(SettingsAction.OnDescriptorShareCopied(isDescriptor = true))
         dispatcher.scheduler.runCurrent()
 
         vm.onAction(SettingsAction.ClearSnackBarMessage)

@@ -47,6 +47,12 @@
     <string name="validated_blocks">Validated Blocks</string>
     <string name="descriptors">Descriptors</string>
     <string name="no_descriptors_loaded">No descriptors loaded yet</string>
+    <string name="share_descriptor">Share</string>
+    <string name="tab_descriptor">Descriptor</string>
+    <string name="tab_extended_key">Extended key</string>
+    <string name="share_descriptor_wallets">Modern wallets like Sparrow, BlueWallet, Specter</string>
+    <string name="share_electrum_wallets">Electrum and older wallets</string>
+    <string name="share_electrum_unavailable">Not available for this wallet type — Electrum can\'t import multisig or taproot as a single key.</string>
     <string name="diagnostics">Diagnostics</string>
     <string name="blockchain">Blockchain</string>
     <string name="chain_status">Chain Status</string>

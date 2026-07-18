@@ -144,8 +144,22 @@ class SettingsViewModel(
                 it.copy(pendingScannedDescriptor = null)
             }
 
-            is SettingsAction.OnDescriptorCopied -> _uiState.update {
-                it.copy(snackBarMessage = "Descriptor copied to clipboard")
+            is SettingsAction.OnClickShareDescriptor -> _uiState.update {
+                it.copy(descriptorToShare = action.descriptor)
+            }
+
+            SettingsAction.OnDismissDescriptorShareSheet -> _uiState.update {
+                it.copy(descriptorToShare = null)
+            }
+
+            is SettingsAction.OnDescriptorShareCopied -> _uiState.update {
+                it.copy(
+                    snackBarMessage = if (action.isDescriptor) {
+                        "Descriptor copied to clipboard"
+                    } else {
+                        "Extended public key copied to clipboard"
+                    },
+                )
             }
 
             SettingsAction.OnClickRescan -> rescan()

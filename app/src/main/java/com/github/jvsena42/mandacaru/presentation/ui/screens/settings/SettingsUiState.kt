@@ -19,6 +19,7 @@ data class SettingsUiState(
     val descriptorScanProgress: Float = 0f,
     val descriptorScanError: String = "",
     val pendingScannedDescriptor: PendingDescriptor? = null,
+    val descriptorToShare: String? = null,
     val electrumAddress: String = "",
     val nodeAddress: String = "",
     val nodeAddressError: Int? = null,
