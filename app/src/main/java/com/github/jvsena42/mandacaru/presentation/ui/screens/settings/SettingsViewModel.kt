@@ -152,16 +152,6 @@ class SettingsViewModel(
                 it.copy(descriptorToShare = null)
             }
 
-            is SettingsAction.OnDescriptorShareCopied -> _uiState.update {
-                it.copy(
-                    snackBarMessage = if (action.isDescriptor) {
-                        "Descriptor copied to clipboard"
-                    } else {
-                        "Extended public key copied to clipboard"
-                    },
-                )
-            }
-
             SettingsAction.OnClickRescan -> rescan()
             SettingsAction.ClearSnackBarMessage -> _uiState.update { it.copy(snackBarMessage = "") }
             SettingsAction.OnClickConnectNode -> connectNode()

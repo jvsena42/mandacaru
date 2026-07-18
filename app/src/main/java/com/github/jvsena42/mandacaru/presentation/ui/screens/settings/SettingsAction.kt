@@ -14,7 +14,6 @@ sealed interface SettingsAction {
     object OnDismissScannedDescriptor: SettingsAction
     data class OnClickShareDescriptor(val descriptor: String): SettingsAction
     object OnDismissDescriptorShareSheet: SettingsAction
-    data class OnDescriptorShareCopied(val isDescriptor: Boolean): SettingsAction
     object OnClickConnectNode: SettingsAction
     object OnClickRescan: SettingsAction
     object ClearSnackBarMessage: SettingsAction

@@ -1019,13 +1019,8 @@ private fun ScreenSettings(
         }
 
         uiState.descriptorToShare?.let { descriptor ->
-            val clipboardManager = LocalClipboardManager.current
             DescriptorShareSheet(
                 descriptor = descriptor,
-                onCopy = { value, isDescriptor ->
-                    clipboardManager.setText(AnnotatedString(value))
-                    currentOnAction(SettingsAction.OnDescriptorShareCopied(isDescriptor))
-                },
                 onDismiss = { currentOnAction(SettingsAction.OnDismissDescriptorShareSheet) },
             )
         }

@@ -28,6 +28,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -35,13 +37,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -50,94 +55,112 @@ import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
 import com.github.jvsena42.mandacaru.presentation.utils.DescriptorUtils
 import com.github.jvsena42.mandacaru.presentation.utils.encodeQr
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DescriptorShareSheet(
     descriptor: String,
-    onCopy: (value: String, isDescriptor: Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        DescriptorShareSheetContent(descriptor = descriptor, onCopy = onCopy)
+        DescriptorShareSheetContent(descriptor = descriptor)
     }
 }
 
 @Composable
-private fun DescriptorShareSheetContent(
-    descriptor: String,
-    onCopy: (value: String, isDescriptor: Boolean) -> Unit,
-) {
+private fun DescriptorShareSheetContent(descriptor: String) {
     val electrumKey = remember(descriptor) { DescriptorUtils.electrumKeyFor(descriptor) }
     var selectedTab by remember { mutableIntStateOf(0) }
 
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        val segmentColors = SegmentedButtonDefaults.colors(
-            activeContainerColor = MaterialTheme.colorScheme.primary,
-            activeContentColor = MaterialTheme.colorScheme.onPrimary,
-            activeBorderColor = MaterialTheme.colorScheme.primary,
-        )
-        SingleChoiceSegmentedButtonRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-        ) {
-            SegmentedButton(
-                selected = selectedTab == 0,
-                onClick = { selectedTab = 0 },
-                shape = SegmentedButtonDefaults.itemShape(index = 0, count = SEGMENT_COUNT),
-                colors = segmentColors,
-                icon = {},
-                modifier = Modifier.testTag("tab_descriptor"),
-            ) {
-                Text(stringResource(R.string.tab_descriptor))
-            }
-            SegmentedButton(
-                selected = selectedTab == 1,
-                onClick = { selectedTab = 1 },
-                shape = SegmentedButtonDefaults.itemShape(index = 1, count = SEGMENT_COUNT),
-                colors = segmentColors,
-                icon = {},
-                modifier = Modifier.testTag("tab_extended_key"),
-            ) {
-                Text(stringResource(R.string.tab_extended_key))
-            }
+    val clipboard = LocalClipboardManager.current
+    val descriptorCopied = stringResource(R.string.descriptor_copied)
+    val keyCopied = stringResource(R.string.extended_key_copied)
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val onCopy: (value: String, isDescriptor: Boolean) -> Unit = { value, isDescriptor ->
+        clipboard.setText(AnnotatedString(value))
+        val message = if (isDescriptor) descriptorCopied else keyCopied
+        scope.launch {
+            snackbarHostState.currentSnackbarData?.dismiss()
+            snackbarHostState.showSnackbar(message)
         }
+    }
 
-        AnimatedContent(
-            targetState = selectedTab,
-            transitionSpec = {
-                val direction = if (targetState > initialState) 1 else -1
-                (slideInHorizontally { width -> direction * width } + fadeIn()) togetherWith
-                    (slideOutHorizontally { width -> -direction * width } + fadeOut())
-            },
-            label = "shareTabContent",
-        ) { tab ->
-            when (tab) {
-                0 -> ShareTabContent(
-                    value = descriptor,
-                    description = stringResource(R.string.share_descriptor_wallets),
-                    copyTestTag = "button_copy_descriptor",
-                    onCopy = { onCopy(descriptor, true) },
-                )
+    Box(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            val segmentColors = SegmentedButtonDefaults.colors(
+                activeContainerColor = MaterialTheme.colorScheme.primary,
+                activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                activeBorderColor = MaterialTheme.colorScheme.primary,
+            )
+            SingleChoiceSegmentedButtonRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+            ) {
+                SegmentedButton(
+                    selected = selectedTab == 0,
+                    onClick = { selectedTab = 0 },
+                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = SEGMENT_COUNT),
+                    colors = segmentColors,
+                    icon = {},
+                    modifier = Modifier.testTag("tab_descriptor"),
+                ) {
+                    Text(stringResource(R.string.tab_descriptor))
+                }
+                SegmentedButton(
+                    selected = selectedTab == 1,
+                    onClick = { selectedTab = 1 },
+                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = SEGMENT_COUNT),
+                    colors = segmentColors,
+                    icon = {},
+                    modifier = Modifier.testTag("tab_extended_key"),
+                ) {
+                    Text(stringResource(R.string.tab_extended_key))
+                }
+            }
 
-                else -> if (electrumKey != null) {
-                    ShareTabContent(
-                        value = electrumKey,
-                        description = stringResource(R.string.share_electrum_wallets),
-                        copyTestTag = "button_copy_extended_key",
-                        onCopy = { onCopy(electrumKey, false) },
+            AnimatedContent(
+                targetState = selectedTab,
+                transitionSpec = {
+                    val direction = if (targetState > initialState) 1 else -1
+                    (slideInHorizontally { width -> direction * width } + fadeIn()) togetherWith
+                        (slideOutHorizontally { width -> -direction * width } + fadeOut())
+                },
+                label = "shareTabContent",
+            ) { tab ->
+                when (tab) {
+                    0 -> ShareTabContent(
+                        value = descriptor,
+                        description = stringResource(R.string.share_descriptor_wallets),
+                        copyTestTag = "button_copy_descriptor",
+                        onCopy = { onCopy(descriptor, true) },
                     )
-                } else {
-                    UnavailableNotice()
+
+                    else -> if (electrumKey != null) {
+                        ShareTabContent(
+                            value = electrumKey,
+                            description = stringResource(R.string.share_electrum_wallets),
+                            copyTestTag = "button_copy_extended_key",
+                            onCopy = { onCopy(electrumKey, false) },
+                        )
+                    } else {
+                        UnavailableNotice()
+                    }
                 }
             }
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
 }
 
@@ -233,7 +256,7 @@ private const val SAMPLE_DESCRIPTOR =
 private fun DescriptorShareSheetPreview() {
     MandacaruTheme {
         Surface {
-            DescriptorShareSheetContent(descriptor = SAMPLE_DESCRIPTOR, onCopy = { _, _ -> })
+            DescriptorShareSheetContent(descriptor = SAMPLE_DESCRIPTOR)
         }
     }
 }
