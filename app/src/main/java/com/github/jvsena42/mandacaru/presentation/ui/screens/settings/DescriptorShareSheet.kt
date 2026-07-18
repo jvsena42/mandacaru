@@ -74,7 +74,7 @@ private fun DescriptorShareSheetContent(
     var selectedTab by remember { mutableIntStateOf(0) }
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         val segmentColors = SegmentedButtonDefaults.colors(
@@ -191,6 +191,8 @@ private fun ShareTabContent(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
             )
         }
+
+        Spacer(modifier = Modifier.weight(1f, fill = false))
 
         OutlinedButton(
             onClick = onCopy,
