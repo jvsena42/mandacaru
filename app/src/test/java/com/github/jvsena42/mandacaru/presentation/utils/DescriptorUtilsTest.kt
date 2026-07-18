@@ -216,6 +216,49 @@ class DescriptorUtilsTest {
         assertEquals(null, DescriptorUtils.extractDescriptor(""))
     }
 
+    // --- electrumKeyFor (SLIP-132 export; ground truth = official BIP test vectors) ---
+
+    @Test
+    fun `electrumKeyFor produces the BIP84 zpub for a native segwit descriptor`() {
+        val xpub = DescriptorUtils.convertSlip132ToStandard(realZpub)
+        val descriptor = "wpkh([00000000/84h/0h/0h]$xpub/<0;1>/*)"
+        assertEquals(realZpub, DescriptorUtils.electrumKeyFor(descriptor))
+    }
+
+    @Test
+    fun `electrumKeyFor produces the BIP49 upub for a testnet nested segwit descriptor`() {
+        val tpub = DescriptorUtils.convertSlip132ToStandard(BIP49_TESTNET_UPUB)
+        val descriptor = "sh(wpkh($tpub/<0;1>/*))"
+        assertEquals(BIP49_TESTNET_UPUB, DescriptorUtils.electrumKeyFor(descriptor))
+    }
+
+    @Test
+    fun `electrumKeyFor returns the xpub unchanged for a legacy descriptor`() {
+        assertEquals(BIP32_XPUB, DescriptorUtils.electrumKeyFor("pkh($BIP32_XPUB/<0;1>/*)"))
+    }
+
+    @Test
+    fun `electrumKeyFor roundtrips back to the descriptor's standard key`() {
+        val xpub = DescriptorUtils.convertSlip132ToStandard(realZpub)
+        val zpub = DescriptorUtils.electrumKeyFor("wpkh($xpub/<0;1>/*)")!!
+        assertEquals(xpub, DescriptorUtils.convertSlip132ToStandard(zpub))
+    }
+
+    @Test
+    fun `electrumKeyFor returns null for multisig`() {
+        assertEquals(null, DescriptorUtils.electrumKeyFor(DescriptorUtils.parseMultisigSetupFile(BLUEWALLET_FILE)!!))
+    }
+
+    @Test
+    fun `electrumKeyFor returns null for taproot`() {
+        assertEquals(null, DescriptorUtils.electrumKeyFor("tr($XPUB1/<0;1>/*)"))
+    }
+
+    @Test
+    fun `electrumKeyFor returns null when no extended key is present`() {
+        assertEquals(null, DescriptorUtils.electrumKeyFor("addr(bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4)"))
+    }
+
     // --- parseMultisigSetupFile (BlueWallet / Coldcard) ---
 
     @Test
@@ -290,6 +333,12 @@ class DescriptorUtilsTest {
     }
 
     private companion object {
+        // BIP-49 "Test vectors" §, Account 0 testnet extended public key.
+        const val BIP49_TESTNET_UPUB = "upub5EFU65HtV5TeiSHmZZm7FUffBGy8UKeqp7vw43jYbvZPpoVsgU93oac7Wk3u6moKegAEWtGNF8DehrnHtv21XXEMYRUocHqguyjknFHYfgY"
+
+        // BIP-32 "Test vector 1", chain m extended public key.
+        const val BIP32_XPUB = "xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8"
+
         const val XPUB1 = "xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj"
         const val XPUB2 = "xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39HjUYTz"
         const val ZPUB1 = "Zpub72NVPmrzYKbwP7Q4bnm59GjzZCCrqoCAmR4yzKbcdHHsKKMUtn8UqggU6VUMgRTqcAubyQ9bn3Tb9n4LB4RnPiEnCqysjCSZY2MCWUMfNsx"
