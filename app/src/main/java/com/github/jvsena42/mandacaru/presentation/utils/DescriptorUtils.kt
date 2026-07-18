@@ -21,6 +21,9 @@ object DescriptorUtils {
     )
     private val JSON_DESCRIPTOR_KEYS = listOf("descriptor", "desc", "output_descriptor")
 
+    // Base58 run of an extended key (xpub/tpub and SLIP-132 variants), origin/derivation excluded.
+    private val EXTENDED_KEY_REGEX = Regex("""[xyztuvYZUV]pub[1-9A-HJ-NP-Za-km-z]{100,115}""")
+
     private val POLICY_REGEX = Regex("""(\d+)\s+of\s+\d+""", RegexOption.IGNORE_CASE)
     private val POLICY_LINE_REGEX = Regex("""(?im)^\s*Policy\s*:""")
     private val FORMAT_LINE_REGEX = Regex("""(?im)^\s*Format\s*:""")
@@ -66,6 +69,32 @@ object DescriptorUtils {
             input.startsWith("xpub") || input.startsWith("tpub") -> "pkh($keyWithPath)"
             else -> input
         }
+    }
+
+    /**
+     * The SLIP-132 extended public key Electrum expects for this descriptor, matching its script
+     * type (`wpkh`→`zpub`/`vpub`, `sh(wpkh)`→`ypub`/`upub`, `pkh`→`xpub`/`tpub`). Electrum has no
+     * descriptor support and infers the wallet type from the key's version-byte prefix, so a bare
+     * standard `xpub` would be read as legacy. Returns null when there is no valid single-key
+     * export: multisig, taproot, or no extractable extended key.
+     */
+    @Suppress("ReturnCount")
+    fun electrumKeyFor(descriptor: String): String? {
+        val trimmed = descriptor.trim()
+        if (trimmed.startsWith("tr(") || trimmed.contains("multi(")) return null
+
+        val rawKey = EXTENDED_KEY_REGEX.find(trimmed)?.value ?: return null
+        val standardKey = convertSlip132ToStandard(rawKey)
+        val testnet = standardKey.startsWith("tpub")
+        if (!testnet && !standardKey.startsWith("xpub")) return null
+
+        val target = when {
+            trimmed.startsWith("wpkh(") -> if (testnet) VERSION_MAGIC_VPUB else VERSION_MAGIC_ZPUB
+            trimmed.startsWith("sh(wpkh(") -> if (testnet) VERSION_MAGIC_UPUB else VERSION_MAGIC_YPUB
+            trimmed.startsWith("pkh(") -> if (testnet) VERSION_MAGIC_TPUB else VERSION_MAGIC_XPUB
+            else -> return null
+        }
+        return reencodeVersion(standardKey, target)
     }
 
     fun isPrivateKey(input: String): Boolean {
@@ -221,6 +250,14 @@ object DescriptorUtils {
         val standardPrefix = SLIP132_TO_STANDARD[prefix] ?: return key
 
         standardPrefix.copyInto(decoded, 0)
+        return base58CheckEncode(decoded)
+    }
+
+    /** Re-encodes an extended key with new version bytes (the inverse of the SLIP-132 mapping). */
+    private fun reencodeVersion(key: String, target: ByteArray): String? {
+        val decoded = base58CheckDecode(key) ?: return null
+        if (decoded.size < VERSION_PREFIX_LENGTH) return null
+        target.copyInto(decoded, 0)
         return base58CheckEncode(decoded)
     }
 
