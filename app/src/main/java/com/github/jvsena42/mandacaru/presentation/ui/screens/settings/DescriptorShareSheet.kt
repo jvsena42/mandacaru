@@ -1,5 +1,11 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -103,23 +109,33 @@ private fun DescriptorShareSheetContent(
             }
         }
 
-        when (selectedTab) {
-            0 -> ShareTabContent(
-                value = descriptor,
-                description = stringResource(R.string.share_descriptor_wallets),
-                copyTestTag = "button_copy_descriptor",
-                onCopy = { onCopy(descriptor, true) },
-            )
-
-            else -> if (electrumKey != null) {
-                ShareTabContent(
-                    value = electrumKey,
-                    description = stringResource(R.string.share_electrum_wallets),
-                    copyTestTag = "button_copy_extended_key",
-                    onCopy = { onCopy(electrumKey, false) },
+        AnimatedContent(
+            targetState = selectedTab,
+            transitionSpec = {
+                val direction = if (targetState > initialState) 1 else -1
+                (slideInHorizontally { width -> direction * width } + fadeIn()) togetherWith
+                    (slideOutHorizontally { width -> -direction * width } + fadeOut())
+            },
+            label = "shareTabContent",
+        ) { tab ->
+            when (tab) {
+                0 -> ShareTabContent(
+                    value = descriptor,
+                    description = stringResource(R.string.share_descriptor_wallets),
+                    copyTestTag = "button_copy_descriptor",
+                    onCopy = { onCopy(descriptor, true) },
                 )
-            } else {
-                UnavailableNotice()
+
+                else -> if (electrumKey != null) {
+                    ShareTabContent(
+                        value = electrumKey,
+                        description = stringResource(R.string.share_electrum_wallets),
+                        copyTestTag = "button_copy_extended_key",
+                        onCopy = { onCopy(electrumKey, false) },
+                    )
+                } else {
+                    UnavailableNotice()
+                }
             }
         }
     }
