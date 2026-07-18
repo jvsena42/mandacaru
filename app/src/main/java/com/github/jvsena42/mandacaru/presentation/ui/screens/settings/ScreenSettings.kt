@@ -302,7 +302,6 @@ private fun ScreenSettings(
                         onToggle = { onAction(SettingsAction.ToggleDescriptorsExpanded) },
                         modifier = Modifier.animateItem(),
                     ) {
-                        val clipboardManager = LocalClipboardManager.current
                         Column(modifier = Modifier.fillMaxWidth()) {
                             if (uiState.descriptors.isNotEmpty()) {
                                 uiState.descriptors.forEach { descriptor ->
@@ -311,10 +310,9 @@ private fun ScreenSettings(
                                             .fillMaxWidth()
                                             .padding(vertical = 4.dp)
                                             .clickable {
-                                                clipboardManager.setText(AnnotatedString(descriptor))
-                                                onAction(SettingsAction.OnDescriptorCopied(descriptor))
+                                                onAction(SettingsAction.OnClickShareDescriptor(descriptor))
                                             }
-                                            .testTag("button_copy_descriptor"),
+                                            .testTag("button_share_descriptor"),
                                         shape = RoundedCornerShape(8.dp),
                                         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
                                     ) {
@@ -334,8 +332,8 @@ private fun ScreenSettings(
                                                 modifier = Modifier.weight(1f)
                                             )
                                             Icon(
-                                                Icons.Outlined.ContentCopy,
-                                                contentDescription = "Copy",
+                                                Icons.Outlined.Share,
+                                                contentDescription = stringResource(R.string.share_descriptor),
                                                 modifier = Modifier
                                                     .padding(start = 12.dp)
                                                     .size(20.dp),
@@ -1017,6 +1015,18 @@ private fun ScreenSettings(
                 pending = pending,
                 onConfirm = { currentOnAction(SettingsAction.OnConfirmScannedDescriptor) },
                 onDismiss = { currentOnAction(SettingsAction.OnDismissScannedDescriptor) },
+            )
+        }
+
+        uiState.descriptorToShare?.let { descriptor ->
+            val clipboardManager = LocalClipboardManager.current
+            DescriptorShareSheet(
+                descriptor = descriptor,
+                onCopy = { value, isDescriptor ->
+                    clipboardManager.setText(AnnotatedString(value))
+                    currentOnAction(SettingsAction.OnDescriptorShareCopied(isDescriptor))
+                },
+                onDismiss = { currentOnAction(SettingsAction.OnDismissDescriptorShareSheet) },
             )
         }
     }
