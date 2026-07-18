@@ -18,6 +18,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.mock
@@ -79,23 +80,13 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `copying surfaces the confirmation for descriptor and extended key`() {
-        val vm = buildViewModel()
-
-        vm.onAction(SettingsAction.OnDescriptorShareCopied(isDescriptor = true))
-        dispatcher.scheduler.runCurrent()
-        assertEquals("Descriptor copied to clipboard", vm.uiState.value.snackBarMessage)
-
-        vm.onAction(SettingsAction.OnDescriptorShareCopied(isDescriptor = false))
-        dispatcher.scheduler.runCurrent()
-        assertEquals("Extended public key copied to clipboard", vm.uiState.value.snackBarMessage)
-    }
-
-    @Test
     fun `clearing the snackbar resets the message`() {
         val vm = buildViewModel()
-        vm.onAction(SettingsAction.OnDescriptorShareCopied(isDescriptor = true))
+        // Seed a message synchronously via the private-key rejection path.
+        vm.onAction(SettingsAction.OnDescriptorChanged("xprv9s21ZrQH143K3GJpoapnV8SFfuZcECeGTqTKP9HYSnmgYfq6"))
+        vm.onAction(SettingsAction.OnClickUpdateDescriptor)
         dispatcher.scheduler.runCurrent()
+        assertTrue(vm.uiState.value.snackBarMessage.isNotEmpty())
 
         vm.onAction(SettingsAction.ClearSnackBarMessage)
         dispatcher.scheduler.runCurrent()

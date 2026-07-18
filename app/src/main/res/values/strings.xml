@@ -53,6 +53,8 @@
     <string name="share_descriptor_wallets">Modern wallets like Sparrow, BlueWallet, Specter</string>
     <string name="share_electrum_wallets">Electrum and older wallets</string>
     <string name="share_electrum_unavailable">Not available for this wallet type — Electrum can\'t import multisig or taproot as a single key.</string>
+    <string name="descriptor_copied">Descriptor copied to clipboard</string>
+    <string name="extended_key_copied">Extended public key copied to clipboard</string>
     <string name="diagnostics">Diagnostics</string>
     <string name="blockchain">Blockchain</string>
     <string name="chain_status">Chain Status</string>
