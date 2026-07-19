@@ -95,7 +95,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon --warning-mode all
 
       - name: Upload APK
         uses: actions/upload-artifact@v7
