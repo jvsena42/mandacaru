@@ -1143,10 +1143,10 @@ private fun UpdateRow(
                         }
                     }
             
-                    is UpdateState.Downloading -> {
+                    is UpdateState.Downloading -> { downloading ->
 
                         val animatedProgress by animateFloatAsState(
-                            targetValue = updateState.progress / 100f,
+                            targetValue = downloading.progress / 100f,
                             animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
                         )
 
@@ -1158,7 +1158,7 @@ private fun UpdateRow(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = "Downloading update… ${updateState.progress}%",
+                            text = "Downloading update… ${downloading.progress}%",
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
