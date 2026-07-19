@@ -156,12 +156,6 @@ viewModelScope.launch {
             "UpdateVM",
             "resolved=$resolved"
         )
-
-        if (resolved is UpdateState.ReadyToInstall) {
-            viewModelScope.sendEvent(
-                SettingsEvents.OpenInstallPrompt(resolved.uri)
-            )
-        }
     }
 }
 
