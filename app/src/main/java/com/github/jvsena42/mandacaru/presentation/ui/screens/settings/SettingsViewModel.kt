@@ -164,6 +164,16 @@ viewModelScope.launch {
         }
     }
 }
+
+viewModelScope.launch {
+    while (true) {
+        if (_uiState.value.updateUiState is UpdateState.Downloading) {
+            updateRegistry.refresh()
+        }
+        delay(1000)
+    }
+}
+
 }
     @Suppress("CyclomaticComplexMethod", "LongMethod")
     fun onAction(action: SettingsAction) {

@@ -114,6 +114,10 @@ android.util.Log.d(
         return if (id != -1L) id else null
     }
 
+    fun refresh() {
+        _changes.update { it + 1 }
+    }
+
     /** Returns URI of a completed version, or null if not downloaded */
     fun getCompletedUri(version: String): Uri? {
         val uriString = prefs.getString("$KEY_COMPLETED_PREFIX$version", null)
