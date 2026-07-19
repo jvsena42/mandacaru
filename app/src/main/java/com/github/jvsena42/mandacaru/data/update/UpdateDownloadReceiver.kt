@@ -30,12 +30,11 @@ android.util.Log.d(
         if (intent.action != DownloadManager.ACTION_DOWNLOAD_COMPLETE) return
 
         val downloadId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
-        if (downloadId == -1L) return
-
-android.util.Log.d(
+        android.util.Log.d(
     "UpdateReceiver",
-    "downloadId=$downloadId"
+    "DOWNLOAD_COMPLETE received id=$downloadId"
 )
+        if (downloadId == -1L) return
 
         val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         val cursor = dm.query(DownloadManager.Query().setFilterById(downloadId)) ?: return
@@ -48,13 +47,13 @@ android.util.Log.d(
         cursor.use {
             if (!it.moveToFirst()) return
 
-            val statusIndex = it.getColumnIndex(DownloadManager.COLUMN_STATUS)
+            val statusIndex = it.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)
             val status = it.getInt(statusIndex)
-
-android.util.Log.d(
+        android.util.Log.d(
     "UpdateReceiver",
-    "download status=$status"
+    "DownloadManager completion status=$status"
 )
+
             if (status != DownloadManager.STATUS_SUCCESSFUL) return
 
             val uriIndex = it.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
@@ -74,11 +73,14 @@ android.util.Log.d(
             if (uri != null) {
                 // Mark the download as completed in the registry
                 val registry = UpdateDownloadRegistry(context)
-                registry.markCompleted(downloadId, uri)
-
 android.util.Log.d(
     "UpdateReceiver",
-    "markCompleted returned"
+    "About to mark completed id=$downloadId uri=$uri"
+)
+                registry.markCompleted(downloadId, uri)
+android.util.Log.d(
+    "UpdateReceiver",
+    "markCompleted finished"
 )
 
 android.util.Log.d(
