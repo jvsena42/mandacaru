@@ -3,15 +3,20 @@ package com.github.jvsena42.mandacaru.data.update
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 /**
- * Persistent single source of truth for APK download tracking.
- * Uses SharedPreferences to remember completed downloads across app restarts.
+ * Persistent registry for APK download tracking.
+ * Uses SharedPreferences to remember active and completed downloads across app restarts.
  */
 class UpdateDownloadRegistry(context: Context) {
 
     private val prefs: SharedPreferences =
         context.getSharedPreferences("update_registry", Context.MODE_PRIVATE)
+    private val _changes = MutableStateFlow(0)
+    val changes = _changes.asStateFlow()
 
     companion object {
         private const val KEY_ACTIVE_DOWNLOAD_ID = "active_download_id"
@@ -27,6 +32,8 @@ class UpdateDownloadRegistry(context: Context) {
             .putLong(KEY_ACTIVE_DOWNLOAD_ID, downloadId)
             .putString(KEY_ACTIVE_VERSION, version)
             .apply()
+
+        _changes.update { it + 1 }
     }
 
     // ----------------------------
@@ -34,16 +41,17 @@ class UpdateDownloadRegistry(context: Context) {
     // ----------------------------
     fun markCompleted(downloadId: Long, uri: Uri) {
         val activeId = prefs.getLong(KEY_ACTIVE_DOWNLOAD_ID, -1L)
-        // Verify the completed ID matches the current active download ID
         if (activeId == -1L || activeId != downloadId) return
 
         val version = prefs.getString(KEY_ACTIVE_VERSION, null) ?: return
-        
+
         prefs.edit()
             .remove(KEY_ACTIVE_DOWNLOAD_ID)
             .remove(KEY_ACTIVE_VERSION)
             .putString("$KEY_COMPLETED_PREFIX$version", uri.toString())
             .apply()
+
+        _changes.update { it + 1 }
     }
 
     // ----------------------------
@@ -55,6 +63,8 @@ class UpdateDownloadRegistry(context: Context) {
             .remove(KEY_ACTIVE_DOWNLOAD_ID)
             .remove(KEY_ACTIVE_VERSION)
             .apply()
+
+        _changes.update { it + 1 }
     }
 
     /** Specific cleanup if a version is explicitly invalidated or deleted */
@@ -62,6 +72,8 @@ class UpdateDownloadRegistry(context: Context) {
         prefs.edit()
             .remove("$KEY_COMPLETED_PREFIX$version")
             .apply()
+    
+        _changes.update { it + 1 }
     }
 
     // ----------------------------
@@ -92,3 +104,4 @@ class UpdateDownloadRegistry(context: Context) {
         return activeVersion == version && hasActiveId
     }
 }
+
