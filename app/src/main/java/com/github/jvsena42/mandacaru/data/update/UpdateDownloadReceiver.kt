@@ -84,7 +84,7 @@ android.util.Log.d(
 android.util.Log.d(
     "UpdateReceiver",
     "showing ready notification"
-))
+)
 
                 // Show a persistent notification
                 showUpdateReadyNotification(context)
