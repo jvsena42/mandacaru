@@ -40,6 +40,11 @@ class UpdateDownloadRegistry(context: Context) {
     // MARK DOWNLOAD COMPLETED
     // ----------------------------
     fun markCompleted(downloadId: Long, uri: Uri) {
+        android.util.Log.d(
+            "UpdateRegistry",
+             "markCompleted called id=$downloadId uri=$uri"
+        )    
+
         val activeId = prefs.getLong(KEY_ACTIVE_DOWNLOAD_ID, -1L)
         if (activeId == -1L || activeId != downloadId) return
 
