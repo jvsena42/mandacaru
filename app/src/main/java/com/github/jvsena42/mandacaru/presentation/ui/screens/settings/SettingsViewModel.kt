@@ -226,8 +226,10 @@ viewModelScope.launch {
             SettingsAction.OnClickGetUpdate -> getUpdate()
             
             is SettingsAction.OnInstallUpdate -> {
-                sendEvent(SettingsEvents.OpenInstallPrompt(action.uri))
-            }
+                viewModelScope.sendEvent(
+                    SettingsEvents.OpenInstallPrompt(action.uri)
+                )
+            }   
 
             SettingsAction.OnClickCheckForUpdates -> checkForUpdates()
 
