@@ -126,34 +126,45 @@ appUpdateRepository.refresh(force = true)
 }
 
 viewModelScope.launch {
-combine(
-    appUpdateRepository.updateStatus,
-    updateRegistry.changes
-) { status, _ ->
-    status
-}.collect { status ->
+    combine(
+        appUpdateRepository.updateStatus,
+        updateRegistry.changes
+    ) { status, _ ->
+        status
+    }.collect { status ->
 
-    val resolved = updateResolver.resolve(
-	status = status,
-	downloadId = updateRegistry.getActiveDownloadId()
-    )
+        val activeId = updateRegistry.getActiveDownloadId()
 
-    _uiState.update {
-	it.copy(
-	    updateStatus = status,
-	    updateUiState = resolved
-	)
+        android.util.Log.d(
+            "UpdateVM",
+            "status=$status activeId=$activeId"
+        )
+
+        val resolved = updateResolver.resolve(
+            status = status,
+            downloadId = activeId
+        )
+
+        _uiState.update {
+            it.copy(
+                updateStatus = status,
+                updateUiState = resolved
+            )
+        }
+
+        android.util.Log.d(
+            "UpdateVM",
+            "resolved=$resolved"
+        )
+
+        if (resolved is UpdateState.ReadyToInstall) {
+            viewModelScope.sendEvent(
+                SettingsEvents.OpenInstallPrompt(resolved.uri)
+            )
+        }
     }
-
-    if (resolved is UpdateState.ReadyToInstall) {
-	viewModelScope.sendEvent(
-	    SettingsEvents.OpenInstallPrompt(resolved.uri)
-	)
-    }
 }
 }
-}
-
     @Suppress("CyclomaticComplexMethod", "LongMethod")
     fun onAction(action: SettingsAction) {
         when (action) {

@@ -22,13 +22,28 @@ class UpdateDownloadReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
+
+android.util.Log.d(
+    "UpdateReceiver",
+    "ENTER onReceive action=${intent.action}"
+)
         if (intent.action != DownloadManager.ACTION_DOWNLOAD_COMPLETE) return
 
         val downloadId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
         if (downloadId == -1L) return
 
+android.util.Log.d(
+    "UpdateReceiver",
+    "downloadId=$downloadId"
+)
+
         val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         val cursor = dm.query(DownloadManager.Query().setFilterById(downloadId)) ?: return
+
+android.util.Log.d(
+    "UpdateReceiver",
+    "cursor found"
+)
 
         cursor.use {
             if (!it.moveToFirst()) return
@@ -36,16 +51,40 @@ class UpdateDownloadReceiver : BroadcastReceiver() {
             val statusIndex = it.getColumnIndex(DownloadManager.COLUMN_STATUS)
             val status = it.getInt(statusIndex)
 
+android.util.Log.d(
+    "UpdateReceiver",
+    "download status=$status"
+)
             if (status != DownloadManager.STATUS_SUCCESSFUL) return
 
             val uriIndex = it.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
             val uriString = it.getString(uriIndex)
             val uri = uriString?.let(Uri::parse)
 
+android.util.Log.d(
+    "UpdateReceiver",
+    "uriString=$uriString uri=$uri"
+)
+
+android.util.Log.d(
+    "UpdateReceiver",
+    "calling markCompleted"
+)
+
             if (uri != null) {
                 // Mark the download as completed in the registry
                 val registry = UpdateDownloadRegistry(context)
                 registry.markCompleted(downloadId, uri)
+
+android.util.Log.d(
+    "UpdateReceiver",
+    "markCompleted returned"
+)
+
+android.util.Log.d(
+    "UpdateReceiver",
+    "showing ready notification"
+))
 
                 // Show a persistent notification
                 showUpdateReadyNotification(context)

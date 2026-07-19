@@ -27,7 +27,14 @@ class UpdateDownloadRegistry(context: Context) {
     // ----------------------------
     // MARK DOWNLOAD STARTED
     // ----------------------------
+
     fun markDownloading(version: String, downloadId: Long) {
+        
+android.util.Log.d(
+    "UpdateRegistry",
+    "markDownloading version=$version id=$downloadId"
+)
+
         prefs.edit()
             .putLong(KEY_ACTIVE_DOWNLOAD_ID, downloadId)
             .putString(KEY_ACTIVE_VERSION, version)
@@ -46,15 +53,31 @@ class UpdateDownloadRegistry(context: Context) {
         )    
 
         val activeId = prefs.getLong(KEY_ACTIVE_DOWNLOAD_ID, -1L)
+
+android.util.Log.d(
+    "UpdateRegistry",
+    "activeId=$activeId"
+)
+
         if (activeId == -1L || activeId != downloadId) return
 
         val version = prefs.getString(KEY_ACTIVE_VERSION, null) ?: return
+
+android.util.Log.d(
+    "UpdateRegistry",
+    "activeVersion=$version"
+)
 
         prefs.edit()
             .remove(KEY_ACTIVE_DOWNLOAD_ID)
             .remove(KEY_ACTIVE_VERSION)
             .putString("$KEY_COMPLETED_PREFIX$version", uri.toString())
             .apply()
+
+android.util.Log.d(
+    "UpdateRegistry",
+    "completed saved version=$version uri=$uri"
+)
 
         _changes.update { it + 1 }
     }
