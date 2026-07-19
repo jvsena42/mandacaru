@@ -23,6 +23,7 @@ sealed interface SettingsAction {
     object ToggleDonateExpanded: SettingsAction
     object OnClickExportLogs: SettingsAction
     object OnClickGetUpdate: SettingsAction
+    data class OnInstallUpdate(val uri: android.net.Uri): SettingsAction
     object OnClickCheckForUpdates: SettingsAction
     object ToggleBirthdayExpanded: SettingsAction
     object OnClickChangeBirthdayYear: SettingsAction

@@ -224,6 +224,10 @@ viewModelScope.launch {
             SettingsAction.ToggleAboutExpanded -> toggleAboutExpanded()
 
             SettingsAction.OnClickGetUpdate -> getUpdate()
+            
+            is SettingsAction.OnInstallUpdate -> {
+                sendEvent(SettingsEvents.OpenInstallPrompt(action.uri))
+            }
 
             SettingsAction.OnClickCheckForUpdates -> checkForUpdates()
 

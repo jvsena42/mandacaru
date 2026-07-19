@@ -1166,15 +1166,16 @@ private fun UpdateRow(
                     is UpdateState.ReadyToInstall -> {
                         Button(
                             onClick = {
-                                onAction(SettingsAction.OnInstallUpdate(resolved.uri))
+                                onAction(SettingsAction.OnInstallUpdate(updateUiState.uri))
                             },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                         ) {
                             Text("Install update")
                         }
-                    } 
-                        UpdateState.Idle -> Unit
+                    }
+
+                    UpdateState.Idle -> Unit
                 }
             }
 
