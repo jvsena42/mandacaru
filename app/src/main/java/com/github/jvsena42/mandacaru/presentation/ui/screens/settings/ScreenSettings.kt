@@ -170,6 +170,11 @@ fun ScreenSettings(
                         addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
 
+                    android.util.Log.d(
+    "UpdateInstall",
+    "Launching installer uri=$contentUri type=${intent.type}"
+)
+
                     context.startActivity(intent)
                 }
             }
