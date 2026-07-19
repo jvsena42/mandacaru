@@ -170,7 +170,7 @@ viewModelScope.launch {
         if (_uiState.value.updateUiState is UpdateState.Downloading) {
             updateRegistry.refresh()
         }
-        delay(1000)
+        delay(DOWNLOAD_PROGRESS_REFRESH_INTERVAL_MS)
     }
 }
 
@@ -634,6 +634,7 @@ viewModelScope.launch {
         private const val VALIDATION_DEBOUNCE_MS = 500L
         private const val RESCAN_POLL_INTERVAL_MS = 3000L
         private const val SCAN_ERROR_COOLDOWN_MS = 10000L
+        private const val DOWNLOAD_PROGRESS_REFRESH_INTERVAL_MS = 1000L
     }
 }
 
