@@ -111,10 +111,11 @@ android.util.Log.d(
 )
 
 			return when (downloadStatus) {
+DownloadManager.STATUS_PENDING,
 DownloadManager.STATUS_RUNNING -> {
     android.util.Log.d(
         "UpdateResolver",
-        "Returning Downloading"
+        "Returning Downloading status=$downloadStatus"
     )
     UpdateState.Downloading
 }
