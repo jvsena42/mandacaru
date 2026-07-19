@@ -1148,7 +1148,7 @@ private fun UpdateRow(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                         ) {
-                            Text("Ready to install")
+                            Text("Install update")
                         }
                     }
             
