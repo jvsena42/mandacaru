@@ -14,6 +14,11 @@ import com.github.jvsena42.mandacaru.data.update.UpdateDownloadRegistry
         private val registry: UpdateDownloadRegistry
     ) {
     
+        private companion object {
+            private const val PERCENTAGE_MIN = 0
+            private const val PERCENTAGE_MAX = 100
+        }
+
         private val dm =
             context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
 
@@ -131,9 +136,9 @@ DownloadManager.STATUS_RUNNING -> {
 
     val progress =
         if (total > 0) {
-            ((downloaded * 100) / total).toInt()
+            ((downloaded * PERCENTAGE_MAX) / total).toInt()
         } else {
-            0
+            PERCENTAGE_MIN
         }
 
     android.util.Log.d(
