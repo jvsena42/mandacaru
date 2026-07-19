@@ -16,7 +16,8 @@ import com.github.jvsena42.mandacaru.data.update.UpdateDownloadRegistry
     
         private val dm =
             context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
-    
+
+        @Suppress("LongMethod")    
         fun resolve(
             status: com.github.jvsena42.mandacaru.domain.model.UpdateStatus,
             downloadId: Long?
