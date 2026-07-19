@@ -82,7 +82,7 @@
     <string name="checking_for_updates">Checking for updates…</string>
     <string name="update_available">Update available</string>
     <string name="latest_version">Latest: %1$s</string>
-    <string name="get_update">Open release page</string>
+    <string name="get_update">Download update</string>
     <string name="up_to_date">You\'re on the latest version</string>
     <string name="donate">Donate</string>
     <string name="lightning_address">Lightning Address</string>

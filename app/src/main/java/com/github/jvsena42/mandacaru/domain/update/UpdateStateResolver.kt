@@ -62,7 +62,11 @@ return if (uri != null) {
         "UpdateResolver",
         "Returning ReadyToInstall from registry uri=$uri"
     )
-    UpdateState.ReadyToInstall(uri)
+android.util.Log.d(
+    "UpdateResolver",
+    "SUCCESSFUL download detected, uri=$uri"
+)    
+UpdateState.ReadyToInstall(uri)
 } else {
     android.util.Log.d(
         "UpdateResolver",
