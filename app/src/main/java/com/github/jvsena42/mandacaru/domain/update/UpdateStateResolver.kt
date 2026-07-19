@@ -117,11 +117,31 @@ android.util.Log.d(
 			return when (downloadStatus) {
 DownloadManager.STATUS_PENDING,
 DownloadManager.STATUS_RUNNING -> {
+    val downloadedIndex =
+        it.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
+
+    val totalIndex =
+        it.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
+
+    val downloaded =
+        it.getLong(downloadedIndex)
+
+    val total =
+        it.getLong(totalIndex)
+
+    val progress =
+        if (total > 0) {
+            ((downloaded * 100) / total).toInt()
+        } else {
+            0
+        }
+
     android.util.Log.d(
         "UpdateResolver",
-        "Returning Downloading status=$downloadStatus"
+        "Downloading $downloaded/$total bytes progress=$progress%"
     )
-    UpdateState.Downloading(progress = 0)
+
+    UpdateState.Downloading(progress)
 }
 
                 DownloadManager.STATUS_SUCCESSFUL -> {
