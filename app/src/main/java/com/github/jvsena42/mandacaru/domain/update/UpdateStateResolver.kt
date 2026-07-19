@@ -121,7 +121,7 @@ DownloadManager.STATUS_RUNNING -> {
         "UpdateResolver",
         "Returning Downloading status=$downloadStatus"
     )
-    UpdateState.Downloading
+    UpdateState.Downloading(progress = 0)
 }
 
                 DownloadManager.STATUS_SUCCESSFUL -> {

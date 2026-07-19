@@ -8,7 +8,9 @@ import android.net.Uri
 sealed class UpdateState {
 
     object Idle : UpdateState()
-    object Downloading : UpdateState()
+	data class Downloading(
+		val progress: Int
+	) : UpdateState()
     data class ReadyToInstall(val uri: Uri) : UpdateState()
     object Available : UpdateState() // no download started yet
 }

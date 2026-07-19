@@ -62,6 +62,8 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ProgressIndicatorDefaults
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -1141,15 +1143,22 @@ private fun UpdateRow(
                         }
                     }
             
-                    UpdateState.Downloading -> {
+                    is UpdateState.Downloading -> {
+
+                        val animatedProgress by animateFloatAsState(
+                            targetValue = updateState.progress / 100f,
+                            animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
+                        )
+
                         LinearProgressIndicator(
+                            progress = { animatedProgress },
                             modifier = Modifier.fillMaxWidth()
                         )
-            
+
                         Spacer(modifier = Modifier.height(8.dp))
-            
+
                         Text(
-                            text = "Downloading update…",
+                            text = "Downloading update… ${updateState.progress}%",
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
