@@ -24,10 +24,6 @@ class UpdateStateResolver(
     private val dm =
         context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
 
-    @Suppress(
-        "LongMethod",
-        "CyclomaticComplexMethod"
-    )
     fun resolve(
         status: com.github.jvsena42.mandacaru.domain.model.UpdateStatus,
         downloadId: Long?
@@ -42,9 +38,8 @@ class UpdateStateResolver(
             return UpdateState.Idle
         }
 
-        val completedState = resolveRegistryDownload(status.latestVersion)
-        if (completedState != null) {
-            return completedState
+        if (registry.isDownloaded(status.latestVersion)) {
+            return resolveRegistryDownload(status.latestVersion)
         }
 
         if (downloadId == null) {
@@ -56,11 +51,7 @@ class UpdateStateResolver(
         return resolveDownloadManagerState(downloadId)
     }
 
-    private fun resolveRegistryDownload(version: String): UpdateState? {
-        if (!registry.isDownloaded(version)) {
-            return null
-        }
-
+    private fun resolveRegistryDownload(version: String): UpdateState {
         val uri = registry.getCompletedUri(version)
 
         return if (uri != null && uriExists(uri)) {
@@ -71,6 +62,7 @@ class UpdateStateResolver(
         }
     }
 
+    @Suppress("CyclomaticComplexMethod")
     private fun resolveDownloadManagerState(downloadId: Long): UpdateState {
         val downloadManager = dm ?: return UpdateState.Available
 
@@ -99,52 +91,61 @@ class UpdateStateResolver(
             return when (downloadStatus) {
                 DownloadManager.STATUS_PENDING,
                 DownloadManager.STATUS_RUNNING -> {
-                    val downloaded =
-                        it.getLong(
-                            it.getColumnIndexOrThrow(
-                                DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR
-                            )
-                        )
-
-                    val total =
-                        it.getLong(
-                            it.getColumnIndexOrThrow(
-                                DownloadManager.COLUMN_TOTAL_SIZE_BYTES
-                            )
-                        )
-
-                    val progress =
-                        if (total > 0) {
-                            ((downloaded * PERCENTAGE_MAX) / total).toInt()
-                        } else {
-                            PERCENTAGE_MIN
-                        }
-
-                    UpdateState.Downloading(progress)
+                    resolveDownloadingState(it)
                 }
 
                 DownloadManager.STATUS_SUCCESSFUL -> {
-                    val uri =
-                        it.getString(
-                            it.getColumnIndexOrThrow(
-                                DownloadManager.COLUMN_LOCAL_URI
-                            )
-                        )
-                            ?.let(Uri::parse)
-
-                    if (uri != null && uriExists(uri)) {
-                        UpdateState.ReadyToInstall(uri)
-                    } else {
-                        android.util.Log.d(
-                            TAG,
-                            "DownloadManager reports successful but APK missing uri=$uri"
-                        )
-                        UpdateState.Available
-                    }
+                    resolveSuccessfulDownload(it)
                 }
 
                 else -> UpdateState.Available
             }
+        }
+    }
+
+    private fun resolveDownloadingState(cursor: android.database.Cursor): UpdateState {
+        val downloaded =
+            cursor.getLong(
+                cursor.getColumnIndexOrThrow(
+                    DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR
+                )
+            )
+
+        val total =
+            cursor.getLong(
+                cursor.getColumnIndexOrThrow(
+                    DownloadManager.COLUMN_TOTAL_SIZE_BYTES
+                )
+            )
+
+        val progress =
+            if (total > 0) {
+                ((downloaded * PERCENTAGE_MAX) / total).toInt()
+            } else {
+                PERCENTAGE_MIN
+            }
+
+        return UpdateState.Downloading(progress)
+    }
+
+    private fun resolveSuccessfulDownload(
+        cursor: android.database.Cursor
+    ): UpdateState {
+        val uri =
+            cursor.getString(
+                cursor.getColumnIndexOrThrow(
+                    DownloadManager.COLUMN_LOCAL_URI
+                )
+            )?.let(Uri::parse)
+
+        return if (uri != null && uriExists(uri)) {
+            UpdateState.ReadyToInstall(uri)
+        } else {
+            android.util.Log.d(
+                TAG,
+                "DownloadManager reports successful but APK missing uri=$uri"
+            )
+            UpdateState.Available
         }
     }
 
@@ -172,9 +173,9 @@ class UpdateStateResolver(
                 it.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI)
 
             while (it.moveToNext()) {
-                if (it.getString(urlIndex) != url) {
-                    continue
-                }
+                val existingUrl = it.getString(urlIndex)
+
+                if (existingUrl != url) continue
 
                 val localUri =
                     it.getString(localUriIndex)
