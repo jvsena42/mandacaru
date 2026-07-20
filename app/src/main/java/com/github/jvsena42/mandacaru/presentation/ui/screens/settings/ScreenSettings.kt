@@ -111,6 +111,7 @@ import com.github.jvsena42.mandacaru.presentation.utils.WalletBirthday
 import com.github.jvsena42.mandacaru.presentation.utils.rememberAdaptiveLayout
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import java.io.File
 import java.time.Year
 
 @Composable
