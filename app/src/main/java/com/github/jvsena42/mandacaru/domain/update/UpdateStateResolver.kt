@@ -22,7 +22,10 @@ class UpdateStateResolver(
         private val dm =
             context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
 
-        @Suppress("LongMethod")    
+        @Suppress(
+            "LongMethod",
+            "CyclomaticComplexMethod"
+        )
         fun resolve(
             status: com.github.jvsena42.mandacaru.domain.model.UpdateStatus,
             downloadId: Long?
@@ -125,8 +128,8 @@ DownloadManager.STATUS_SUCCESSFUL -> {
         android.util.Log.d(
             "UpdateResolver",
             "DownloadManager reports successful but APK missing uri=$uri"
-        )        
-		UpdateState.Available
+        )
+        UpdateState.Available
     }
 }
 
@@ -134,6 +137,7 @@ else -> {
     UpdateState.Available
 }
 
+            }
         }
     }
 
