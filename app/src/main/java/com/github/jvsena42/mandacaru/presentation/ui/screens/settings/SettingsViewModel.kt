@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import android.app.DownloadManager
 import android.net.Uri
+import android.os.Environment
 import com.github.jvsena42.mandacaru.data.update.UpdateDownloadRegistry
 import com.github.jvsena42.mandacaru.domain.update.UpdateState
 import com.github.jvsena42.mandacaru.domain.update.UpdateStateResolver
