@@ -83,6 +83,19 @@ android.util.Log.d(
     }
 
     // ----------------------------
+    // RESTORE COMPLETED
+    // ----------------------------
+    fun restoreCompleted(version: String, uri: Uri) {
+        prefs.edit()
+            .putString("$KEY_COMPLETED_PREFIX$version", uri.toString())
+            .remove(KEY_ACTIVE_DOWNLOAD_ID)
+            .remove(KEY_ACTIVE_VERSION)
+            .apply()
+
+        _changes.update { it + 1 }
+    }
+
+    // ----------------------------
     // MARK DOWNLOAD FAILED / CANCELLED
     // ----------------------------
     /** Clears the active download tracking state if a download fails or is cancelled */

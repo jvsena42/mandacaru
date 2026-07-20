@@ -321,7 +321,26 @@ viewModelScope.launch {
     
             if (updateRegistry.isDownloaded(version)) return@launch
             if (updateRegistry.isDownloading(version)) return@launch
-    
+   
+            val downloads =
+                Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_DOWNLOADS
+                )
+
+            val existingApk = downloads.listFiles()?.firstOrNull { file ->
+                file.isFile &&
+                    file.extension.equals("apk", ignoreCase = true) &&
+                    file.name.contains(version, ignoreCase = true)
+            }
+
+            if (existingApk != null) {
+                updateRegistry.restoreCompleted(
+                    version,
+                    Uri.fromFile(existingApk)
+                )
+                return@launch
+            }
+ 
             val dm =
                 context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
     
