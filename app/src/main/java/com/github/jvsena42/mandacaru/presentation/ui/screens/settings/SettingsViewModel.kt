@@ -316,6 +316,54 @@ viewModelScope.launch {
         viewModelScope.launch { appUpdateRepository.refresh(force = true) }
     }
 
+    private fun findExistingDownload(
+        dm: DownloadManager,
+        url: String
+    ): Long? {
+
+        val query = DownloadManager.Query()
+
+        dm.query(query).use { cursor ->
+
+            val uriIndex =
+                cursor.getColumnIndex(
+                    DownloadManager.COLUMN_URI
+                )
+
+            val idIndex =
+                cursor.getColumnIndex(
+                    DownloadManager.COLUMN_ID
+                )
+
+            val statusIndex =
+                cursor.getColumnIndex(
+                    DownloadManager.COLUMN_STATUS
+                )
+
+            while (cursor.moveToNext()) {
+
+                val existingUrl =
+                    cursor.getString(uriIndex)
+
+                if (existingUrl == url) {
+
+                    val status =
+                        cursor.getInt(statusIndex)
+
+                    if (
+                        status == DownloadManager.STATUS_RUNNING ||
+                        status == DownloadManager.STATUS_PENDING ||
+                        status == DownloadManager.STATUS_SUCCESSFUL
+                    ) {
+                        return cursor.getLong(idIndex)
+                    }
+                }
+            }
+        }
+
+        return null
+    }
+
     private fun getUpdate() {
         val status = _uiState.value.updateStatus
         val url = status.apkDownloadUrl ?: return
@@ -328,7 +376,6 @@ viewModelScope.launch {
 
             val dm =
                 context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-
             val request = DownloadManager.Request(Uri.parse(url))
                 .setTitle("Mandacaru update $version")
                 .setNotificationVisibility(
