@@ -1,0 +1,57 @@
+name: Claude Code Review
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to review"
+        required: true
+        type: string
+
+concurrency:
+  group: claude-review-${{ github.event.inputs.pr_number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    name: Claude review
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check out PR branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr checkout ${{ github.event.inputs.pr_number }}
+
+      - name: Claude review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          prompt: |
+            Review pull request #${{ github.event.inputs.pr_number }} in
+            ${{ github.repository }}.
+
+            Diff the PR branch against origin/main and review ONLY the changed code.
+            Follow this project's standards in CONTRIBUTING.md and AGENTS.md:
+            - Conventional, atomic commits
+            - Unit tests for business-logic / ViewModel changes (fakes, not mocks)
+            - UI changes must update journeys/ and journeys/README.md testTags
+            - Kotlin conventions: runCatching / runSuspendCatching over try/catch
+            - detekt (config/detekt/detekt.yml) and Android lint (app/lint.xml) must pass
+
+            Post a pull-request review on #${{ github.event.inputs.pr_number }}:
+            - Add an INLINE comment on each specific finding, anchored to the exact
+              changed file and line it refers to.
+            - Add ONE general summary comment on the PR with the overall assessment
+              (what's good, main concerns, whether it meets the standards above).
+            Be concise and actionable. Do not modify any files or push commits — review only.
+          claude_args: '--max-turns 25 --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr review:*)"'
