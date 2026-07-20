@@ -312,58 +312,55 @@ viewModelScope.launch {
         }
     }
 
-    private fun checkForUpdates() {
-        viewModelScope.launch { appUpdateRepository.refresh(force = true) }
-    }
-
     private fun findExistingDownload(
         dm: DownloadManager,
         url: String
     ): Long? {
 
-        val query = DownloadManager.Query()
-
-        dm.query(query).use { cursor ->
+        dm.query(DownloadManager.Query()).use { cursor ->
 
             val uriIndex =
-                cursor.getColumnIndex(
+                cursor.getColumnIndexOrThrow(
                     DownloadManager.COLUMN_URI
                 )
 
             val idIndex =
-                cursor.getColumnIndex(
+                cursor.getColumnIndexOrThrow(
                     DownloadManager.COLUMN_ID
                 )
 
             val statusIndex =
-                cursor.getColumnIndex(
+                cursor.getColumnIndexOrThrow(
                     DownloadManager.COLUMN_STATUS
                 )
 
             while (cursor.moveToNext()) {
 
-                val existingUrl =
-                    cursor.getString(uriIndex)
-
-                if (existingUrl == url) {
-
-                    val status =
-                        cursor.getInt(statusIndex)
-
-                    if (
-                        status == DownloadManager.STATUS_RUNNING ||
-                        status == DownloadManager.STATUS_PENDING ||
-                        status == DownloadManager.STATUS_SUCCESSFUL
-                    ) {
-                        return cursor.getLong(idIndex)
-                    }
+                if (cursor.getString(uriIndex) != url) {
+                    continue
                 }
+
+                val status =
+                    cursor.getInt(statusIndex)
+
+                if (
+                    status != DownloadManager.STATUS_PENDING &&
+                    status != DownloadManager.STATUS_RUNNING &&
+                    status != DownloadManager.STATUS_SUCCESSFUL
+                ) {
+                    continue
+                }
+
+                return cursor.getLong(idIndex)
             }
         }
 
         return null
     }
 
+    private fun checkForUpdates() {
+        viewModelScope.launch { appUpdateRepository.refresh(force = true) }
+    }
     private fun getUpdate() {
         val status = _uiState.value.updateStatus
         val url = status.apkDownloadUrl ?: return
@@ -386,6 +383,19 @@ viewModelScope.launch {
                     Environment.DIRECTORY_DOWNLOADS,
                     "Mandacaru-$version.apk"
                 )
+
+            val existingDownloadId = findExistingDownload(
+                dm,
+                url
+            )
+
+            if (existingDownloadId != null) {
+                updateRegistry.markDownloading(
+                    version,
+                    existingDownloadId
+                )
+                return@launch
+            }
 
             val id = dm.enqueue(request)
 
