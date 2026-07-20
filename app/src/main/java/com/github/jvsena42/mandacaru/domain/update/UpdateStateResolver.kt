@@ -3,7 +3,6 @@ package com.github.jvsena42.mandacaru.domain.update
 import android.app.DownloadManager
 import android.content.Context
 import android.net.Uri
-import android.os.Environment
 import com.github.jvsena42.mandacaru.data.update.UpdateDownloadRegistry
 import java.io.File
 
@@ -47,26 +46,6 @@ class UpdateStateResolver(
                 return registryState
             }
         }        
-
-        val downloads =
-            Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_DOWNLOADS
-            )
-
-        val apkFile =
-            File(
-                downloads,
-                "Mandacaru-${status.latestVersion}.apk"
-            )
-
-        if (apkFile.exists()) {
-            android.util.Log.d(
-                TAG,
-                "Found existing APK in Downloads: ${apkFile.absolutePath}"
-            )
-
-            return UpdateState.ReadyToInstall(Uri.fromFile(apkFile))
-        }
         
         if (downloadId == null) {
             return findCompletedDownload(status.apkDownloadUrl)
@@ -179,9 +158,14 @@ class UpdateStateResolver(
     }
 
     private fun uriExists(uri: Uri): Boolean {
-        return when (uri.scheme) {
-            "file" -> File(uri.path ?: "").exists()
-            else -> false
+        return try {
+            when (uri.scheme) {
+                "file" -> File(uri.path ?: "").exists()
+                "content" -> true
+                else -> false
+            }
+        } catch (_: Exception) {
+            false
         }
     }
 

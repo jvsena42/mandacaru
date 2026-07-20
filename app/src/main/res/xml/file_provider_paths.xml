@@ -2,6 +2,4 @@
 <paths>
     <files-path name="logs" path="." />
     <cache-path name="cached_logs" path="logs/" />
-    <cache-path name="cached_apks" path="." />
-    <external-path name="external_downloads" path="Download/" />
 </paths>

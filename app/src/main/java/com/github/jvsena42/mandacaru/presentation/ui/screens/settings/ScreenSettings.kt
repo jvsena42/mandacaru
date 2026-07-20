@@ -157,65 +157,7 @@ fun ScreenSettings(
                 is SettingsEvents.OpenReleasePage -> uriHandler.openUri(event.url)
                 is SettingsEvents.OpenDeveloperLogs -> currentOnOpenLogs()
                 is SettingsEvents.OpenInstallPrompt -> {
-                    val contentResolver = context.contentResolver
-
-                    val requiredBytes =
-                        contentResolver
-                            .openFileDescriptor(event.uri, "r")
-                            ?.use { it.statSize }
-                            ?: run {
-                                android.util.Log.d(
-                                    "UpdateInstall",
-                                    "Unable to read APK size uri=${event.uri}"
-                                )
-                                return@collect
-                            }
-
-                    val availableBytes =
-                        context.cacheDir.usableSpace
-
-                    if (availableBytes < requiredBytes) {
-                        android.util.Log.d(
-                            "UpdateInstall",
-                            "Not enough cache space available=$availableBytes required=$requiredBytes"
-                        )
-
-                        return@collect
-                    }
-
-                    clearCachedApks(context)
-                    
-                    val installFile = File(
-                        context.cacheDir,
-                        event.uri.lastPathSegment ?: "mandacaru-update.apk"
-                    )
-                    
-                    try {
-                    contentResolver.openInputStream(event.uri)?.use { input ->
-                        installFile.outputStream().use { output ->
-                            input.copyTo(output)
-                        }
-                    } ?: run {
-                        android.util.Log.d(
-                            "UpdateInstall",
-                            "Unable to open APK input stream uri=${event.uri}"
-                        )
-                        return@collect
-                    }
-                    
-                    } catch (e: IOException) {
-                        android.util.Log.d(
-                            "UpdateInstall",
-                            "Failed copying APK: ${e.message}"
-                        )
-                        return@collect
-                    }
-                    
-                    val contentUri = FileProvider.getUriForFile(
-                        context,
-                        "${context.packageName}.fileprovider",
-                        installFile
-                    )
+                    val contentUri = event.uri
 
                     val intent = Intent(Intent.ACTION_VIEW).apply {
                         setDataAndType(
@@ -225,17 +167,6 @@ fun ScreenSettings(
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
-
-                    context.grantUriPermission(
-                        "com.google.android.packageinstaller",
-                        contentUri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    )
-
-                    android.util.Log.d(
-                        "UpdateInstall",
-                        "Launching installer uri=$contentUri"
-                    )
 
                     context.startActivity(intent)
                 }
