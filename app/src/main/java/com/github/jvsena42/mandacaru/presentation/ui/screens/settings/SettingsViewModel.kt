@@ -336,22 +336,20 @@ viewModelScope.launch {
 
             while (cursor.moveToNext()) {
 
-                if (cursor.getString(uriIndex) != url) {
-                    continue
-                }
+                val existingUrl =
+                    cursor.getString(uriIndex)
 
                 val status =
                     cursor.getInt(statusIndex)
 
-                if (
-                    status != DownloadManager.STATUS_PENDING &&
-                    status != DownloadManager.STATUS_RUNNING &&
-                    status != DownloadManager.STATUS_SUCCESSFUL
-                ) {
-                    continue
-                }
+                val isActiveOrComplete =
+                    status == DownloadManager.STATUS_PENDING ||
+                        status == DownloadManager.STATUS_RUNNING ||
+                        status == DownloadManager.STATUS_SUCCESSFUL
 
-                return cursor.getLong(idIndex)
+                if (existingUrl == url && isActiveOrComplete) {
+                    return cursor.getLong(idIndex)
+                }
             }
         }
 
@@ -361,6 +359,7 @@ viewModelScope.launch {
     private fun checkForUpdates() {
         viewModelScope.launch { appUpdateRepository.refresh(force = true) }
     }
+
     private fun getUpdate() {
         val status = _uiState.value.updateStatus
         val url = status.apkDownloadUrl ?: return
