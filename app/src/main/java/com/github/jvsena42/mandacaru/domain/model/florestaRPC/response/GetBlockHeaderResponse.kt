@@ -14,14 +14,14 @@ data class GetBlockHeaderResponse(
 data class BlockHeaderResult(
     @SerializedName("version")
     val version: Int,
-    @SerializedName("prev_blockhash")
-    val prevBlockhash: String,
-    @SerializedName("merkle_root")
+    @SerializedName("previousblockhash")
+    val prevBlockhash: String? = null,
+    @SerializedName("merkleroot")
     val merkleRoot: String,
     @SerializedName("time")
     val time: Long,
     @SerializedName("bits")
-    val bits: Long,
+    val bits: String,
     @SerializedName("nonce")
     val nonce: Long
 )

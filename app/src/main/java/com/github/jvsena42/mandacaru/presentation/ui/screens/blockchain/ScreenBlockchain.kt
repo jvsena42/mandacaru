@@ -520,13 +520,15 @@ internal fun BlockHeaderCard(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-            BlockDetailRow(
-                label = stringResource(R.string.previous_block),
-                value = header.prevBlockhash,
-                isMonospace = true
-            )
+            header.prevBlockhash?.let { prevBlockhash ->
+                BlockDetailRow(
+                    label = stringResource(R.string.previous_block),
+                    value = prevBlockhash,
+                    isMonospace = true
+                )
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+            }
 
             BlockDetailRow(
                 label = stringResource(R.string.nonce),
@@ -537,7 +539,7 @@ internal fun BlockHeaderCard(
 
             BlockDetailRow(
                 label = stringResource(R.string.bits),
-                value = header.bits.toString()
+                value = header.bits
             )
         }
     }
@@ -588,7 +590,7 @@ private fun Preview() {
                         prevBlockhash = "00000000000000000002abc123def456abc123def456abc123def456abc123de",
                         merkleRoot = "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b",
                         time = 1699564800,
-                        bits = 386089497,
+                        bits = "1702905c",
                         nonce = 2083236893
                     ),
                     blockHash = "00000000000000000001234567890abcdef1234567890abcdef1234567890ab",
@@ -632,7 +634,7 @@ private fun TabletPreview() {
                         prevBlockhash = "00000000000000000002abc123def456abc123def456abc123def456abc123de",
                         merkleRoot = "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b",
                         time = 1699564800,
-                        bits = 386089497,
+                        bits = "1702905c",
                         nonce = 2083236893
                     ),
                     blockHash = "00000000000000000001234567890abcdef1234567890abcdef1234567890ab",
