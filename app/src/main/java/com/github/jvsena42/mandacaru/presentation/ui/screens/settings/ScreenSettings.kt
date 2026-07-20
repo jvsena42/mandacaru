@@ -156,7 +156,13 @@ fun ScreenSettings(
                 is SettingsEvents.OpenReleasePage -> uriHandler.openUri(event.url)
                 is SettingsEvents.OpenDeveloperLogs -> currentOnOpenLogs()
                 is SettingsEvents.OpenInstallPrompt -> {
-                    val contentUri = event.uri
+                    val file = File(event.uri.path ?: return@collect)
+
+                    val contentUri = FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.fileprovider",
+                        file
+                    )
 
                     val intent = Intent(Intent.ACTION_VIEW).apply {
                         setDataAndType(
