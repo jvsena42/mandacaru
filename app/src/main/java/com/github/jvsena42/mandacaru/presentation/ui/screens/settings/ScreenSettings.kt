@@ -153,7 +153,7 @@ fun ScreenSettings(
                 is SettingsEvents.OpenReleasePage -> uriHandler.openUri(event.url)
                 is SettingsEvents.OpenDeveloperLogs -> currentOnOpenLogs()
                 is SettingsEvents.OpenInstallPrompt -> {
-                    val file = java.io.File(event.uri.path!!)
+                    val file = File(event.uri.path ?: return@collect)
 
                     val contentUri = androidx.core.content.FileProvider.getUriForFile(
                         context,
@@ -172,10 +172,18 @@ fun ScreenSettings(
                         addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
 
-                    android.util.Log.d(
-    "UpdateInstall",
-    "Launching installer uri=$contentUri type=${intent.type}"
-)
+                    context.packageManager
+                        .queryIntentActivities(
+                            intent,
+                            android.content.pm.PackageManager.MATCH_DEFAULT_ONLY
+                        )
+                        .forEach {
+                            context.grantUriPermission(
+                                it.activityInfo.packageName,
+                                contentUri,
+                                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            )
+                        }
 
                     context.startActivity(intent)
                 }
