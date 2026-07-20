@@ -100,6 +100,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import android.content.Context
 import com.florestad.Network
 import com.github.jvsena42.mandacaru.BuildConfig
 import com.github.jvsena42.mandacaru.R
@@ -243,8 +244,6 @@ fun ScreenSettings(
                 it.delete()
             }
     }
-
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
