@@ -312,38 +312,44 @@ viewModelScope.launch {
         }
     }
 
+    private fun checkForUpdates() {
+        viewModelScope.launch { appUpdateRepository.refresh(force = true) }
+    }
+
     private fun getUpdate() {
         val status = _uiState.value.updateStatus
         val url = status.apkDownloadUrl ?: return
         val version = status.latestVersion
-    
+
         viewModelScope.launch {
-    
+
             if (updateRegistry.isDownloaded(version)) return@launch
             if (updateRegistry.isDownloading(version)) return@launch
-   
-            val downloads =
-                Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_DOWNLOADS
-                )
 
-            val existingApk = downloads.listFiles()?.firstOrNull { file ->
-                file.isFile &&
-                    file.extension.equals("apk", ignoreCase = true) &&
-                    file.name.contains(version, ignoreCase = true)
-            }
+            val existingApk = findExistingApk(version)
+
+            android.util.Log.d(
+                "UpdateVM",
+                "existing APK scan version=$version found=${existingApk?.absolutePath}"
+            )
 
             if (existingApk != null) {
+                android.util.Log.d(
+                    "UpdateVM",
+                    "RESTORING EXISTING APK ${existingApk.absolutePath}"
+                )
+
                 updateRegistry.restoreCompleted(
                     version,
                     Uri.fromFile(existingApk)
                 )
+
                 return@launch
             }
- 
+
             val dm =
                 context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-    
+
             val request = DownloadManager.Request(Uri.parse(url))
                 .setTitle("Mandacaru update $version")
                 .setNotificationVisibility(
@@ -354,10 +360,28 @@ viewModelScope.launch {
                     Environment.DIRECTORY_DOWNLOADS,
                     "Mandacaru-$version.apk"
                 )
-    
+
             val id = dm.enqueue(request)
-    
+
+            android.util.Log.d(
+                "UpdateVM",
+                "ENQUEUED DOWNLOAD id=$id"
+            )
+
             updateRegistry.markDownloading(version, id)
+        }
+    }
+
+    private fun findExistingApk(version: String): File? {
+        val downloads =
+            Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_DOWNLOADS
+            )
+
+        return downloads.listFiles()?.firstOrNull { file ->
+            file.isFile &&
+                file.extension.equals("apk", ignoreCase = true) &&
+                file.name.contains(version, ignoreCase = true)
         }
     }
 
