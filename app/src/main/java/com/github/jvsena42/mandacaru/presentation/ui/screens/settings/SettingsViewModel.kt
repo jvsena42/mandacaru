@@ -1,25 +1,26 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 
 import android.annotation.SuppressLint
+import android.app.DownloadManager
 import android.content.Context
+import android.net.Uri
+import android.os.Environment
 import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import android.app.DownloadManager
-import android.net.Uri
-import android.os.Environment
-import com.github.jvsena42.mandacaru.data.update.UpdateDownloadRegistry
-import com.github.jvsena42.mandacaru.domain.update.UpdateState
-import com.github.jvsena42.mandacaru.domain.update.UpdateStateResolver
+import com.florestad.Network as FlorestaNetwork
+import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.data.AppUpdateRepository
 import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
-import com.github.jvsena42.mandacaru.R
+import com.github.jvsena42.mandacaru.data.update.UpdateDownloadRegistry
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.AddNodeCommand
 import com.github.jvsena42.mandacaru.domain.scan.DescriptorQrScanner
 import com.github.jvsena42.mandacaru.domain.scan.DescriptorScanState
+import com.github.jvsena42.mandacaru.domain.update.UpdateState
+import com.github.jvsena42.mandacaru.domain.update.UpdateStateResolver
 import com.github.jvsena42.mandacaru.presentation.utils.DescriptorUtils
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlowImpl
@@ -29,8 +30,10 @@ import com.github.jvsena42.mandacaru.presentation.utils.getElectrumPort
 import com.github.jvsena42.mandacaru.presentation.utils.getNetwork
 import com.github.jvsena42.mandacaru.presentation.utils.getRpcPort
 import com.github.jvsena42.mandacaru.presentation.utils.removeSpaces
-import kotlinx.coroutines.Dispatchers
 import java.io.File
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,10 +42,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
-import com.florestad.Network as FlorestaNetwork
-
 
 class SettingsViewModel(
     private val florestaRpc: FlorestaRpc,
@@ -55,7 +54,16 @@ class SettingsViewModel(
 
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState = _uiState.asStateFlow()
+
     private val updateResolver = UpdateStateResolver(context, updateRegistry)
+
+    private sealed class ExistingDownload {
+        data class Completed(val id: Long, val uri: Uri) : ExistingDownload()
+
+        data class Active(val id: Long) : ExistingDownload()
+
+        data class Stale(val id: Long) : ExistingDownload()
+    }
 
     private var nodeAddressValidationJob: Job? = null
     private var descriptorScanErrorJob: Job? = null
@@ -64,20 +72,21 @@ class SettingsViewModel(
 
     init {
         viewModelScope.launch {
-            val birthdayYear = preferencesDataSource
-                .getString(PreferenceKeys.WALLET_BIRTHDAY_YEAR, "")
-                .toIntOrNull()
-                ?: WalletBirthday.defaultYear()
-            val useAlsoMobileData = preferencesDataSource
-                .getBoolean(PreferenceKeys.USE_ALSO_MOBILE_DATA, false)
-            val enableAdvancedFeatures = preferencesDataSource
-                .getBoolean(PreferenceKeys.ENABLE_ADVANCED_FEATURES, false)
+            val birthdayYear =
+                preferencesDataSource
+                    .getString(PreferenceKeys.WALLET_BIRTHDAY_YEAR, "")
+                    .toIntOrNull() ?: WalletBirthday.defaultYear()
+            val useAlsoMobileData =
+                preferencesDataSource.getBoolean(PreferenceKeys.USE_ALSO_MOBILE_DATA, false)
+            val enableAdvancedFeatures =
+                preferencesDataSource.getBoolean(PreferenceKeys.ENABLE_ADVANCED_FEATURES, false)
             _uiState.update {
                 it.copy(
-                    selectedNetwork = preferencesDataSource.getString(
-                        PreferenceKeys.CURRENT_NETWORK,
-                        FlorestaNetwork.BITCOIN.name
-                    ),
+                    selectedNetwork =
+                        preferencesDataSource.getString(
+                            PreferenceKeys.CURRENT_NETWORK,
+                            FlorestaNetwork.BITCOIN.name
+                        ),
                     walletBirthdayYear = birthdayYear,
                     useAlsoMobileData = useAlsoMobileData,
                     enableAdvancedFeatures = enableAdvancedFeatures,
@@ -91,107 +100,88 @@ class SettingsViewModel(
     }
 
     /**
-     * Polls the node for rescan state so the Rescan button reflects the real
-     * background scan (driven by `rescan_in_progress` from `getblockchaininfo`)
-     * instead of a fixed timer. Also surfaces a completion message and catches
-     * rescans started elsewhere (e.g. the auto-rescan after a descriptor load).
+     * Polls the node for rescan state so the Rescan button reflects the real background scan
+     * (driven by `rescan_in_progress` from `getblockchaininfo`) instead of a fixed timer. Also
+     * surfaces a completion message and catches rescans started elsewhere (e.g. the auto-rescan
+     * after a descriptor load).
      */
     private fun observeRescanState() {
         rescanPollJob?.cancel()
-        rescanPollJob = viewModelScope.launch(Dispatchers.IO) {
-            while (true) {
-                val info = florestaRpc.getBlockchainInfo().firstOrNull()?.getOrNull()?.result
-                if (info != null) {
-                    val running = info.rescanInProgress
-                    _uiState.update {
-                        it.copy(
-                            isRescanning = running,
-                            rescanBlocksProcessed = info.rescanBlocksProcessed,
-                            rescanBlocksTotal = info.rescanBlocksTotal,
-                        )
+        rescanPollJob =
+            viewModelScope.launch(Dispatchers.IO) {
+                while (true) {
+                    val info = florestaRpc.getBlockchainInfo().firstOrNull()?.getOrNull()?.result
+                    if (info != null) {
+                        val running = info.rescanInProgress
+                        _uiState.update {
+                            it.copy(
+                                isRescanning = running,
+                                rescanBlocksProcessed = info.rescanBlocksProcessed,
+                                rescanBlocksTotal = info.rescanBlocksTotal,
+                            )
+                        }
+                        if (wasRescanning && !running) {
+                            _uiState.update { it.copy(snackBarMessage = "Rescan complete") }
+                        }
+                        wasRescanning = running
                     }
-                    if (wasRescanning && !running) {
-                        _uiState.update { it.copy(snackBarMessage = "Rescan complete") }
-                    }
-                    wasRescanning = running
+                    delay(RESCAN_POLL_INTERVAL_MS.milliseconds)
                 }
-                delay(RESCAN_POLL_INTERVAL_MS.milliseconds)
+            }
+    }
+
+    private fun uriExists(uri: Uri): Boolean {
+        return when (uri.scheme) {
+            "file" -> File(uri.path ?: "").exists()
+            else -> false
+        }
+    }
+
+    private fun observeUpdateStatus() {
+        viewModelScope.launch { appUpdateRepository.refresh(force = true) }
+
+        viewModelScope.launch {
+            combine(appUpdateRepository.updateStatus, updateRegistry.changes) { status, _ ->
+                    status
+                }
+                .collect { status ->
+                    val activeId = updateRegistry.getActiveDownloadId()
+
+                    android.util.Log.d("UpdateVM", "status=$status activeId=$activeId")
+
+                    val resolved = updateResolver.resolve(status = status, downloadId = activeId)
+
+                    _uiState.update { it.copy(updateStatus = status, updateUiState = resolved) }
+
+                    android.util.Log.d("UpdateVM", "resolved=$resolved")
+                }
+        }
+
+        viewModelScope.launch {
+            while (true) {
+                if (_uiState.value.updateUiState is UpdateState.Downloading) {
+                    updateRegistry.refresh()
+                }
+                delay(DOWNLOAD_PROGRESS_REFRESH_INTERVAL_MS)
             }
         }
     }
 
-private fun observeUpdateStatus() {
-viewModelScope.launch {
-appUpdateRepository.refresh(force = true)
-}
-
-viewModelScope.launch {
-    combine(
-        appUpdateRepository.updateStatus,
-        updateRegistry.changes
-    ) { status, _ ->
-        status
-    }.collect { status ->
-
-        val activeId = updateRegistry.getActiveDownloadId()
-
-        android.util.Log.d(
-            "UpdateVM",
-            "status=$status activeId=$activeId"
-        )
-
-        val resolved = updateResolver.resolve(
-            status = status,
-            downloadId = activeId
-        )
-
-        _uiState.update {
-            it.copy(
-                updateStatus = status,
-                updateUiState = resolved
-            )
-        }
-
-        android.util.Log.d(
-            "UpdateVM",
-            "resolved=$resolved"
-        )
-    }
-}
-
-viewModelScope.launch {
-    while (true) {
-        if (_uiState.value.updateUiState is UpdateState.Downloading) {
-            updateRegistry.refresh()
-        }
-        delay(DOWNLOAD_PROGRESS_REFRESH_INTERVAL_MS)
-    }
-}
-
-}
     @Suppress("CyclomaticComplexMethod", "LongMethod")
     fun onAction(action: SettingsAction) {
         when (action) {
             is SettingsAction.OnDescriptorChanged -> {
-                _uiState.update {
-                    it.copy(descriptorText = action.descriptor.removeSpaces())
-                }
+                _uiState.update { it.copy(descriptorText = action.descriptor.removeSpaces()) }
             }
-
             is SettingsAction.OnClickUpdateDescriptor -> updateDescriptor()
-
             SettingsAction.OnClickScanDescriptor -> openDescriptorScanner()
             SettingsAction.OnDismissDescriptorScanner -> closeDescriptorScanner()
             is SettingsAction.OnDescriptorQrFrameScanned -> handleDescriptorFrame(action.raw)
             SettingsAction.OnConfirmScannedDescriptor -> confirmScannedDescriptor()
-            SettingsAction.OnDismissScannedDescriptor -> _uiState.update {
-                it.copy(pendingScannedDescriptor = null)
-            }
-
-            is SettingsAction.OnDescriptorCopied -> _uiState.update {
-                it.copy(snackBarMessage = "Descriptor copied to clipboard")
-            }
-
+            SettingsAction.OnDismissScannedDescriptor ->
+                _uiState.update { it.copy(pendingScannedDescriptor = null) }
+            is SettingsAction.OnDescriptorCopied ->
+                _uiState.update { it.copy(snackBarMessage = "Descriptor copied to clipboard") }
             SettingsAction.OnClickRescan -> rescan()
             SettingsAction.ClearSnackBarMessage -> _uiState.update { it.copy(snackBarMessage = "") }
             SettingsAction.OnClickConnectNode -> connectNode()
@@ -205,71 +195,42 @@ viewModelScope.launch {
                 }
                 debouncedValidateNodeAddress()
             }
-
             is SettingsAction.OnNetworkSelected -> handleNetworkSelected(action)
-            SettingsAction.ToggleDescriptorsExpanded -> _uiState.update {
-                it.copy(
-                    isDescriptorsExpanded = !it.isDescriptorsExpanded
-                )
-            }
-
-            SettingsAction.ToggleNetworkExpanded -> _uiState.update {
-                it.copy(isNetworkExpanded = !it.isNetworkExpanded)
-            }
-
-            SettingsAction.ToggleNodeExpanded -> _uiState.update {
-                it.copy(isNodeExpanded = !it.isNodeExpanded)
-            }
-
+            SettingsAction.ToggleDescriptorsExpanded ->
+                _uiState.update { it.copy(isDescriptorsExpanded = !it.isDescriptorsExpanded) }
+            SettingsAction.ToggleNetworkExpanded ->
+                _uiState.update { it.copy(isNetworkExpanded = !it.isNetworkExpanded) }
+            SettingsAction.ToggleNodeExpanded ->
+                _uiState.update { it.copy(isNodeExpanded = !it.isNodeExpanded) }
             SettingsAction.ToggleAboutExpanded -> toggleAboutExpanded()
-
             SettingsAction.OnClickGetUpdate -> getUpdate()
-            
             is SettingsAction.OnInstallUpdate -> {
-                viewModelScope.sendEvent(
-                    SettingsEvents.OpenInstallPrompt(action.uri)
-                )
-            }   
-
+                viewModelScope.sendEvent(SettingsEvents.OpenInstallPrompt(action.uri))
+            }
             SettingsAction.OnClickCheckForUpdates -> checkForUpdates()
-
-            SettingsAction.ToggleDonateExpanded -> _uiState.update {
-                it.copy(isDonateExpanded = !it.isDonateExpanded)
-            }
-
+            SettingsAction.ToggleDonateExpanded ->
+                _uiState.update { it.copy(isDonateExpanded = !it.isDonateExpanded) }
             SettingsAction.OnClickExportLogs -> exportLogs()
-
-            SettingsAction.ToggleBirthdayExpanded -> _uiState.update {
-                it.copy(isBirthdayExpanded = !it.isBirthdayExpanded)
-            }
-
-            SettingsAction.OnClickChangeBirthdayYear -> _uiState.update {
-                it.copy(isBirthdayPickerOpen = true)
-            }
-
-            SettingsAction.OnDismissBirthdayPicker -> _uiState.update {
-                it.copy(isBirthdayPickerOpen = false)
-            }
-
-            is SettingsAction.OnBirthdayYearSelected -> _uiState.update {
-                it.copy(isBirthdayPickerOpen = false, pendingBirthdayYear = action.year)
-            }
-
-            SettingsAction.OnCancelBirthdayRestart -> _uiState.update {
-                it.copy(pendingBirthdayYear = null)
-            }
-
+            SettingsAction.ToggleBirthdayExpanded ->
+                _uiState.update { it.copy(isBirthdayExpanded = !it.isBirthdayExpanded) }
+            SettingsAction.OnClickChangeBirthdayYear ->
+                _uiState.update { it.copy(isBirthdayPickerOpen = true) }
+            SettingsAction.OnDismissBirthdayPicker ->
+                _uiState.update { it.copy(isBirthdayPickerOpen = false) }
+            is SettingsAction.OnBirthdayYearSelected ->
+                _uiState.update {
+                    it.copy(isBirthdayPickerOpen = false, pendingBirthdayYear = action.year)
+                }
+            SettingsAction.OnCancelBirthdayRestart ->
+                _uiState.update { it.copy(pendingBirthdayYear = null) }
             SettingsAction.OnConfirmBirthdayRestart -> applyBirthdayYearAndRestart()
             SettingsAction.ToggleDataUsageExpanded -> toggleDataUsageExpanded()
             is SettingsAction.OnToggleMobileData -> handleMobileDataToggled(action)
             is SettingsAction.OnToggleAdvancedFeatures -> handleAdvancedFeaturesToggled(action)
-            SettingsAction.ToggleDeveloperToolsExpanded -> _uiState.update {
-                it.copy(isDeveloperToolsExpanded = !it.isDeveloperToolsExpanded)
-            }
-
-            SettingsAction.OnClickViewLogs -> viewModelScope.sendEvent(
-                SettingsEvents.OpenDeveloperLogs
-            )
+            SettingsAction.ToggleDeveloperToolsExpanded ->
+                _uiState.update { it.copy(isDeveloperToolsExpanded = !it.isDeveloperToolsExpanded) }
+            SettingsAction.OnClickViewLogs ->
+                viewModelScope.sendEvent(SettingsEvents.OpenDeveloperLogs)
         }
     }
 
@@ -288,16 +249,12 @@ viewModelScope.launch {
         }
     }
 
-    private fun toggleDataUsageExpanded() = _uiState.update {
-        it.copy(isDataUsageExpanded = !it.isDataUsageExpanded)
-    }
+    private fun toggleDataUsageExpanded() =
+        _uiState.update { it.copy(isDataUsageExpanded = !it.isDataUsageExpanded) }
 
     private fun handleMobileDataToggled(action: SettingsAction.OnToggleMobileData) {
         viewModelScope.launch(Dispatchers.IO) {
-            preferencesDataSource.setBoolean(
-                PreferenceKeys.USE_ALSO_MOBILE_DATA,
-                action.enabled
-            )
+            preferencesDataSource.setBoolean(PreferenceKeys.USE_ALSO_MOBILE_DATA, action.enabled)
             _uiState.update { it.copy(useAlsoMobileData = action.enabled, isLoading = true) }
             delay(2.seconds)
             viewModelScope.sendEvent(SettingsEvents.OnNetworkPolicyChanged)
@@ -312,43 +269,46 @@ viewModelScope.launch {
         }
     }
 
-    private fun findExistingDownload(
-        dm: DownloadManager,
-        url: String
-    ): Long? {
+    private fun findExistingDownload(dm: DownloadManager, url: String): ExistingDownload? {
 
         dm.query(DownloadManager.Query()).use { cursor ->
+            val uriIndex = cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI)
 
-            val uriIndex =
-                cursor.getColumnIndexOrThrow(
-                    DownloadManager.COLUMN_URI
-                )
+            val downloadUriIndex = cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_URI)
 
-            val idIndex =
-                cursor.getColumnIndexOrThrow(
-                    DownloadManager.COLUMN_ID
-                )
+            val idIndex = cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_ID)
 
-            val statusIndex =
-                cursor.getColumnIndexOrThrow(
-                    DownloadManager.COLUMN_STATUS
-                )
+            val statusIndex = cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)
 
             while (cursor.moveToNext()) {
 
-                val existingUrl =
-                    cursor.getString(uriIndex)
+                val existingUrl = cursor.getString(downloadUriIndex)
 
-                val status =
-                    cursor.getInt(statusIndex)
+                if (existingUrl != url) continue
 
-                val isActiveOrComplete =
-                    status == DownloadManager.STATUS_PENDING ||
-                        status == DownloadManager.STATUS_RUNNING ||
-                        status == DownloadManager.STATUS_SUCCESSFUL
+                val id = cursor.getLong(idIndex)
 
-                if (existingUrl == url && isActiveOrComplete) {
-                    return cursor.getLong(idIndex)
+                val status = cursor.getInt(statusIndex)
+
+                when (status) {
+                    DownloadManager.STATUS_PENDING,
+                    DownloadManager.STATUS_RUNNING -> {
+                        return ExistingDownload.Active(id)
+                    }
+                    DownloadManager.STATUS_SUCCESSFUL -> {
+                        val uriString = cursor.getString(uriIndex)
+
+                        val uri = uriString?.let(Uri::parse)
+
+                        return if (uri != null && uriExists(uri)) {
+                            ExistingDownload.Completed(id, uri)
+                        } else {
+                            ExistingDownload.Stale(id)
+                        }
+                    }
+                    else -> {
+                        return ExistingDownload.Stale(id)
+                    }
                 }
             }
         }
@@ -366,42 +326,42 @@ viewModelScope.launch {
         val version = status.latestVersion
 
         viewModelScope.launch {
+            val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
-            if (updateRegistry.isDownloaded(version)) return@launch
-            if (updateRegistry.isDownloading(version)) return@launch
-
-            val dm =
-                context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            val request = DownloadManager.Request(Uri.parse(url))
-                .setTitle("Mandacaru update $version")
-                .setNotificationVisibility(
-                    DownloadManager.Request.VISIBILITY_VISIBLE
-                )
-                .setAllowedOverMetered(true)
-                .setDestinationInExternalPublicDir(
-                    Environment.DIRECTORY_DOWNLOADS,
-                    "Mandacaru-$version.apk"
-                )
-
-            val existingDownloadId = findExistingDownload(
-                dm,
-                url
-            )
-
-            if (existingDownloadId != null) {
-                updateRegistry.markDownloading(
-                    version,
-                    existingDownloadId
-                )
-                return@launch
+            when (val existing = findExistingDownload(dm, url)) {
+                is ExistingDownload.Completed -> {
+                    updateRegistry.markCompleted(existing.id, existing.uri)
+                    return@launch
+                }
+                is ExistingDownload.Active -> {
+                    updateRegistry.markDownloading(version, existing.id)
+                    return@launch
+                }
+                is ExistingDownload.Stale -> {
+                    android.util.Log.d(
+                        "UpdateVM",
+                        "Removing stale DownloadManager entry id=${existing.id}"
+                    )
+                    dm.remove(existing.id)
+                    updateRegistry.clearActiveDownload()
+                    updateRegistry.clearCompletedVersion(version)
+                }
+                null -> Unit
             }
+
+            val request =
+                DownloadManager.Request(Uri.parse(url))
+                    .setTitle("Mandacaru update $version")
+                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
+                    .setAllowedOverMetered(true)
+                    .setDestinationInExternalPublicDir(
+                        Environment.DIRECTORY_DOWNLOADS,
+                        "Mandacaru-$version.apk"
+                    )
 
             val id = dm.enqueue(request)
 
-            android.util.Log.d(
-                "UpdateVM",
-                "ENQUEUED DOWNLOAD id=$id"
-            )
+            android.util.Log.d("UpdateVM", "ENQUEUED DOWNLOAD id=$id")
 
             updateRegistry.markDownloading(version, id)
         }
@@ -410,10 +370,7 @@ viewModelScope.launch {
     private fun applyBirthdayYearAndRestart() {
         val year = _uiState.value.pendingBirthdayYear ?: return
         viewModelScope.launch(Dispatchers.IO) {
-            preferencesDataSource.setString(
-                PreferenceKeys.WALLET_BIRTHDAY_YEAR,
-                year.toString()
-            )
+            preferencesDataSource.setString(PreferenceKeys.WALLET_BIRTHDAY_YEAR, year.toString())
             // Floresta wipes the compact filter store and re-syncs from the new
             // height when this changes, but it does not auto-rescan loaded
             // descriptors against the new store. Without this flag the wallet
@@ -433,7 +390,7 @@ viewModelScope.launch {
 
     fun handleNetworkSelected(action: SettingsAction.OnNetworkSelected) {
         viewModelScope.launch(Dispatchers.IO) {
-            //TODO MOVE TO A REPOSITORY
+            // TODO MOVE TO A REPOSITORY
             preferencesDataSource.setString(PreferenceKeys.CURRENT_NETWORK, action.network)
             preferencesDataSource.setString(
                 PreferenceKeys.CURRENT_RPC_PORT,
@@ -447,10 +404,10 @@ viewModelScope.launch {
     }
 
     private suspend fun updateElectrumAddress() {
-        val network = preferencesDataSource.getString(
-            PreferenceKeys.CURRENT_NETWORK,
-            FlorestaNetwork.BITCOIN.name
-        ).getNetwork()
+        val network =
+            preferencesDataSource
+                .getString(PreferenceKeys.CURRENT_NETWORK, FlorestaNetwork.BITCOIN.name)
+                .getNetwork()
         val port = network.getElectrumPort()
         _uiState.update { it.copy(electrumAddress = "127.0.0.1:$port") }
     }
@@ -468,39 +425,46 @@ viewModelScope.launch {
 
     private fun debouncedValidateNodeAddress() {
         nodeAddressValidationJob?.cancel()
-        nodeAddressValidationJob = viewModelScope.launch {
-            delay(VALIDATION_DEBOUNCE_MS.milliseconds)
-            val address = _uiState.value.nodeAddress
-            val result = PeerAddressValidator.validate(address)
-            _uiState.update {
-                when (result) {
-                    PeerAddressValidator.Result.Valid -> it.copy(
-                        isNodeAddressValid = true,
-                        nodeAddressError = null,
-                    )
-                    PeerAddressValidator.Result.Empty -> it.copy(
-                        isNodeAddressValid = false,
-                        nodeAddressError = null,
-                    )
-                    PeerAddressValidator.Result.InvalidIpv4 -> it.copy(
-                        isNodeAddressValid = false,
-                        nodeAddressError = R.string.node_address_error_invalid_ipv4,
-                    )
-                    PeerAddressValidator.Result.InvalidIpv6 -> it.copy(
-                        isNodeAddressValid = false,
-                        nodeAddressError = R.string.node_address_error_invalid_ipv6,
-                    )
-                    PeerAddressValidator.Result.InvalidPort -> it.copy(
-                        isNodeAddressValid = false,
-                        nodeAddressError = R.string.node_address_error_invalid_port,
-                    )
-                    PeerAddressValidator.Result.InvalidFormat -> it.copy(
-                        isNodeAddressValid = false,
-                        nodeAddressError = R.string.node_address_error_invalid_format,
-                    )
+        nodeAddressValidationJob =
+            viewModelScope.launch {
+                delay(VALIDATION_DEBOUNCE_MS.milliseconds)
+                val address = _uiState.value.nodeAddress
+                val result = PeerAddressValidator.validate(address)
+                _uiState.update {
+                    when (result) {
+                        PeerAddressValidator.Result.Valid ->
+                            it.copy(
+                                isNodeAddressValid = true,
+                                nodeAddressError = null,
+                            )
+                        PeerAddressValidator.Result.Empty ->
+                            it.copy(
+                                isNodeAddressValid = false,
+                                nodeAddressError = null,
+                            )
+                        PeerAddressValidator.Result.InvalidIpv4 ->
+                            it.copy(
+                                isNodeAddressValid = false,
+                                nodeAddressError = R.string.node_address_error_invalid_ipv4,
+                            )
+                        PeerAddressValidator.Result.InvalidIpv6 ->
+                            it.copy(
+                                isNodeAddressValid = false,
+                                nodeAddressError = R.string.node_address_error_invalid_ipv6,
+                            )
+                        PeerAddressValidator.Result.InvalidPort ->
+                            it.copy(
+                                isNodeAddressValid = false,
+                                nodeAddressError = R.string.node_address_error_invalid_port,
+                            )
+                        PeerAddressValidator.Result.InvalidFormat ->
+                            it.copy(
+                                isNodeAddressValid = false,
+                                nodeAddressError = R.string.node_address_error_invalid_format,
+                            )
+                    }
                 }
             }
-        }
     }
 
     private fun connectNode() {
@@ -511,22 +475,25 @@ viewModelScope.launch {
         viewModelScope.launch(Dispatchers.IO) {
             val onetryResult = florestaRpc.addNode(address, AddNodeCommand.ONETRY).firstOrNull()
 
-            onetryResult?.onSuccess { data ->
-                Log.d(TAG, "connectNode: onetry ok: $data")
-                _uiState.update {
-                    it.copy(
-                        nodeAddress = "",
-                        nodeAddressError = null,
-                        isNodeAddressValid = false,
-                        snackBarMessage = "Attempting connection to $address…"
-                    )
+            onetryResult
+                ?.onSuccess { data ->
+                    Log.d(TAG, "connectNode: onetry ok: $data")
+                    _uiState.update {
+                        it.copy(
+                            nodeAddress = "",
+                            nodeAddressError = null,
+                            isNodeAddressValid = false,
+                            snackBarMessage = "Attempting connection to $address…"
+                        )
+                    }
+                    florestaRpc.addNode(address, AddNodeCommand.ADD).firstOrNull()?.onFailure {
+                        Log.w(TAG, "connectNode: add (persist) failed: ${it.message}")
+                    }
                 }
-                florestaRpc.addNode(address, AddNodeCommand.ADD).firstOrNull()
-                    ?.onFailure { Log.w(TAG, "connectNode: add (persist) failed: ${it.message}") }
-            }?.onFailure { error ->
-                Log.d(TAG, "connectNode: onetry failed: ${error.message}")
-                _uiState.update { it.copy(snackBarMessage = error.message.toString()) }
-            }
+                ?.onFailure { error ->
+                    Log.d(TAG, "connectNode: onetry failed: ${error.message}")
+                    _uiState.update { it.copy(snackBarMessage = error.message.toString()) }
+                }
 
             delay(2.seconds)
             _uiState.update { it.copy(isLoading = false) }
@@ -542,33 +509,40 @@ viewModelScope.launch {
     private fun loadDescriptorString(input: String, onSuccess: () -> Unit = {}) {
         if (DescriptorUtils.isPrivateKey(input)) {
             _uiState.update {
-                it.copy(snackBarMessage = "Private keys are not supported. Please use a public key (xpub, zpub, etc.) or a full descriptor.")
+                it.copy(
+                    snackBarMessage =
+                        "Private keys are not supported. Please use a public key (xpub, zpub, etc.) or a full descriptor."
+                )
             }
             return
         }
 
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch(Dispatchers.IO) {
-            florestaRpc.loadDescriptor(DescriptorUtils.wrapDescriptorIfNeeded(input))
-                .collect { result ->
-                    result.onSuccess { data ->
+            florestaRpc.loadDescriptor(DescriptorUtils.wrapDescriptorIfNeeded(input)).collect {
+                result ->
+                result
+                    .onSuccess { data ->
                         // The server-side rescan kicked off by loaddescriptor only
                         // covers filters already downloaded; flag a rescan so the
                         // service re-scans once filters reach the tip, picking up
                         // history in blocks downloaded after this point.
                         preferencesDataSource.setBoolean(PreferenceKeys.WALLET_NEEDS_RESCAN, true)
                         onSuccess()
-                        _uiState.update { it.copy(snackBarMessage = "Descriptor loaded successfully") }
+                        _uiState.update {
+                            it.copy(snackBarMessage = "Descriptor loaded successfully")
+                        }
                         getDescriptors()
                         Log.d(TAG, "loadDescriptorString: Success: $data")
-                    }.onFailure { error ->
+                    }
+                    .onFailure { error ->
                         Log.d(TAG, "loadDescriptorString: Fail: ${error.message}")
                         _uiState.update { it.copy(snackBarMessage = error.message.toString()) }
                     }
 
-                    delay(2.seconds)
-                    _uiState.update { it.copy(isLoading = false) }
-                }
+                delay(2.seconds)
+                _uiState.update { it.copy(isLoading = false) }
+            }
         }
     }
 
@@ -599,12 +573,14 @@ viewModelScope.launch {
 
     private fun handleDescriptorFrame(raw: String) {
         val current = _uiState.value
-        if (current.pendingScannedDescriptor != null || current.descriptorScanError.isNotEmpty()) return
+        if (current.pendingScannedDescriptor != null || current.descriptorScanError.isNotEmpty())
+            return
         when (val state = descriptorScanner.ingest(raw)) {
             is DescriptorScanState.Idle -> Unit
-            is DescriptorScanState.InProgress -> _uiState.update {
-                it.copy(descriptorScanProgress = state.progress, descriptorScanError = "")
-            }
+            is DescriptorScanState.InProgress ->
+                _uiState.update {
+                    it.copy(descriptorScanProgress = state.progress, descriptorScanError = "")
+                }
             is DescriptorScanState.Error -> showDescriptorScanError(state.reason)
             is DescriptorScanState.Complete -> onDescriptorScanned(state.descriptor)
         }
@@ -617,10 +593,11 @@ viewModelScope.launch {
                 isDescriptorScanSheetOpen = false,
                 descriptorScanProgress = 0f,
                 descriptorScanError = "",
-                pendingScannedDescriptor = PendingDescriptor(
-                    descriptor = wrapped,
-                    summary = DescriptorUtils.summarize(wrapped),
-                ),
+                pendingScannedDescriptor =
+                    PendingDescriptor(
+                        descriptor = wrapped,
+                        summary = DescriptorUtils.summarize(wrapped),
+                    ),
             )
         }
     }
@@ -634,29 +611,32 @@ viewModelScope.launch {
     private fun showDescriptorScanError(reason: String) {
         descriptorScanErrorJob?.cancel()
         _uiState.update { it.copy(descriptorScanError = reason, descriptorScanProgress = 0f) }
-        descriptorScanErrorJob = viewModelScope.launch {
-            delay(SCAN_ERROR_COOLDOWN_MS.milliseconds)
-            descriptorScanner.reset()
-            _uiState.update { it.copy(descriptorScanError = "", descriptorScanProgress = 0f) }
-        }
+        descriptorScanErrorJob =
+            viewModelScope.launch {
+                delay(SCAN_ERROR_COOLDOWN_MS.milliseconds)
+                descriptorScanner.reset()
+                _uiState.update { it.copy(descriptorScanError = "", descriptorScanProgress = 0f) }
+            }
     }
 
     private fun rescan() {
         if (_uiState.value.descriptors.isEmpty() || _uiState.value.isRescanning) return
         viewModelScope.launch(Dispatchers.IO) {
             florestaRpc.rescan().collect { result ->
-                result.onSuccess { data ->
-                    // Optimistically reflect the running state; observeRescanState
-                    // takes over from here (progress + completion message).
-                    wasRescanning = true
-                    _uiState.update {
-                        it.copy(isRescanning = true, snackBarMessage = "Rescan started")
+                result
+                    .onSuccess { data ->
+                        // Optimistically reflect the running state; observeRescanState
+                        // takes over from here (progress + completion message).
+                        wasRescanning = true
+                        _uiState.update {
+                            it.copy(isRescanning = true, snackBarMessage = "Rescan started")
+                        }
+                        Log.d(TAG, "rescan: Success: $data")
                     }
-                    Log.d(TAG, "rescan: Success: $data")
-                }.onFailure { error ->
-                    Log.d(TAG, "rescan: Fail: ${error.message}")
-                    _uiState.update { it.copy(snackBarMessage = error.message.toString()) }
-                }
+                    .onFailure { error ->
+                        Log.d(TAG, "rescan: Fail: ${error.message}")
+                        _uiState.update { it.copy(snackBarMessage = error.message.toString()) }
+                    }
             }
         }
     }
@@ -675,11 +655,12 @@ viewModelScope.launch {
             val cachedLog = File(cacheDir, "debug.log")
             logFile.copyTo(cachedLog, overwrite = true)
 
-            val uri = FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.fileprovider",
-                cachedLog
-            )
+            val uri =
+                FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    cachedLog
+                )
             viewModelScope.sendEvent(SettingsEvents.OnExportLogs(uri))
         }
     }
@@ -698,621 +679,3 @@ viewModelScope.launch {
         private const val DOWNLOAD_PROGRESS_REFRESH_INTERVAL_MS = 1000L
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
