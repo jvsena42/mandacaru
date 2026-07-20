@@ -52,7 +52,7 @@ if (registry.isDownloaded(status.latestVersion)) {
     return if (uri != null && uriExists(uri)) {
         UpdateState.ReadyToInstall(uri)
     } else {
-        registry.clearCompleted(status.latestVersion)
+        registry.clearCompletedVersion(status.latestVersion) 
         UpdateState.Available
     }
 }
