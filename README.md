@@ -196,8 +196,8 @@ IP Geolocation by [DB-IP](https://db-ip.com), licensed under
 
 ## Contributing
 
-Contributions are welcome! Please read
-[CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+If you'd like to open a pull request, please read
+[CONTRIBUTING.md](CONTRIBUTING.md) first.
 
 I maintain Mandacaru alone, on my free time, so reviews may take a while — thank you for
 your patience.
