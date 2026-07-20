@@ -233,7 +233,8 @@ fun ScreenSettings(
             }
         }
     }
-
+}
+    
     private fun clearCachedApks(context: Context) {
         context.cacheDir
             .listFiles()
