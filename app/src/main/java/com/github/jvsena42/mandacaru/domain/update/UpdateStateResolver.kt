@@ -3,6 +3,7 @@ package com.github.jvsena42.mandacaru.domain.update
 import android.app.DownloadManager
 import android.content.Context
 import android.net.Uri
+import android.os.Environment
 import com.github.jvsena42.mandacaru.data.update.UpdateDownloadRegistry
 import java.io.File
 
@@ -23,7 +24,8 @@ class UpdateStateResolver(
 
     private val dm =
         context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
-
+    
+    @Suppress("CyclomaticComplexMethod")
     fun resolve(
         status: com.github.jvsena42.mandacaru.domain.model.UpdateStatus,
         downloadId: Long?
@@ -39,9 +41,33 @@ class UpdateStateResolver(
         }
 
         if (registry.isDownloaded(status.latestVersion)) {
-            return resolveRegistryDownload(status.latestVersion)
-        }
+            val registryState = resolveRegistryDownload(status.latestVersion)
 
+            if (registryState is UpdateState.ReadyToInstall) {
+                return registryState
+            }
+        }        
+
+        val downloads =
+            Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_DOWNLOADS
+            )
+
+        val apkFile =
+            File(
+                downloads,
+                "Mandacaru-${status.latestVersion}.apk"
+            )
+
+        if (apkFile.exists()) {
+            android.util.Log.d(
+                TAG,
+                "Found existing APK in Downloads: ${apkFile.absolutePath}"
+            )
+
+            return UpdateState.ReadyToInstall(Uri.fromFile(apkFile))
+        }
+        
         if (downloadId == null) {
             return findCompletedDownload(status.apkDownloadUrl)
                 ?.let { UpdateState.ReadyToInstall(it) }
@@ -51,15 +77,18 @@ class UpdateStateResolver(
         return resolveDownloadManagerState(downloadId)
     }
 
-    private fun resolveRegistryDownload(version: String): UpdateState {
+    private fun resolveRegistryDownload(version: String): UpdateState? {
         val uri = registry.getCompletedUri(version)
 
-        return if (uri != null && uriExists(uri)) {
-            UpdateState.ReadyToInstall(uri)
-        } else {
-            registry.clearCompletedVersion(version)
-            UpdateState.Available
+        if (uri != null && uriExists(uri)) {
+            return UpdateState.ReadyToInstall(uri)
         }
+
+        if (uri != null) {
+            registry.clearCompletedVersion(version)
+        }
+
+        return null
     }
 
     @Suppress("CyclomaticComplexMethod")
@@ -194,3 +223,4 @@ class UpdateStateResolver(
         return null
     }
 }
+
