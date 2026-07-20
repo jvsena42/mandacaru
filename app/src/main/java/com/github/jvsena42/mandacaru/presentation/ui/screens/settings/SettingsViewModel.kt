@@ -269,51 +269,62 @@ class SettingsViewModel(
         }
     }
 
-    private fun findExistingDownload(dm: DownloadManager, url: String): ExistingDownload? {
-
+    private fun findExistingDownload(
+        dm: DownloadManager,
+        url: String
+    ): ExistingDownload? {
+        
         dm.query(DownloadManager.Query()).use { cursor ->
             val uriIndex = cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI)
-
             val downloadUriIndex = cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_URI)
-
             val idIndex = cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_ID)
-
             val statusIndex = cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)
-
+        
             while (cursor.moveToNext()) {
-
                 val existingUrl = cursor.getString(downloadUriIndex)
-
+        
                 if (existingUrl != url) continue
-
+        
                 val id = cursor.getLong(idIndex)
-
                 val status = cursor.getInt(statusIndex)
-
-                when (status) {
-                    DownloadManager.STATUS_PENDING,
-                    DownloadManager.STATUS_RUNNING -> {
-                        return ExistingDownload.Active(id)
-                    }
-                    DownloadManager.STATUS_SUCCESSFUL -> {
-                        val uriString = cursor.getString(uriIndex)
-
-                        val uri = uriString?.let(Uri::parse)
-
-                        return if (uri != null && uriExists(uri)) {
-                            ExistingDownload.Completed(id, uri)
-                        } else {
-                            ExistingDownload.Stale(id)
-                        }
-                    }
-                    else -> {
-                        return ExistingDownload.Stale(id)
-                    }
-                }
+        
+                return resolveExistingDownload(
+                    id = id,
+                    status = status,
+                    uriString = cursor.getString(uriIndex),
+                )
             }
         }
-
+        
         return null
+    }
+
+    private fun resolveExistingDownload(
+        id: Long,
+        status: Int,
+        uriString: String?,
+    ): ExistingDownload {
+    
+        return when (status) {
+            DownloadManager.STATUS_PENDING,
+            DownloadManager.STATUS_RUNNING -> {
+                ExistingDownload.Active(id)
+            }
+    
+            DownloadManager.STATUS_SUCCESSFUL -> {
+                val uri = uriString?.let(Uri::parse)
+    
+                if (uri != null && uriExists(uri)) {
+                    ExistingDownload.Completed(id, uri)
+                } else {
+                    ExistingDownload.Stale(id)
+                }
+            }
+    
+            else -> {
+                ExistingDownload.Stale(id)
+            }
+        }
     }
 
     private fun checkForUpdates() {
