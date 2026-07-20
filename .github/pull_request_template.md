@@ -10,6 +10,6 @@
 - [ ] `./gradlew detekt`, `./gradlew lintDebug`, and `./gradlew test` pass locally
 - [ ] I have self-reviewed my own diff
 
-## UI changes
+## Preview
 
 <!-- If this PR changes the UI, attach before/after screenshots or a short screen recording. Otherwise write "N/A". -->
