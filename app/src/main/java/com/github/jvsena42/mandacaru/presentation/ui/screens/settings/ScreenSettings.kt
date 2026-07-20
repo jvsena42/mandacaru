@@ -99,6 +99,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import com.florestad.Network
 import com.github.jvsena42.mandacaru.BuildConfig
 import com.github.jvsena42.mandacaru.R
@@ -112,6 +113,7 @@ import com.github.jvsena42.mandacaru.presentation.utils.rememberAdaptiveLayout
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import java.io.File
+import java.io.IOException
 import java.time.Year
 
 @Composable
@@ -154,43 +156,94 @@ fun ScreenSettings(
                 is SettingsEvents.OpenReleasePage -> uriHandler.openUri(event.url)
                 is SettingsEvents.OpenDeveloperLogs -> currentOnOpenLogs()
                 is SettingsEvents.OpenInstallPrompt -> {
-                    val file = File(event.uri.path ?: return@collect)
+                    val sourceFile = File(event.uri.path ?: return@collect)
 
-                    val contentUri = androidx.core.content.FileProvider.getUriForFile(
-                        context,
-                        "${context.packageName}.fileprovider",
-                        file
+                    if (!sourceFile.exists()) {
+                        android.util.Log.d(
+                            "UpdateInstall",
+                            "APK missing source=$sourceFile"
+                        )
+                        return@collect
+                    }
+
+                    val availableBytes =
+                        context.cacheDir.usableSpace
+
+                    val requiredBytes =
+                        sourceFile.length() * 2
+
+                    if (availableBytes < requiredBytes) {
+                        android.util.Log.d(
+                            "UpdateInstall",
+                            "Not enough cache space available=$availableBytes required=$requiredBytes"
+                        )
+
+                        return@collect
+                    }
+
+                    clearCachedApks(context)
+                    
+                    val installFile = File(
+                        context.cacheDir,
+                        sourceFile.name
                     )
 
-                    val intent = android.content.Intent(
-                        android.content.Intent.ACTION_VIEW
-                    ).apply {
+                    try {
+                        sourceFile.copyTo(
+                            installFile,
+                            overwrite = true
+                        )
+                    } catch (e: IOException) {
+                        android.util.Log.d(
+                            "UpdateInstall",
+                            "Failed copying APK: ${e.message}"
+                        )
+                        return@collect
+                    }
+                    
+                    val contentUri = FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.fileprovider",
+                        installFile
+                    )
+
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
                         setDataAndType(
                             contentUri,
                             "application/vnd.android.package-archive"
                         )
-                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
 
-                    context.packageManager
-                        .queryIntentActivities(
-                            intent,
-                            android.content.pm.PackageManager.MATCH_DEFAULT_ONLY
-                        )
-                        .forEach {
-                            context.grantUriPermission(
-                                it.activityInfo.packageName,
-                                contentUri,
-                                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            )
-                        }
+                    context.grantUriPermission(
+                        "com.google.android.packageinstaller",
+                        contentUri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+
+                    android.util.Log.d(
+                        "UpdateInstall",
+                        "Launching installer uri=$contentUri"
+                    )
 
                     context.startActivity(intent)
                 }
             }
         }
     }
+
+    private fun clearCachedApks(context: Context) {
+        context.cacheDir
+            .listFiles()
+            ?.filter {
+                it.extension == "apk"
+            }
+            ?.forEach {
+                it.delete()
+            }
+    }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
