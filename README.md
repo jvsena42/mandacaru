@@ -194,6 +194,14 @@ peers simply show no flag.
 IP Geolocation by [DB-IP](https://db-ip.com), licensed under
 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
+## Contributing
+
+If you'd like to open a pull request, please read
+[CONTRIBUTING.md](CONTRIBUTING.md) first.
+
+I maintain Mandacaru alone, on my free time, so reviews may take a while — thank you for
+your patience.
+
 ## Related Projects
 
 - [Floresta Wallet](https://github.com/jvsena42/floresta_app) - A wallet client running Floresta
