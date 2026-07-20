@@ -126,7 +126,7 @@ android.util.Log.d(
 
     /** Is this version already downloaded? */
     fun isDownloaded(version: String): Boolean {
-        return prefs.contains("$KEY_COMPLETED_PREFIX$version")
+        return getCompletedUri(version) != null
     }
 
     /** Is a download in progress for this version? */
