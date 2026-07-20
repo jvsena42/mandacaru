@@ -3,7 +3,6 @@ package com.github.jvsena42.mandacaru.domain.update
 import android.app.DownloadManager
 import android.content.Context
 import android.net.Uri
-import android.os.Environment
 import com.github.jvsena42.mandacaru.data.update.UpdateDownloadRegistry
 import java.io.File
 
@@ -19,6 +18,7 @@ class UpdateStateResolver(
     private companion object {
         private const val PERCENTAGE_MIN = 0
         private const val PERCENTAGE_MAX = 100
+        private const val TAG = "UpdateResolver"
     }
 
     private val dm =
@@ -34,7 +34,7 @@ class UpdateStateResolver(
     ): UpdateState {
 
         android.util.Log.d(
-            "UpdateResolver",
+            TAG,
             "resolve version=${status.latestVersion} downloadId=$downloadId"
         )
 
@@ -42,28 +42,37 @@ class UpdateStateResolver(
             return UpdateState.Idle
         }
 
-        val downloadManager = dm ?: return UpdateState.Available
-
-        // Already fully downloaded (persistent state)
-        if (registry.isDownloaded(status.latestVersion)) {
-            val uri = registry.getCompletedUri(status.latestVersion)
-
-            return if (uri != null && uriExists(uri)) {
-                UpdateState.ReadyToInstall(uri)
-            } else {
-                registry.clearCompletedVersion(status.latestVersion)
-                UpdateState.Available
-            }
+        val completedState = resolveRegistryDownload(status.latestVersion)
+        if (completedState != null) {
+            return completedState
         }
 
-        // Registry may have been cleared while DownloadManager survived.
         if (downloadId == null) {
-            findCompletedDownload(status.apkDownloadUrl)?.let {
-                return UpdateState.ReadyToInstall(it)
-            }
-
-            return UpdateState.Available
+            return findCompletedDownload(status.apkDownloadUrl)
+                ?.let { UpdateState.ReadyToInstall(it) }
+                ?: UpdateState.Available
         }
+
+        return resolveDownloadManagerState(downloadId)
+    }
+
+    private fun resolveRegistryDownload(version: String): UpdateState? {
+        if (!registry.isDownloaded(version)) {
+            return null
+        }
+
+        val uri = registry.getCompletedUri(version)
+
+        return if (uri != null && uriExists(uri)) {
+            UpdateState.ReadyToInstall(uri)
+        } else {
+            registry.clearCompletedVersion(version)
+            UpdateState.Available
+        }
+    }
+
+    private fun resolveDownloadManagerState(downloadId: Long): UpdateState {
+        val downloadManager = dm ?: return UpdateState.Available
 
         val cursor =
             downloadManager.query(
@@ -75,13 +84,15 @@ class UpdateStateResolver(
                 return UpdateState.Available
             }
 
-            val statusIndex =
-                it.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)
-
-            val downloadStatus = it.getInt(statusIndex)
+            val downloadStatus =
+                it.getInt(
+                    it.getColumnIndexOrThrow(
+                        DownloadManager.COLUMN_STATUS
+                    )
+                )
 
             android.util.Log.d(
-                "UpdateResolver",
+                TAG,
                 "DownloadManager status=$downloadStatus downloadId=$downloadId"
             )
 
@@ -115,17 +126,17 @@ class UpdateStateResolver(
                 DownloadManager.STATUS_SUCCESSFUL -> {
                     val uri =
                         it.getString(
-                                it.getColumnIndexOrThrow(
-                                    DownloadManager.COLUMN_LOCAL_URI
-                                )
+                            it.getColumnIndexOrThrow(
+                                DownloadManager.COLUMN_LOCAL_URI
                             )
+                        )
                             ?.let(Uri::parse)
 
                     if (uri != null && uriExists(uri)) {
                         UpdateState.ReadyToInstall(uri)
                     } else {
                         android.util.Log.d(
-                            "UpdateResolver",
+                            TAG,
                             "DownloadManager reports successful but APK missing uri=$uri"
                         )
                         UpdateState.Available
@@ -161,9 +172,9 @@ class UpdateStateResolver(
                 it.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI)
 
             while (it.moveToNext()) {
-                val existingUrl = it.getString(urlIndex)
-
-                if (existingUrl != url) continue
+                if (it.getString(urlIndex) != url) {
+                    continue
+                }
 
                 val localUri =
                     it.getString(localUriIndex)
@@ -171,7 +182,7 @@ class UpdateStateResolver(
 
                 if (localUri != null && uriExists(localUri)) {
                     android.util.Log.d(
-                        "UpdateResolver",
+                        TAG,
                         "Recovered completed download uri=$localUri"
                     )
                     return localUri
