@@ -385,10 +385,6 @@ viewModelScope.launch {
         }
     }
 
-    private fun checkForUpdates() {
-        viewModelScope.launch { appUpdateRepository.refresh(force = true) }
-    }
-
     private fun applyBirthdayYearAndRestart() {
         val year = _uiState.value.pendingBirthdayYear ?: return
         viewModelScope.launch(Dispatchers.IO) {
