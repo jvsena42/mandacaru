@@ -31,7 +31,7 @@ class UpdateDownloadRegistry(context: Context) {
     fun markDownloading(version: String, downloadId: Long) {
         
 android.util.Log.d(
-    "UpdateRegistry",
+   "UpdateRegistry",
     "markDownloading version=$version id=$downloadId"
 )
 
@@ -48,7 +48,7 @@ android.util.Log.d(
     // ----------------------------
     fun markCompleted(downloadId: Long, uri: Uri) {
         android.util.Log.d(
-            "UpdateRegistry",
+             "UpdateRegistry",
              "markCompleted called id=$downloadId uri=$uri"
         )    
 
@@ -78,19 +78,6 @@ android.util.Log.d(
     "UpdateRegistry",
     "completed saved version=$version uri=$uri"
 )
-
-        _changes.update { it + 1 }
-    }
-
-    // ----------------------------
-    // RESTORE COMPLETED
-    // ----------------------------
-    fun restoreCompleted(version: String, uri: Uri) {
-        prefs.edit()
-            .putString("$KEY_COMPLETED_PREFIX$version", uri.toString())
-            .remove(KEY_ACTIVE_DOWNLOAD_ID)
-            .remove(KEY_ACTIVE_VERSION)
-            .apply()
 
         _changes.update { it + 1 }
     }

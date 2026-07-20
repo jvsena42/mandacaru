@@ -2,7 +2,6 @@ package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.Environment
 import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
@@ -326,27 +325,6 @@ viewModelScope.launch {
             if (updateRegistry.isDownloaded(version)) return@launch
             if (updateRegistry.isDownloading(version)) return@launch
 
-            val existingApk = findExistingApk(version)
-
-            android.util.Log.d(
-                "UpdateVM",
-                "existing APK scan version=$version found=${existingApk?.absolutePath}"
-            )
-
-            if (existingApk != null) {
-                android.util.Log.d(
-                    "UpdateVM",
-                    "RESTORING EXISTING APK ${existingApk.absolutePath}"
-                )
-
-                updateRegistry.restoreCompleted(
-                    version,
-                    Uri.fromFile(existingApk)
-                )
-
-                return@launch
-            }
-
             val dm =
                 context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
@@ -369,19 +347,6 @@ viewModelScope.launch {
             )
 
             updateRegistry.markDownloading(version, id)
-        }
-    }
-
-    private fun findExistingApk(version: String): File? {
-        val downloads =
-            Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_DOWNLOADS
-            )
-
-        return downloads.listFiles()?.firstOrNull { file ->
-            file.isFile &&
-                file.extension.equals("apk", ignoreCase = true) &&
-                file.name.contains(version, ignoreCase = true)
         }
     }
 
