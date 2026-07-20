@@ -1,8 +1,7 @@
 # Contributing to Mandacaru 🌵
 
 This guide is for **external contributors** and describes the basic practices expected of
-any pull request. It is written for humans, and is also intended to be usable by automated
-code-review bots in the future.
+any pull request.
 
 > **A note on maintenance.** Mandacaru is a personal project — I maintain it alone, on my
 > free time. I review and land contributions whenever I can, so **reviews may take a long
