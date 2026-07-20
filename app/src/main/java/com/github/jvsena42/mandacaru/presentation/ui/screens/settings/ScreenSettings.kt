@@ -157,21 +157,22 @@ fun ScreenSettings(
                 is SettingsEvents.OpenReleasePage -> uriHandler.openUri(event.url)
                 is SettingsEvents.OpenDeveloperLogs -> currentOnOpenLogs()
                 is SettingsEvents.OpenInstallPrompt -> {
-                    val sourceFile = File(event.uri.path ?: return@collect)
+                    val contentResolver = context.contentResolver
 
-                    if (!sourceFile.exists()) {
-                        android.util.Log.d(
-                            "UpdateInstall",
-                            "APK missing source=$sourceFile"
-                        )
-                        return@collect
-                    }
+                    val requiredBytes =
+                        contentResolver
+                            .openFileDescriptor(event.uri, "r")
+                            ?.use { it.statSize }
+                            ?: run {
+                                android.util.Log.d(
+                                    "UpdateInstall",
+                                    "Unable to read APK size uri=${event.uri}"
+                                )
+                                return@collect
+                            }
 
                     val availableBytes =
                         context.cacheDir.usableSpace
-
-                    val requiredBytes =
-                        sourceFile.length() * 2
 
                     if (availableBytes < requiredBytes) {
                         android.util.Log.d(
@@ -186,14 +187,22 @@ fun ScreenSettings(
                     
                     val installFile = File(
                         context.cacheDir,
-                        sourceFile.name
+                        event.uri.lastPathSegment ?: "mandacaru-update.apk"
                     )
-
+                    
                     try {
-                        sourceFile.copyTo(
-                            installFile,
-                            overwrite = true
+                    contentResolver.openInputStream(event.uri)?.use { input ->
+                        installFile.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    } ?: run {
+                        android.util.Log.d(
+                            "UpdateInstall",
+                            "Unable to open APK input stream uri=${event.uri}"
                         )
+                        return@collect
+                    }
+                    
                     } catch (e: IOException) {
                         android.util.Log.d(
                             "UpdateInstall",
