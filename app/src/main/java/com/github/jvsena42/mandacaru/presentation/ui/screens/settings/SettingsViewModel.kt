@@ -16,6 +16,7 @@ import com.github.jvsena42.mandacaru.domain.geoip.isPeerFlagsEnabled
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.AddNodeCommand
 import com.github.jvsena42.mandacaru.domain.scan.DescriptorQrScanner
 import com.github.jvsena42.mandacaru.domain.scan.DescriptorScanState
+import com.github.jvsena42.mandacaru.domain.settings.isAdvancedFeaturesEnabled
 import com.github.jvsena42.mandacaru.presentation.utils.DescriptorUtils
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlowImpl
@@ -64,8 +65,7 @@ class SettingsViewModel(
                 ?: WalletBirthday.defaultYear()
             val useAlsoMobileData = preferencesDataSource
                 .getBoolean(PreferenceKeys.USE_ALSO_MOBILE_DATA, false)
-            val enableAdvancedFeatures = preferencesDataSource
-                .getBoolean(PreferenceKeys.ENABLE_ADVANCED_FEATURES, false)
+            val enableAdvancedFeatures = preferencesDataSource.isAdvancedFeaturesEnabled()
             val isPeerFlagsEnabled = preferencesDataSource.isPeerFlagsEnabled()
             _uiState.update {
                 it.copy(

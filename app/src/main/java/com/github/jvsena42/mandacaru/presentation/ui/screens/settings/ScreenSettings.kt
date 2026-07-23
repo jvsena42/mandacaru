@@ -495,65 +495,67 @@ private fun ScreenSettings(
                 }
 
                 // Network Section
-                item {
-                    SectionCard(
-                        title = stringResource(R.string.network),
-                        icon = Icons.Outlined.NetworkCheck,
-                        isExpanded = uiState.isNetworkExpanded,
-                        onToggle = { onAction(SettingsAction.ToggleNetworkExpanded) },
-                        modifier = Modifier.animateItem(),
-                    ) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            var expanded by remember { mutableStateOf(false) }
+                if (uiState.enableAdvancedFeatures) {
+                    item {
+                        SectionCard(
+                            title = stringResource(R.string.network),
+                            icon = Icons.Outlined.NetworkCheck,
+                            isExpanded = uiState.isNetworkExpanded,
+                            onToggle = { onAction(SettingsAction.ToggleNetworkExpanded) },
+                            modifier = Modifier.animateItem(),
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                var expanded by remember { mutableStateOf(false) }
 
-                            ExposedDropdownMenuBox(
-                                expanded = expanded,
-                                onExpandedChange = { expanded = !expanded }
-                            ) {
-                                OutlinedTextField(
-                                    value = uiState.selectedNetwork,
-                                    readOnly = true,
-                                    onValueChange = { },
-                                    label = { Text(stringResource(R.string.select_a_network)) },
-                                    trailingIcon = {
-                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                                    },
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .menuAnchor()
-                                        .testTag("input_network")
-                                )
-
-                                ExposedDropdownMenu(
+                                ExposedDropdownMenuBox(
                                     expanded = expanded,
-                                    onDismissRequest = { expanded = false }
+                                    onExpandedChange = { expanded = !expanded }
                                 ) {
-                                    uiState.network.forEach { network ->
-                                        DropdownMenuItem(
-                                            text = { Text(network.name) },
-                                            onClick = {
-                                                onAction(SettingsAction.OnNetworkSelected(network.name))
-                                                expanded = false
-                                            }
-                                        )
+                                    OutlinedTextField(
+                                        value = uiState.selectedNetwork,
+                                        readOnly = true,
+                                        onValueChange = { },
+                                        label = { Text(stringResource(R.string.select_a_network)) },
+                                        trailingIcon = {
+                                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                                        },
+                                        shape = RoundedCornerShape(12.dp),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .menuAnchor()
+                                            .testTag("input_network")
+                                    )
+
+                                    ExposedDropdownMenu(
+                                        expanded = expanded,
+                                        onDismissRequest = { expanded = false }
+                                    ) {
+                                        uiState.network.forEach { network ->
+                                            DropdownMenuItem(
+                                                text = { Text(network.name) },
+                                                onClick = {
+                                                    onAction(SettingsAction.OnNetworkSelected(network.name))
+                                                    expanded = false
+                                                }
+                                            )
+                                        }
                                     }
                                 }
-                            }
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                                Spacer(modifier = Modifier.height(12.dp))
 
-                            Card(
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                                )
-                            ) {
-                                Text(
-                                    stringResource(R.string.the_application_will_be_restarted_to_update_the_network),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    modifier = Modifier.padding(12.dp)
-                                )
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                    )
+                                ) {
+                                    Text(
+                                        stringResource(R.string.the_application_will_be_restarted_to_update_the_network),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        modifier = Modifier.padding(12.dp)
+                                    )
+                                }
                             }
                         }
                     }

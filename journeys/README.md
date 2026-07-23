@@ -145,10 +145,10 @@ action) on open. The snackbar is part of the Scaffold subtree, so its text and a
 | `tab_extended_key`         | "Extended key" tab inside the share sheet (see popup caveat) |
 | `button_copy_descriptor`    | Copy button on the share sheet's Descriptor tab |
 | `button_copy_extended_key`  | Copy button on the share sheet's Extended-key tab |
-| `input_network`             | network selector field                 |
+| `input_network`             | network selector field — inside the Network section, only when advanced features are on |
 | `toggle_mobile_data`        | "Also use mobile data" switch          |
 | `toggle_peer_flags`         | "Peer country flags" switch — inside its own expandable section, only when advanced features are on |
-| `toggle_advanced_features`  | "Advanced features" switch (gates the Developer Tools section) |
+| `toggle_advanced_features`  | "Advanced features" switch (gates the Network, Peer country flags and Developer Tools sections) |
 | `button_view_logs`          | "View logs" (opens the full-screen log viewer) |
 | `button_export_logs`        | "Export" (share the full debug.log) — inside Developer Tools |
 
@@ -178,15 +178,20 @@ first, then expand "Peer country flags" by text before the switch surfaces. Unli
 switches it is **on** by default. Turning it off stops the monthly database download and removes
 `node_peer_flag` from every peer row within one 10-second poll, with no restart.
 
-`toggle_advanced_features` is off by default. The **Developer Tools** section (and its
-`button_view_logs` / `button_export_logs`) only renders once the toggle is on. Expand
+`toggle_advanced_features` defaults to **on in debug builds and off in release builds**, so on the
+debug build journeys run against, the gated sections are visible without touching it — but a
+journey that depends on them should still confirm the switch is on (it persists across restarts,
+so a previous run may have turned it off). The **Network**, **Peer country flags** and **Developer
+Tools** sections only render while the toggle is on. Expand
 "Developer Tools" by text, then tap `button_view_logs` to open `ScreenDeveloperLogs` — a
 full-screen Nav3 destination in the root subtree, so its tags surface normally (the popup
 caveat does **not** apply). There: `button_back_logs` returns to Settings, `button_copy_logs`
 copies the displayed tail, and the share action reuses `button_export_logs`. Each log line
 is colored by level (ERROR/WARN/INFO/DEBUG/TRACE).
 
-Tapping `input_network` opens the network dropdown. Its options are **targeted by text**
+The **Network** section only renders while `toggle_advanced_features` is on, so turn advanced
+features on first, then expand "Network" by text before `input_network` surfaces. Tapping
+`input_network` opens the network dropdown. Its options are **targeted by text**
 (`BITCOIN`, `SIGNET`, `TESTNET`, `REGTEST`, `TESTNET4`) — see the popup caveat below.
 
 ## Popups, dropdowns, and dialogs
