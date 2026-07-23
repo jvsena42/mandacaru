@@ -102,7 +102,7 @@
     <string name="export_logs">Export</string>
     <string name="share_logs">Share Logs</string>
     <string name="advanced_features">Advanced features</string>
-    <string name="advanced_features_subtitle">Show developer tools such as the node log viewer</string>
+    <string name="advanced_features_subtitle">Show extra settings and tools for advanced users</string>
     <string name="developer_tools">Developer Tools</string>
     <string name="view_logs">View logs</string>
     <string name="copy_logs">Copy logs</string>

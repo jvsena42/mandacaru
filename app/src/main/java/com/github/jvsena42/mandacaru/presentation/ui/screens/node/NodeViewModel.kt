@@ -18,6 +18,7 @@ import com.github.jvsena42.mandacaru.domain.floresta.computeRescanProgressDecima
 import com.github.jvsena42.mandacaru.domain.floresta.hasUtreexoServiceFlag
 import com.github.jvsena42.mandacaru.domain.floresta.isLikelyStalled
 import com.github.jvsena42.mandacaru.domain.geoip.PeerCountryLookup
+import com.github.jvsena42.mandacaru.domain.settings.isAdvancedFeaturesEnabled
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlowImpl
 import com.github.jvsena42.mandacaru.presentation.utils.HexUtils
@@ -70,8 +71,7 @@ class NodeViewModel(
     }
 
     private suspend fun refreshPreferences() {
-        val enabled = preferencesDataSource
-            .getBoolean(PreferenceKeys.ENABLE_ADVANCED_FEATURES, false)
+        val enabled = preferencesDataSource.isAdvancedFeaturesEnabled()
         // A rescan armed by a descriptor load or birthday change only fires
         // once the chain has been at the tip for a grace window. Until it
         // does, the wallet still has history to find and we must not claim

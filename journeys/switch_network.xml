@@ -6,6 +6,7 @@
     <actions>
         <action>Launch the Mandacaru app and wait for the splash screen to dismiss (poll until nav_node is present)</action>
         <action>Tap the Settings navigation item (nav_settings)</action>
+        <action>Scroll to the Advanced features switch (toggle_advanced_features) and turn it on if it is off — the Network section only renders while it is on</action>
         <action>Expand the Network section if it is collapsed</action>
         <action>Tap the network selector field (input_network)</action>
         <action>Tap the SIGNET option in the dropdown (target it by its text)</action>

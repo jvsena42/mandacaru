@@ -2,6 +2,7 @@ package com.github.jvsena42.mandacaru.presentation.ui.screens.node
 
 import androidx.compose.runtime.Stable
 import com.github.jvsena42.mandacaru.domain.floresta.SnapshotPreview
+import com.github.jvsena42.mandacaru.domain.settings.ADVANCED_FEATURES_ENABLED_BY_DEFAULT
 
 @Stable
 data class NodeUiState(
@@ -30,7 +31,7 @@ data class NodeUiState(
     val peers: List<PeerUi> = emptyList(),
     val utreexoPeerCount: Int = 0,
     val isPeersExpanded: Boolean = false,
-    val enableAdvancedFeatures: Boolean = false,
+    val enableAdvancedFeatures: Boolean = ADVANCED_FEATURES_ENABLED_BY_DEFAULT,
     val uptime: String = "",
     val isDiagnosticsExpanded: Boolean = false,
 
