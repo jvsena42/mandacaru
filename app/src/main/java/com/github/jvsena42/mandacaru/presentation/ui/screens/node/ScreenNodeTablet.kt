@@ -48,16 +48,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.github.jvsena42.mandacaru.R
+import com.github.jvsena42.mandacaru.domain.floresta.SyncPhase
 import java.text.NumberFormat
 
 @Composable
 internal fun TabletNodeDashboard(
     uiState: NodeUiState,
-    isHeaderSync: Boolean,
-    isFilterSync: Boolean,
-    isStalled: Boolean,
-    isWalletScanning: Boolean,
-    syncTitleRes: Int,
+    phase: SyncPhase,
     onPingClick: () -> Unit,
     onRequestDisconnect: (String) -> Unit,
     onClickScan: () -> Unit,
@@ -69,6 +66,7 @@ internal fun TabletNodeDashboard(
     onClickShareExport: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isHeaderSync = phase == SyncPhase.HEADERS
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -76,18 +74,11 @@ internal fun TabletNodeDashboard(
         if (uiState.ibd && uiState.utreexoPeerCount == 0) {
             UtreexoWarningCard()
         }
-        if (isStalled) {
+        if (phase == SyncPhase.STALLED) {
             SyncStalledWarningCard()
         }
 
-        HeroStatusBand(
-            uiState = uiState,
-            isHeaderSync = isHeaderSync,
-            isFilterSync = isFilterSync,
-            isStalled = isStalled,
-            isWalletScanning = isWalletScanning,
-            syncTitleRes = syncTitleRes,
-        )
+        HeroStatusBand(uiState = uiState, phase = phase)
 
         Row(
             modifier = Modifier
@@ -144,12 +135,13 @@ internal fun TabletNodeDashboard(
 @Composable
 private fun HeroStatusBand(
     uiState: NodeUiState,
-    isHeaderSync: Boolean,
-    isFilterSync: Boolean,
-    isStalled: Boolean,
-    isWalletScanning: Boolean,
-    syncTitleRes: Int,
+    phase: SyncPhase,
 ) {
+    val isHeaderSync = phase == SyncPhase.HEADERS
+    val isFilterSync = phase == SyncPhase.FILTERS
+    val isStalled = phase == SyncPhase.STALLED
+    val isWalletScanning = phase == SyncPhase.WALLET_SCAN
+    val syncTitleRes = phase.titleRes()
     val rawDecimal: Float? = when {
         isStalled -> 0f
         isHeaderSync && uiState.headerSyncDecimal != null -> uiState.headerSyncDecimal
@@ -177,25 +169,12 @@ private fun HeroStatusBand(
         else -> "${uiState.syncPercentage}%"
     }
 
-    val hasFiltersStep = uiState.filterSyncDecimal != null
-    val headersDone = !isHeaderSync
-    val blocksDone = uiState.syncDecimal >= 1f
-    val filtersDone = uiState.filterSyncDecimal == null || uiState.filterSyncDecimal >= 1f
-    // A running wallet rescan means we're not fully synced yet, even once
-    // filters reached the tip.
-    val allDone = headersDone && blocksDone && filtersDone && !uiState.rescanInProgress
-    val headersState = if (headersDone) StepState.Done else StepState.Current
-    val blocksState = when {
-        blocksDone -> StepState.Done
-        headersDone -> StepState.Current
-        else -> StepState.Pending
-    }
-    val filtersState: StepState? = when {
-        !hasFiltersStep -> null
-        filtersDone && blocksDone -> StepState.Done
-        blocksDone -> StepState.Current
-        else -> StepState.Pending
-    }
+    val steps = computeSyncStepStates(
+        phase = phase,
+        syncDecimal = uiState.syncDecimal,
+        filterSyncDecimal = uiState.filterSyncDecimal,
+    )
+    val allDone = steps.allDone
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -247,9 +226,9 @@ private fun HeroStatusBand(
                         shrinkVertically(animationSpec = tween(300)),
                 ) {
                     SyncStepper(
-                        headersState = headersState,
-                        blocksState = blocksState,
-                        filtersState = filtersState,
+                        headersState = steps.headers,
+                        blocksState = steps.blocks,
+                        filtersState = steps.filters,
                     )
                 }
                 HorizontalDivider(

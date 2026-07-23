@@ -12,7 +12,9 @@ import com.github.jvsena42.mandacaru.data.floresta.toFlorestaNetwork
 import com.github.jvsena42.mandacaru.data.network.NetworkPolicy
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.floresta.UtreexoSnapshotService
+import com.github.jvsena42.mandacaru.domain.floresta.computeFilterSyncDecimal
 import com.github.jvsena42.mandacaru.domain.floresta.computeHeaderSyncProgress
+import com.github.jvsena42.mandacaru.domain.floresta.computeRescanProgressDecimal
 import com.github.jvsena42.mandacaru.domain.floresta.hasUtreexoServiceFlag
 import com.github.jvsena42.mandacaru.domain.floresta.isLikelyStalled
 import com.github.jvsena42.mandacaru.domain.geoip.PeerCountryLookup
@@ -60,17 +62,25 @@ class NodeViewModel(
 
     private fun getInLoop() {
         viewModelScope.launch(ioDispatcher) {
-            refreshAdvancedFeatures()
+            refreshPreferences()
             getInfo()
             delay(10.seconds)
             getInLoop()
         }
     }
 
-    private suspend fun refreshAdvancedFeatures() {
+    private suspend fun refreshPreferences() {
         val enabled = preferencesDataSource
             .getBoolean(PreferenceKeys.ENABLE_ADVANCED_FEATURES, false)
-        _uiState.update { it.copy(enableAdvancedFeatures = enabled) }
+        // A rescan armed by a descriptor load or birthday change only fires
+        // once the chain has been at the tip for a grace window. Until it
+        // does, the wallet still has history to find and we must not claim
+        // to be fully synced.
+        val rescanPending = preferencesDataSource
+            .getBoolean(PreferenceKeys.WALLET_NEEDS_RESCAN, false)
+        _uiState.update {
+            it.copy(enableAdvancedFeatures = enabled, walletRescanPending = rescanPending)
+        }
     }
 
     private fun getInfo() {
@@ -78,21 +88,17 @@ class NodeViewModel(
             florestaRpc.getBlockchainInfo().collect { result ->
                 result.onSuccess { data ->
                     val filterHeight = data.result.filters
-                    val filterStart = data.result.filtersStart ?: 0
-                    val filterDecimal = filterHeight?.let { fh ->
-                        val numerator = (fh - filterStart).coerceAtLeast(0).toFloat()
-                        val denominator = (data.result.height - filterStart)
-                            .coerceAtLeast(1)
-                            .toFloat()
-                        (numerator / denominator).coerceIn(0f, 1f)
-                    }
+                    val filterDecimal = computeFilterSyncDecimal(
+                        filters = filterHeight,
+                        filtersStart = data.result.filtersStart,
+                        height = data.result.height,
+                    )
                     val rescanTotal = data.result.rescanBlocksTotal ?: 0
                     val rescanProcessed = data.result.rescanBlocksProcessed ?: 0
-                    val rescanDecimal = if (rescanTotal > 0) {
-                        (rescanProcessed.toFloat() / rescanTotal.toFloat()).coerceIn(0f, 1f)
-                    } else {
-                        null
-                    }
+                    val rescanDecimal = computeRescanProgressDecimal(
+                        processed = rescanProcessed,
+                        total = rescanTotal,
+                    )
                     _uiState.update {
                         it.copy(
                             blockHeight = NumberFormat.getNumberInstance().format(data.result.height),
