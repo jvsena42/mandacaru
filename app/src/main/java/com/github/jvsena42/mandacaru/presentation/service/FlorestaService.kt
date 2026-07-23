@@ -17,12 +17,17 @@ import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.data.network.NetworkPolicyManager
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
+import com.github.jvsena42.mandacaru.domain.floresta.SyncPhase
+import com.github.jvsena42.mandacaru.domain.floresta.SyncSnapshot
 import com.github.jvsena42.mandacaru.domain.floresta.UtreexoBridgeAutoConnect
+import com.github.jvsena42.mandacaru.domain.floresta.WalletRescanGate
+import com.github.jvsena42.mandacaru.domain.floresta.computeFilterSyncDecimal
 import com.github.jvsena42.mandacaru.domain.floresta.computeHeaderSyncProgress
+import com.github.jvsena42.mandacaru.domain.floresta.computeRescanProgressDecimal
 import com.github.jvsena42.mandacaru.domain.floresta.isLikelyStalled
+import com.github.jvsena42.mandacaru.domain.floresta.phase
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.PeerInfoResult
 import com.github.jvsena42.mandacaru.presentation.ui.screens.main.MainActivity
-import com.github.jvsena42.mandacaru.presentation.utils.toSyncPercentageString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -35,8 +40,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.android.ext.android.inject
-import java.text.NumberFormat
 import java.util.concurrent.atomic.AtomicBoolean
+import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.Result as BlockchainInfo
 
 class FlorestaService : Service() {
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -50,7 +55,7 @@ class FlorestaService : Service() {
     private var wifiStateJob: Job? = null
     @Volatile private var waitingForWifi = false
     private var startupSeedDone = false
-    private var fullySyncedSinceMs: Long? = null
+    private val walletRescanGate = WalletRescanGate()
     private val rescanInFlight = AtomicBoolean(false)
 
     companion object {
@@ -67,10 +72,6 @@ class FlorestaService : Service() {
         private const val COLOR_SYNCED = "#006D37"
         private const val FULL_SYNC_THRESHOLD = 1.0f
         private const val PERCENTAGE_MULTIPLIER = 100
-        // Filter sync usually catches up to chain sync within seconds, but
-        // matched-block downloads add tail latency. Wait this long after the
-        // chain reports fully synced before triggering the descriptor rescan.
-        private const val FULL_SYNC_GRACE_MS = 60_000L
     }
 
     override fun onCreate() {
@@ -187,49 +188,63 @@ class FlorestaService : Service() {
                 delay(NOTIFICATION_POLL_INTERVAL_MS)
                 runSuspendCatching {
                     florestaRpc.getBlockchainInfo().collect { result ->
-                        result.onSuccess { data ->
-                            val peers = florestaRpc.getPeerInfo().firstOrNull()
-                                ?.getOrNull()?.result.orEmpty()
-                            updateSyncNotification(
-                                progress = data.result.progress,
-                                height = data.result.height,
-                                ibd = data.result.ibd,
-                                peers = peers,
-                            )
-                            if (!startupSeedDone) {
-                                startupSeedDone = true
-                                launch { utreexoBridgeAutoConnect.seedOnStartup() }
-                            } else {
-                                launch { utreexoBridgeAutoConnect.ensureUtreexoPeers() }
-                            }
-                            val stalled = isLikelyStalled(
-                                progress = data.result.progress,
-                                ibd = data.result.ibd,
-                                ourHeight = data.result.height,
-                                peers = peers,
-                            )
-                            // Compact filters must be downloaded all the way to
-                            // the tip before a rescan can find every relevant
-                            // block. `filters` null means cfilters are disabled
-                            // or started from genesis — then there's nothing to
-                            // wait on. When present, require filters >= height.
-                            val filtersComplete = data.result.filters
-                                ?.let { it >= data.result.height && data.result.height > 0 }
-                                ?: true
-                            maybeTriggerWalletRescan(
-                                progress = data.result.progress,
-                                ibd = data.result.ibd,
-                                stalled = stalled,
-                                filtersComplete = filtersComplete,
-                                rescanInProgress = data.result.rescanInProgress,
-                            )
-                        }
+                        result.onSuccess { data -> onBlockchainInfo(data.result) }
                     }
                 }.onFailure { e ->
                     Log.d(TAG, "Notification poll failed: ${e.message}")
                 }
             }
         }
+    }
+
+    private suspend fun onBlockchainInfo(info: BlockchainInfo) {
+        val peers = florestaRpc.getPeerInfo().firstOrNull()?.getOrNull()?.result.orEmpty()
+        val stalled = isLikelyStalled(
+            progress = info.progress,
+            ibd = info.ibd,
+            ourHeight = info.height,
+            peers = peers,
+        )
+        val filterSyncDecimal = computeFilterSyncDecimal(
+            filters = info.filters,
+            filtersStart = info.filtersStart,
+            height = info.height,
+        )
+        val snapshot = SyncSnapshot(
+            ibd = info.ibd,
+            progress = info.progress,
+            filterSyncDecimal = filterSyncDecimal,
+            stalled = stalled,
+            rescanInProgress = info.rescanInProgress,
+            rescanPending = preferencesDataSource
+                .getBoolean(PreferenceKeys.WALLET_NEEDS_RESCAN, false),
+        )
+
+        updateSyncNotification(
+            snapshot = snapshot,
+            height = info.height,
+            peers = peers,
+            rescanProgressDecimal = computeRescanProgressDecimal(
+                processed = info.rescanBlocksProcessed,
+                total = info.rescanBlocksTotal,
+            ),
+        )
+
+        if (!startupSeedDone) {
+            startupSeedDone = true
+            ioScope.launch { utreexoBridgeAutoConnect.seedOnStartup() }
+        } else {
+            ioScope.launch { utreexoBridgeAutoConnect.ensureUtreexoPeers() }
+        }
+
+        maybeTriggerWalletRescan(
+            snapshot = snapshot,
+            // Compact filters must be downloaded all the way to the tip before
+            // a rescan can find every relevant block. A null decimal means
+            // cfilters are disabled or started from genesis — nothing to wait on.
+            filtersComplete = filterSyncDecimal == null ||
+                    filterSyncDecimal >= FULL_SYNC_THRESHOLD,
+        )
     }
 
     /**
@@ -242,51 +257,55 @@ class FlorestaService : Service() {
      * [PreferenceKeys.WALLET_NEEDS_RESCAN] flag so it only fires once.
      *
      * Skips while a rescan is already running so we never stack duplicates.
+     * The UI reports "not synced" for as long as the flag is set, so a rescan
+     * that keeps failing gives up rather than pinning it there forever.
      */
-    private fun maybeTriggerWalletRescan(
-        progress: Float,
-        ibd: Boolean,
-        stalled: Boolean,
-        filtersComplete: Boolean,
-        rescanInProgress: Boolean,
-    ) {
-        val chainFullySynced = !ibd && progress >= FULL_SYNC_THRESHOLD && !stalled
-        if (!chainFullySynced || !filtersComplete || rescanInProgress) {
-            fullySyncedSinceMs = null
-            return
-        }
-        val now = System.currentTimeMillis()
-        val syncedSince = fullySyncedSinceMs ?: now.also { fullySyncedSinceMs = it }
-        if (now - syncedSince < FULL_SYNC_GRACE_MS) return
+    private fun maybeTriggerWalletRescan(snapshot: SyncSnapshot, filtersComplete: Boolean) {
+        val chainFullySynced = !snapshot.ibd &&
+                snapshot.progress >= FULL_SYNC_THRESHOLD &&
+                !snapshot.stalled
+        // Called unconditionally so the gate keeps tracking how long we have
+        // been at the tip, even while no rescan is owed.
+        val shouldTrigger = walletRescanGate.shouldTrigger(
+            chainFullySynced = chainFullySynced,
+            filtersComplete = filtersComplete,
+            rescanInProgress = snapshot.rescanInProgress,
+        )
+        if (!shouldTrigger || !snapshot.rescanPending) return
         if (!rescanInFlight.compareAndSet(false, true)) return
 
         ioScope.launch {
             try {
-                val needsRescan = preferencesDataSource
-                    .getBoolean(PreferenceKeys.WALLET_NEEDS_RESCAN, false)
-                if (!needsRescan) return@launch
-
                 Log.i(TAG, "Triggering rescanblockchain after wallet-birthday change")
                 val result = florestaRpc.rescan().firstOrNull()
                 if (result?.isSuccess == true) {
+                    walletRescanGate.onTriggered()
                     preferencesDataSource.setBoolean(PreferenceKeys.WALLET_NEEDS_RESCAN, false)
                     Log.i(TAG, "Wallet rescan triggered; flag cleared")
                 } else {
                     Log.w(TAG, "rescan failed: ${result?.exceptionOrNull()?.message}")
+                    giveUpOnRescanIfExhausted()
                 }
             } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
                 Log.w(TAG, "Wallet rescan trigger failed: ${e.message}")
+                giveUpOnRescanIfExhausted()
             } finally {
                 rescanInFlight.set(false)
             }
         }
     }
 
+    private suspend fun giveUpOnRescanIfExhausted() {
+        if (!walletRescanGate.onFailed()) return
+        preferencesDataSource.setBoolean(PreferenceKeys.WALLET_NEEDS_RESCAN, false)
+        Log.w(TAG, "Wallet rescan gave up after repeated failures; flag cleared")
+    }
+
     private fun updateSyncNotification(
-        progress: Float,
+        snapshot: SyncSnapshot,
         height: Int,
-        ibd: Boolean,
         peers: List<PeerInfoResult>,
+        rescanProgressDecimal: Float?,
     ) {
         val notificationManager = getSystemService(NotificationManager::class.java) ?: return
 
@@ -314,9 +333,18 @@ class FlorestaService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val isHeaderSync = ibd && progress == 0f
-        val headerDecimal = if (isHeaderSync) computeHeaderSyncProgress(height, peers) else null
-        val stalled = isLikelyStalled(progress = progress, ibd = ibd, ourHeight = height, peers = peers)
+        val phase = snapshot.phase()
+        val content = syncNotificationContent(
+            phase = phase,
+            snapshot = snapshot,
+            headerSyncDecimal = if (phase == SyncPhase.HEADERS) {
+                computeHeaderSyncProgress(height, peers)
+            } else {
+                null
+            },
+            rescanProgressDecimal = rescanProgressDecimal,
+            height = height,
+        )
 
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Mandacaru")
@@ -327,58 +355,22 @@ class FlorestaService : Service() {
             .setOngoing(true)
             .setContentIntent(openAppPendingIntent)
             .addAction(R.drawable.ic_x, "Stop", stopPendingIntent)
-            .applySyncState(progress, height, isHeaderSync, headerDecimal, stalled)
+            .applySyncState(content)
 
         notificationManager.notify(FLORESTA_NOTIFICATION_ID, builder.build())
     }
 
     private fun NotificationCompat.Builder.applySyncState(
-        progress: Float,
-        height: Int,
-        isHeaderSync: Boolean,
-        headerDecimal: Float?,
-        stalled: Boolean,
+        content: SyncNotificationContent,
     ): NotificationCompat.Builder {
+        setContentText(content.contentText)
+            .setSubText(content.subText)
+            .setColor(if (content.synced) COLOR_SYNCED.toColorInt() else COLOR_PRIMARY.toColorInt())
+            .setColorized(true)
         when {
-            headerDecimal != null -> {
-                val label = headerDecimal.toSyncPercentageString()
-                val barProgress = (headerDecimal * PERCENTAGE_MULTIPLIER).toInt()
-                setContentText("Syncing headers: $label%")
-                    .setSubText("$label% headers")
-                    .setProgress(PERCENTAGE_MULTIPLIER, barProgress, false)
-                    .setColor(COLOR_PRIMARY.toColorInt())
-                    .setColorized(true)
-            }
-            isHeaderSync -> {
-                setContentText("Syncing headers…")
-                    .setSubText("Connecting to peers")
-                    .setProgress(0, 0, true)
-                    .setColor(COLOR_PRIMARY.toColorInt())
-                    .setColorized(true)
-            }
-            stalled -> {
-                val formattedHeight = NumberFormat.getNumberInstance().format(height)
-                setContentText("Sync stalled at block #$formattedHeight")
-                    .setSubText("Storage may be unhealthy")
-                    .setColor(COLOR_PRIMARY.toColorInt())
-                    .setColorized(true)
-            }
-            progress < FULL_SYNC_THRESHOLD -> {
-                val label = progress.toSyncPercentageString()
-                val barProgress = (progress * PERCENTAGE_MULTIPLIER).toInt()
-                setContentText("Syncing blocks: $label%")
-                    .setSubText("$label% blocks")
-                    .setProgress(PERCENTAGE_MULTIPLIER, barProgress, false)
-                    .setColor(COLOR_PRIMARY.toColorInt())
-                    .setColorized(true)
-            }
-            else -> {
-                val formattedHeight = NumberFormat.getNumberInstance().format(height)
-                setContentText("Synced - Block #$formattedHeight")
-                    .setSubText("Fully synced")
-                    .setColor(COLOR_SYNCED.toColorInt())
-                    .setColorized(true)
-            }
+            content.indeterminate -> setProgress(0, 0, true)
+            content.progressPercent != null ->
+                setProgress(PERCENTAGE_MULTIPLIER, content.progressPercent, false)
         }
         return this
     }

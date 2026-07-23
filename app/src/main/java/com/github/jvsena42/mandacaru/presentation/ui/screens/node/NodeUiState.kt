@@ -21,6 +21,7 @@ data class NodeUiState(
     val isStalled: Boolean = false,
     val ibd: Boolean = true,
     val rescanInProgress: Boolean = false,
+    val walletRescanPending: Boolean = false,
     val rescanProgressDecimal: Float? = null,
     val rescanProgressPercentage: String = "0.00",
     val rescanBlocksProcessed: Int = 0,

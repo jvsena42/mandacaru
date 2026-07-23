@@ -96,6 +96,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.text.NumberFormat
 import com.github.jvsena42.mandacaru.R
+import com.github.jvsena42.mandacaru.domain.floresta.SyncPhase
+import com.github.jvsena42.mandacaru.domain.floresta.phase
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.PeerInfoResult
 import com.github.jvsena42.mandacaru.presentation.ui.components.ExpandableHeader
 import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
@@ -285,31 +287,19 @@ fun ScreenNode(
     var peerToDisconnect by remember { mutableStateOf<String?>(null) }
     var showPingConfirmation by remember { mutableStateOf(false) }
 
-    val isHeaderSync = uiState.ibd && uiState.syncDecimal == 0f
-    val isStalled = uiState.isStalled
+    // Shared with the tablet layout and the foreground-service notification so
+    // the three can't disagree about how synced we are.
+    val syncPhase = uiState.toSyncSnapshot().phase()
+    val isHeaderSync = syncPhase == SyncPhase.HEADERS
+    val isStalled = syncPhase == SyncPhase.STALLED
     val headerSyncDecimal = uiState.headerSyncDecimal
     val filterSyncDecimal = uiState.filterSyncDecimal
-    val isFilterSync = !isHeaderSync
-            && !isStalled
-            && uiState.syncDecimal >= 1f
-            && filterSyncDecimal != null
-            && filterSyncDecimal < 1f
+    val isFilterSync = syncPhase == SyncPhase.FILTERS
     // Filters reaching the tip doesn't mean the wallet is scanned; while a
-    // rescan runs the node is still finding the wallet's transactions, so we
-    // surface that instead of claiming "Synced".
-    val isWalletScanning = !isHeaderSync
-            && !isStalled
-            && uiState.syncDecimal >= 1f
-            && (filterSyncDecimal == null || filterSyncDecimal >= 1f)
-            && uiState.rescanInProgress
-    val syncTitleRes = when {
-        isHeaderSync -> R.string.syncing_headers_title
-        isStalled -> R.string.sync_stalled_title
-        isFilterSync -> R.string.syncing_filters_title
-        uiState.ibd -> R.string.syncing_blocks_title
-        isWalletScanning -> R.string.scanning_wallet_title
-        else -> R.string.sync
-    }
+    // rescan runs — or is still owed — the node has transactions left to find,
+    // so we surface that instead of claiming "Synced".
+    val isWalletScanning = syncPhase == SyncPhase.WALLET_SCAN
+    val syncTitleRes = syncPhase.titleRes()
 
     ScreenNodeAlertDialogs(
         peerToDisconnect = peerToDisconnect,
@@ -352,11 +342,7 @@ fun ScreenNode(
         if (layout.useTwoPane) {
             TabletNodeDashboard(
                 uiState = uiState,
-                isHeaderSync = isHeaderSync,
-                isFilterSync = isFilterSync,
-                isStalled = isStalled,
-                isWalletScanning = isWalletScanning,
-                syncTitleRes = syncTitleRes,
+                phase = syncPhase,
                 onPingClick = { showPingConfirmation = true },
                 onRequestDisconnect = { peerToDisconnect = it },
                 onClickScan = onClickScan,
@@ -410,7 +396,7 @@ fun ScreenNode(
                         filterSyncPercentage = uiState.filterSyncPercentage,
                         syncPercentage = uiState.syncPercentage,
                         syncDecimal = uiState.syncDecimal,
-                        rescanInProgress = uiState.rescanInProgress,
+                        phase = syncPhase,
                         rescanProgressDecimal = uiState.rescanProgressDecimal,
                         rescanProgressPercentage = uiState.rescanProgressPercentage,
                         rescanBlocksProcessed = uiState.rescanBlocksProcessed,
@@ -760,58 +746,6 @@ private fun DiagnosticsCard(
     }
 }
 
-private data class SyncStepStates(
-    val headers: StepState,
-    val blocks: StepState,
-    val filters: StepState?,
-    val allDone: Boolean,
-)
-
-private fun blocksStepState(
-    headersDone: Boolean,
-    blocksDone: Boolean,
-    walletScanning: Boolean,
-    hasFiltersStep: Boolean,
-): StepState = when {
-    walletScanning && !hasFiltersStep -> StepState.Current
-    blocksDone -> StepState.Done
-    headersDone -> StepState.Current
-    else -> StepState.Pending
-}
-
-private fun filtersStepState(
-    hasFiltersStep: Boolean,
-    walletScanning: Boolean,
-    filtersDownloaded: Boolean,
-    blocksDone: Boolean,
-): StepState? = when {
-    !hasFiltersStep -> null
-    walletScanning -> StepState.Current
-    filtersDownloaded && blocksDone -> StepState.Done
-    blocksDone -> StepState.Current
-    else -> StepState.Pending
-}
-
-private fun computeSyncStepStates(
-    isHeaderSync: Boolean,
-    syncDecimal: Float,
-    filterSyncDecimal: Float?,
-    rescanInProgress: Boolean,
-): SyncStepStates {
-    val hasFiltersStep = filterSyncDecimal != null
-    val headersDone = !isHeaderSync
-    val blocksDone = syncDecimal >= 1f
-    val filtersDownloaded = filterSyncDecimal == null || filterSyncDecimal >= 1f
-    // A running rescan means the wallet isn't fully scanned yet: keep the last
-    // step Current and don't report everything done.
-    val walletScanning = headersDone && blocksDone && filtersDownloaded && rescanInProgress
-    val headers = if (headersDone) StepState.Done else StepState.Current
-    val blocks = blocksStepState(headersDone, blocksDone, walletScanning, hasFiltersStep)
-    val filters = filtersStepState(hasFiltersStep, walletScanning, filtersDownloaded, blocksDone)
-    val allDone = headersDone && blocksDone && filtersDownloaded && !rescanInProgress
-    return SyncStepStates(headers, blocks, filters, allDone)
-}
-
 private data class SyncProgressInputs(
     val isStalled: Boolean,
     val isHeaderSync: Boolean,
@@ -926,7 +860,7 @@ private fun SyncProgressCard(
     filterSyncPercentage: String,
     syncPercentage: String,
     syncDecimal: Float,
-    rescanInProgress: Boolean,
+    phase: SyncPhase,
     rescanProgressDecimal: Float?,
     rescanProgressPercentage: String,
     rescanBlocksProcessed: Int,
@@ -953,8 +887,7 @@ private fun SyncProgressCard(
         label = "syncProgress",
     )
     val percentageText = inputs.percentageText()
-    val steps =
-        computeSyncStepStates(isHeaderSync, syncDecimal, filterSyncDecimal, rescanInProgress)
+    val steps = computeSyncStepStates(phase, syncDecimal, filterSyncDecimal)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
