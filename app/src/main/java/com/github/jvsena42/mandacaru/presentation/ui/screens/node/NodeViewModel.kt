@@ -90,7 +90,6 @@ class NodeViewModel(
                     val filterHeight = data.result.filters
                     val filterDecimal = computeFilterSyncDecimal(
                         filters = filterHeight,
-                        filtersStart = data.result.filtersStart,
                         height = data.result.height,
                     )
                     val rescanTotal = data.result.rescanBlocksTotal ?: 0

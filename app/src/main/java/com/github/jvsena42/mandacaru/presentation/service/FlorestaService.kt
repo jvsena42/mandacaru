@@ -207,7 +207,6 @@ class FlorestaService : Service() {
         )
         val filterSyncDecimal = computeFilterSyncDecimal(
             filters = info.filters,
-            filtersStart = info.filtersStart,
             height = info.height,
         )
         val snapshot = SyncSnapshot(

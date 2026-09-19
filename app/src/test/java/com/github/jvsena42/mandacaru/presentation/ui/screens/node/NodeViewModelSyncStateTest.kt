@@ -114,7 +114,6 @@ class NodeViewModelSyncStateTest {
             rootHashes = emptyList(),
             validated = 947_390,
             filters = 947_390,
-            filtersStart = 0,
             rescanInProgress = false,
         ),
     )
