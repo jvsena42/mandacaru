@@ -247,13 +247,12 @@ class FlorestaService : Service() {
     }
 
     /**
-     * Loading a descriptor (or changing the wallet birthday) caches addresses
-     * that the node has not necessarily scanned against the full compact-filter
-     * store — the server-side rescan kicked off by `loaddescriptor` runs once,
-     * against whatever filters existed at that moment, so anything downloaded
-     * afterwards is missed. Trigger one rescan once the chain is fully validated
-     * AND filters have reached the tip (with a grace window), then clear the
-     * [PreferenceKeys.WALLET_NEEDS_RESCAN] flag so it only fires once.
+     * `loaddescriptor` rescans on its own, up to the tip, but changing the
+     * wallet birthday does not: the node only applies it to later rescans.
+     * Trigger one rescan once the chain is fully validated AND filter headers
+     * have reached the tip (with a grace window), then clear the
+     * [PreferenceKeys.WALLET_NEEDS_RESCAN] flag so it only fires once. A rescan
+     * downloads every filter in its range, so it must not fire needlessly.
      *
      * Skips while a rescan is already running so we never stack duplicates.
      * The UI reports "not synced" for as long as the flag is set, so a rescan

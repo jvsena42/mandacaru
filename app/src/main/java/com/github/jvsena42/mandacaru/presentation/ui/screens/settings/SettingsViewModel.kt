@@ -312,10 +312,9 @@ class SettingsViewModel(
                 PreferenceKeys.WALLET_BIRTHDAY_YEAR,
                 year.toString()
             )
-            // Floresta wipes the compact filter store and re-syncs from the new
-            // height when this changes, but it does not auto-rescan loaded
-            // descriptors against the new store. Without this flag the wallet
-            // stays empty until the user manually re-loads the descriptor.
+            // The birthday is where Floresta starts rescans from, but it does not
+            // rescan already loaded descriptors when it changes. Without this
+            // flag an earlier birthday would not bring the older history in.
             preferencesDataSource.setBoolean(PreferenceKeys.WALLET_NEEDS_RESCAN, true)
             _uiState.update {
                 it.copy(
@@ -452,11 +451,6 @@ class SettingsViewModel(
             florestaRpc.loadDescriptor(DescriptorUtils.wrapDescriptorIfNeeded(input))
                 .collect { result ->
                     result.onSuccess { data ->
-                        // The server-side rescan kicked off by loaddescriptor only
-                        // covers filters already downloaded; flag a rescan so the
-                        // service re-scans once filters reach the tip, picking up
-                        // history in blocks downloaded after this point.
-                        preferencesDataSource.setBoolean(PreferenceKeys.WALLET_NEEDS_RESCAN, true)
                         onSuccess()
                         _uiState.update { it.copy(snackBarMessage = "Descriptor loaded successfully") }
                         walletDescriptorRepository.refresh()
