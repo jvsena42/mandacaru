@@ -53,9 +53,10 @@ fi
 
 # Common cross-compilation environment (arch-independent)
 export ANDROID_NDK_ROOT="$NDK"
-# libbitcoinkernel-sys (android_support) reads ANDROID_NDK_HOME to locate the
-# NDK CMake toolchain file.
+# libbitcoinkernel-sys reads ANDROID_NDK_HOME to locate the NDK CMake toolchain
+# file and ANDROID_API_LEVEL for the platform (it defaults to 24 otherwise).
 export ANDROID_NDK_HOME="$NDK"
+export ANDROID_API_LEVEL="$API_LEVEL"
 export PATH="${TOOLCHAIN}/bin:$PATH"
 # Make Boost's CMake config discoverable to the NDK-toolchain'd Bitcoin Core build.
 export Boost_DIR="$BOOST_CMAKE_DIR"

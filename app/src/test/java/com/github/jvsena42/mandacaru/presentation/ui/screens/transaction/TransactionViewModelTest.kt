@@ -163,17 +163,16 @@ class TransactionViewModelTest {
             jsonrpc = "2.0",
             result = BlockchainInfo(
                 bestBlock = "00",
-                chain = "bitcoin",
+                chain = "main",
                 difficulty = 1f,
                 height = 100,
                 ibd = ibd,
                 latestBlockTime = 0,
                 latestWork = "00",
                 leafCount = 0,
-                progress = progress,
                 rootCount = 0,
                 rootHashes = emptyList(),
-                validated = 50,
+                validated = (progress * 100).toInt(),
             ),
         )
 

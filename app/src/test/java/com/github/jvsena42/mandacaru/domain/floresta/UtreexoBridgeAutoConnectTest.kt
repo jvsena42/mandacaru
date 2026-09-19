@@ -29,7 +29,7 @@ class UtreexoBridgeAutoConnectTest {
     @Test
     fun `ensureUtreexoPeers fires onetry then add for each bridge when no utreexo peer is present`() = runBlocking {
         val rpc = FakeFlorestaRpc(
-            peers = listOf(peer("NETWORK|WITNESS|NETWORK_LIMITED|P2P_V2"))
+            peers = listOf(peer("0000000000000c09"))
         )
         val prefs = FakePreferences(network = "SIGNET")
         val sut = UtreexoBridgeAutoConnect(rpc, prefs, nowMs = { 0L })
@@ -50,7 +50,7 @@ class UtreexoBridgeAutoConnectTest {
     @Test
     fun `ensureUtreexoPeers does nothing when a peer already advertises utreexo`() = runBlocking {
         val rpc = FakeFlorestaRpc(
-            peers = listOf(peer("NETWORK|WITNESS|0x1000"))
+            peers = listOf(peer("0000000000001009"))
         )
         val prefs = FakePreferences(network = "SIGNET")
         val sut = UtreexoBridgeAutoConnect(rpc, prefs, nowMs = { 0L })
@@ -160,7 +160,7 @@ class UtreexoBridgeAutoConnectTest {
         address = "1.2.3.4:8333",
         initialHeight = 0,
         kind = "regular",
-        services = "ServiceFlags($services)",
+        services = services,
         state = "Ready",
         userAgent = "/test/"
     )

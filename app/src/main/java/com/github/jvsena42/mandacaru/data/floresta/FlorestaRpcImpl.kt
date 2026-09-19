@@ -65,7 +65,7 @@ class FlorestaRpcImpl(
         executeRpcCall(RpcMethods.STOP)
 
     override fun getTransaction(txId: String): Flow<Result<GetTransactionResponse>> =
-        executeRpcCall(RpcMethods.GET_TRANSACTION, params = arrayOf(txId))
+        executeRpcCall(RpcMethods.GET_TRANSACTION, params = arrayOf<Any>(txId, VERBOSE))
 
     override fun listDescriptors(): Flow<Result<ListDescriptorsResponse>> =
         executeRpcCall(RpcMethods.LIST_DESCRIPTORS)
@@ -177,8 +177,11 @@ class FlorestaRpcImpl(
             val json = JSONObject(body)
 
             if (json.has("error")) {
+                val error = json.getJSONObject("error")
+                val message = error.getString("message")
+                val detail = if (error.isNull("data")) null else error.get("data").toString()
                 @Suppress("TooGenericExceptionThrown")
-                throw Exception(json.getJSONObject("error").getString("message"))
+                throw Exception(if (detail == null) message else "$message: $detail")
             }
             json
         }
@@ -188,6 +191,7 @@ class FlorestaRpcImpl(
 
     private companion object {
         private const val TAG = "FlorestaRpcImpl"
+        private const val VERBOSE = 1
     }
 
 }

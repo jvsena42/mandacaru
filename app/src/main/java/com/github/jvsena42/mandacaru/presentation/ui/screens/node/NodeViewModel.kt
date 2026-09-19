@@ -104,7 +104,7 @@ class NodeViewModel(
                             blockHeight = NumberFormat.getNumberInstance().format(data.result.height),
                             headerHeightRaw = data.result.height,
                             difficulty = data.result.difficulty.toHumanReadableDifficulty(),
-                            network = data.result.chain.uppercase(),
+                            network = data.result.networkName.uppercase(),
                             blockHash = data.result.bestBlock,
                             syncPercentage = data.result.progress.toSyncPercentageString(),
                             syncDecimal = data.result.progress,

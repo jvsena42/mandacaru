@@ -11,7 +11,7 @@ class IsLikelyStalledTest {
         address = "1.2.3.4:8333",
         initialHeight = initialHeight,
         kind = "regular",
-        services = "ServiceFlags(NETWORK|WITNESS|UTREEXO)",
+        services = "0000000000001009",
         state = "Ready",
         userAgent = "/Satoshi:30.0.0/",
     )
