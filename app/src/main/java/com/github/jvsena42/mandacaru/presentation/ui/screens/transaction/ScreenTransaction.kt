@@ -63,6 +63,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
@@ -86,7 +87,6 @@ import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
 @Composable
 fun ScreenTransaction(
@@ -572,7 +572,7 @@ internal fun TransactionDetailsCard(tx: TransactionResult) {
 
             tx.blocktime?.let {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                val date = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
+                val date = SimpleDateFormat("MMM dd, yyyy HH:mm", LocalConfiguration.current.locales[0])
                     .format(Date(it * 1000))
                 TxDetailRow(label = "Block Time", value = date)
             }
