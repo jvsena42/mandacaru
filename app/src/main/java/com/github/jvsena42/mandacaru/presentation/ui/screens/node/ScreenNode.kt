@@ -1285,7 +1285,10 @@ internal fun PeerItem(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
-                peer.peer.servicesNames?.joinToString("|") ?: peer.peer.services,
+                peer.peer.servicesNames
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.joinToString("|")
+                    ?: "NONE",
                 style = MaterialTheme.typography.bodySmall,
                 fontFamily = FontFamily.Monospace,
                 fontSize = 10.sp,
