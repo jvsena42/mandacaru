@@ -1285,9 +1285,7 @@ internal fun PeerItem(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
-                peer.peer.services
-                    .removePrefix("ServiceFlags(")
-                    .removeSuffix(")"),
+                peer.peer.servicesNames?.joinToString("|") ?: peer.peer.services,
                 style = MaterialTheme.typography.bodySmall,
                 fontFamily = FontFamily.Monospace,
                 fontSize = 10.sp,
@@ -1384,7 +1382,8 @@ private fun Preview() {
                             address = "194.145.199.26:8333",
                             initialHeight = 943609,
                             kind = "regular",
-                            services = "ServiceFlags(NETWORK|WITNESS|COMPACT_FILTERS|NETWORK_LIMITED|P2P_V2)",
+                            services = "0000000000000c49",
+                            servicesNames = listOf("NETWORK", "WITNESS", "COMPACT_FILTERS", "NETWORK_LIMITED", "P2P_V2"),
                             state = "Ready",
                             userAgent = "/Satoshi:30.0.0/"
                         ).withCountry("UA"),
@@ -1392,7 +1391,8 @@ private fun Preview() {
                             address = "59.3.9.212:8333",
                             initialHeight = 943609,
                             kind = "regular",
-                            services = "ServiceFlags(NETWORK|WITNESS|COMPACT_FILTERS|NETWORK_LIMITED|P2P_V2)",
+                            services = "0000000000000c49",
+                            servicesNames = listOf("NETWORK", "WITNESS", "COMPACT_FILTERS", "NETWORK_LIMITED", "P2P_V2"),
                             state = "Ready",
                             userAgent = "/Satoshi:28.1.0/"
                         ).withCountry("KR")
@@ -1427,7 +1427,8 @@ private fun StalledPreview() {
                             address = "194.145.199.26:8333",
                             initialHeight = 947_390,
                             kind = "regular",
-                            services = "ServiceFlags(NETWORK|WITNESS|COMPACT_FILTERS|UTREEXO)",
+                            services = "0000000000001049",
+                            servicesNames = listOf("NETWORK", "WITNESS", "COMPACT_FILTERS", "UTREEXO"),
                             state = "Ready",
                             userAgent = "/Satoshi:30.0.0/"
                         ).withCountry("UA"),
@@ -1469,7 +1470,8 @@ private fun WalletScanningPreview() {
                             address = "194.145.199.26:8333",
                             initialHeight = 947_390,
                             kind = "regular",
-                            services = "ServiceFlags(NETWORK|WITNESS|COMPACT_FILTERS|UTREEXO)",
+                            services = "0000000000001049",
+                            servicesNames = listOf("NETWORK", "WITNESS", "COMPACT_FILTERS", "UTREEXO"),
                             state = "Ready",
                             userAgent = "/Satoshi:30.0.0/"
                         ).withCountry("UA"),
@@ -1505,7 +1507,8 @@ private fun TabletPreview() {
                             address = "194.145.199.26:8333",
                             initialHeight = 943609,
                             kind = "regular",
-                            services = "ServiceFlags(NETWORK|WITNESS|COMPACT_FILTERS|NETWORK_LIMITED|P2P_V2)",
+                            services = "0000000000000c49",
+                            servicesNames = listOf("NETWORK", "WITNESS", "COMPACT_FILTERS", "NETWORK_LIMITED", "P2P_V2"),
                             state = "Ready",
                             userAgent = "/Satoshi:30.0.0/"
                         ).withCountry("UA"),
@@ -1513,7 +1516,8 @@ private fun TabletPreview() {
                             address = "59.3.9.212:8333",
                             initialHeight = 943609,
                             kind = "regular",
-                            services = "ServiceFlags(NETWORK|WITNESS|COMPACT_FILTERS|NETWORK_LIMITED|P2P_V2)",
+                            services = "0000000000000c49",
+                            servicesNames = listOf("NETWORK", "WITNESS", "COMPACT_FILTERS", "NETWORK_LIMITED", "P2P_V2"),
                             state = "Ready",
                             userAgent = "/Satoshi:28.1.0/"
                         ).withCountry("KR")

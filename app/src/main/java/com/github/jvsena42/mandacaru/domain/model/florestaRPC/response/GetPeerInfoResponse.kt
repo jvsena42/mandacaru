@@ -21,6 +21,8 @@ data class PeerInfoResult(
     val kind: String,
     @SerializedName("services")
     val services: String,
+    @SerializedName("servicesnames")
+    val servicesNames: List<String>? = null,
     @SerializedName("state")
     val state: String,
     @SerializedName("user_agent")
