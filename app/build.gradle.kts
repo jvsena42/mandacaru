@@ -18,7 +18,7 @@ plugins {
 
 android {
     namespace = "com.github.jvsena42.mandacaru"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.github.jvsena42.mandacaru"
