@@ -58,8 +58,6 @@ data class Result(
     val validated: Int,
     @SerializedName("filters")
     val filters: Int? = null,
-    @SerializedName("filters_start")
-    val filtersStart: Int? = null,
     @SerializedName("rescan_in_progress")
     val rescanInProgress: Boolean = false,
     @SerializedName("rescan_blocks_processed")

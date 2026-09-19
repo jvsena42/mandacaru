@@ -46,15 +46,13 @@ fun SyncSnapshot.phase(): SyncPhase = when {
 }
 
 /**
- * Progress of the compact-filter store towards the chain tip. A wallet
- * birthday shifts the store's start height, so the ratio is measured from
- * [filtersStart] rather than from genesis.
+ * Progress of the compact-filter header chain towards the chain tip. Headers
+ * always sync from genesis; the wallet birthday only bounds rescans.
  */
-fun computeFilterSyncDecimal(filters: Int?, filtersStart: Int?, height: Int): Float? {
+fun computeFilterSyncDecimal(filters: Int?, height: Int): Float? {
     if (filters == null) return null
-    val start = filtersStart ?: 0
-    val numerator = (filters - start).coerceAtLeast(0).toFloat()
-    val denominator = (height - start).coerceAtLeast(1).toFloat()
+    val numerator = filters.coerceAtLeast(0).toFloat()
+    val denominator = height.coerceAtLeast(1).toFloat()
     return (numerator / denominator).coerceIn(0f, COMPLETE)
 }
 

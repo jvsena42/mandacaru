@@ -119,7 +119,7 @@ class FlorestaDaemonImpl(
             FlorestaNetwork.BITCOIN.name
         ).toFlorestaNetwork()
         val base = File(dataDirFor(network))
-        listOf("chaindata", "cfilters").forEach { sub ->
+        listOf("chaindata", "cfilter_headers.dat").forEach { sub ->
             val dir = File(base, sub)
             val size = if (dir.exists()) dirSize(dir) else 0L
             Log.i(TAG, "prepareForSnapshotImport: preserving $sub (size=$size)")
