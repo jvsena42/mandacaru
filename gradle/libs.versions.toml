@@ -27,7 +27,7 @@ zxing-core = "3.5.3"
 camerax = "1.6.1"
 mlkit-barcode = "17.3.0"
 coreSplashscreen = "1.0.1"
-orgJson = "20240303"
+orgJson = "20260814"
 hummingbird = "1.7.4"
 bdk = "2.3.1"
 
