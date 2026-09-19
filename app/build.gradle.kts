@@ -6,6 +6,8 @@ val localProperties = Properties().apply {
     if (file.exists()) load(file.inputStream())
 }
 
+fun signingProperty(key: String): String? = localProperties.getProperty(key) ?: System.getenv(key)
+
 val appVersionName = "0.15.0"
 
 plugins {
@@ -34,13 +36,13 @@ android {
     }
 
     signingConfigs {
-        val keystoreFile = localProperties["KEYSTORE_FILE"] as? String
+        val keystoreFile = signingProperty("KEYSTORE_FILE")
         if (keystoreFile != null) {
             create("release") {
                 storeFile = file(keystoreFile)
-                storePassword = localProperties["KEYSTORE_PASSWORD"] as String
-                keyAlias = localProperties["KEY_ALIAS"] as String
-                keyPassword = localProperties["KEY_PASSWORD"] as String
+                storePassword = signingProperty("KEYSTORE_PASSWORD")
+                keyAlias = signingProperty("KEY_ALIAS")
+                keyPassword = signingProperty("KEY_PASSWORD")
             }
         }
     }
