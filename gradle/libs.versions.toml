@@ -29,7 +29,7 @@ mlkit-barcode = "17.3.0"
 coreSplashscreen = "1.2.0"
 orgJson = "20260814"
 hummingbird = "1.7.5"
-bdk = "2.3.1"
+bdk = "3.1.0"
 
 [libraries]
 androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
