@@ -133,6 +133,8 @@ fun ScreenNode(
                     }
                     context.startActivity(Intent.createChooser(share, null))
                 }
+                is NodeEvents.OnCopyAccumulator ->
+                    clipboard.setText(AnnotatedString(event.payload))
             }
         }
     }
@@ -267,10 +269,7 @@ fun ScreenNode(
                 onToggleImportCard = viewModel::toggleImportCardExpanded,
                 onToggleExportCard = viewModel::toggleExportCardExpanded,
                 onClickShowExportQr = viewModel::onClickShowExportQr,
-                onClickCopyExport = {
-                    viewModel.onClickCopyExport()
-                    uiState.exportPayload?.let { clipboard.setText(AnnotatedString(it)) }
-                },
+                onClickCopyExport = viewModel::onClickCopyExport,
                 onClickShareExport = viewModel::onClickShareExport,
                 onDismissExportQrSheet = viewModel::onDismissExportQrSheet,
             )

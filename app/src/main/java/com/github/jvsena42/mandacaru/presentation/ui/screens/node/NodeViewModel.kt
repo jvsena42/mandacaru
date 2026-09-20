@@ -414,6 +414,7 @@ class NodeViewModel(
         _uiState.update {
             it.copy(exportPayload = payload, snapshotMessage = COPIED_MESSAGE)
         }
+        with(viewModelScope) { sendEvent(NodeEvents.OnCopyAccumulator(payload)) }
     }
 
     fun onClickShareExport() = withExportPayload { payload ->
@@ -431,11 +432,8 @@ class NodeViewModel(
 
     private fun withExportPayload(then: (String) -> Unit) {
         if (_uiState.value.ibd) return
-        val cached = _uiState.value.exportPayload
-        if (cached != null) {
-            then(cached)
-            return
-        }
+        // Dumped on every use: the accumulator moves with each block, and a payload kept from
+        // an earlier tap would hand the other device a state that is hours behind.
         viewModelScope.launch(ioDispatcher) {
             snapshotService.dump()
                 .onSuccess { then(it) }
