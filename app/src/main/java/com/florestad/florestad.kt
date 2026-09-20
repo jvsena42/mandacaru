@@ -1566,12 +1566,14 @@ data class Config (
     var `proxy`: kotlin.String? = null 
     , 
     /**
-     * Whether to build and store compact block filters for wallet rescanning.
+     * Whether to keep the compact block filter header chain for wallet rescanning.
+     * Only headers are stored; full filters are downloaded on demand by each rescan.
      */
     var `cfilters`: kotlin.Boolean = false 
     , 
     /**
-     * The block height to start downloading compact filters from.
+     * Wallet birthday: the height rescans start from unless the caller names one.
+     * Negative values are relative to the tip at the time of the rescan.
      */
     var `filtersStartHeight`: kotlin.Int? = null 
     , 
