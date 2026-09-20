@@ -135,7 +135,6 @@ class NodeViewModelExportTest {
             rootHashes = emptyList(),
             validated = 967_875,
             filters = 967_875,
-            filtersStart = 0,
             rescanInProgress = false,
         ),
     )
