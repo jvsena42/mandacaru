@@ -20,6 +20,7 @@ object DescriptorUtils {
         "Ypub", "Zpub", "Upub", "Vpub",
     )
     private val JSON_DESCRIPTOR_KEYS = listOf("descriptor", "desc", "output_descriptor")
+    private val WHITESPACE_REGEX = Regex("""\s+""")
 
     // Base58 run of an extended key (xpub/tpub and SLIP-132 variants), origin/derivation excluded.
     private val EXTENDED_KEY_REGEX = Regex("""[xyztuvYZUV]pub[1-9A-HJ-NP-Za-km-z]{100,115}""")
@@ -57,7 +58,26 @@ object DescriptorUtils {
         VERSION_MAGIC_VPUB_MULTI.toList() to VERSION_MAGIC_TPUB,
     )
 
-    fun wrapDescriptorIfNeeded(input: String): String {
+    /**
+     * Descriptors and extended keys never contain whitespace, so anything a paste or a
+     * line-wrapped export brings along (trailing newline, tabs, spaces) is dropped.
+     */
+    fun sanitize(input: String): String = WHITESPACE_REGEX.replace(input, "")
+
+    /**
+     * Why a bare extended key cannot be loaded, or null when it decodes. Full descriptors
+     * are left for the node to validate.
+     */
+    fun extendedKeyError(input: String): String? {
+        val key = sanitize(input)
+        if (key.contains("(") || EXTENDED_KEY_PREFIXES.none { key.startsWith(it) }) return null
+        val bareKey = key.substringBefore("/")
+        if (base58CheckDecode(bareKey) != null) return null
+        return "This extended key is not valid (bad checksum). Check for missing or extra characters."
+    }
+
+    fun wrapDescriptorIfNeeded(rawInput: String): String {
+        val input = sanitize(rawInput)
         if (input.contains("(")) return input
 
         val converted = convertSlip132ToStandard(input)

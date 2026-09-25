@@ -1,6 +1,7 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 
 import android.content.Context
+import com.github.jvsena42.mandacaru.common.CoroutineDispatchers
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.domain.model.WalletDescriptorStatus
@@ -12,15 +13,18 @@ import com.github.jvsena42.mandacaru.fakes.FakeGeoIpDatabaseRepository
 import com.github.jvsena42.mandacaru.fakes.FakeWalletDescriptorRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.withTimeout
-import org.json.JSONObject
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -65,6 +69,7 @@ class SettingsViewModelTest {
             descriptorScanner = descriptorScanner,
             walletDescriptorRepository = walletDescriptorRepository,
             context = mock(Context::class.java),
+            dispatchers = CoroutineDispatchers(io = dispatcher, default = dispatcher),
         )
         // runCurrent (not advanceUntilIdle): observeRescanState is an infinite delay loop
         // that would never let advanceUntilIdle return; runCurrent parks it at the first delay.
@@ -113,21 +118,50 @@ class SettingsViewModelTest {
 
     @Test
     fun `loading a descriptor refreshes the repository so the prompts clear immediately`() =
-        runBlocking {
+        runTest(dispatcher) {
             rpc.loadDescriptorResult = Result.success(JSONObject())
             val vm = buildViewModel()
 
             vm.onAction(SettingsAction.OnDescriptorChanged(DESCRIPTOR))
             vm.onAction(SettingsAction.OnClickUpdateDescriptor)
-
-            // loadDescriptorString runs on the real Dispatchers.IO, which the test scheduler
-            // does not drive, so wait for the effect instead of advancing virtual time.
-            withTimeout(REFRESH_TIMEOUT_MS) {
-                while (walletDescriptorRepository.refreshCount == 0) delay(POLL_MS)
-            }
+            runCurrent()
 
             assertEquals(1, walletDescriptorRepository.refreshCount)
+            assertEquals(listOf(DESCRIPTOR), rpc.loadedDescriptors)
+            assertTrue(vm.uiState.value.isLoading)
+
+            // The loading state is held for a moment after the answer
+            advanceTimeBy(LOADING_HOLD_MS)
+            runCurrent()
+            assertFalse(vm.uiState.value.isLoading)
+
+            // observeRescanState polls forever; runTest would otherwise wait for it
+            vm.viewModelScope.cancel()
         }
+
+    @Test
+    fun `typed descriptor text loses any whitespace`() {
+        val vm = buildViewModel()
+
+        vm.onAction(SettingsAction.OnDescriptorChanged(" $ZPUB\n"))
+        dispatcher.scheduler.runCurrent()
+
+        assertEquals(ZPUB, vm.uiState.value.descriptorText)
+    }
+
+    @Test
+    fun `a corrupted extended key is rejected before reaching the node`() = runTest(dispatcher) {
+        val vm = buildViewModel()
+
+        vm.onAction(SettingsAction.OnDescriptorChanged(ZPUB.dropLast(1)))
+        vm.onAction(SettingsAction.OnClickUpdateDescriptor)
+        runCurrent()
+
+        assertTrue(vm.uiState.value.snackBarMessage.contains("checksum"))
+        assertEquals(emptyList<String>(), rpc.loadedDescriptors)
+        assertFalse(vm.uiState.value.isLoading)
+        vm.viewModelScope.cancel()
+    }
 
     @Test
     fun `expanding descriptors is idempotent unlike toggling`() {
@@ -157,10 +191,11 @@ class SettingsViewModelTest {
     }
 
     private companion object {
-        const val REFRESH_TIMEOUT_MS = 5_000L
-        const val POLL_MS = 10L
+        const val LOADING_HOLD_MS = 2_001L
         const val DESCRIPTOR =
             "wpkh([73c5da0a/84h/1h/0h]tpubDC8msFGeGuwnKG9Upg7DM2b4DaRqg3CUZa5g8v2SRQ6K4NSkxUgd7HsL2XVWbVm39yBA4LgAFKvDsdsBPzMw3RGYbjeMs9dGcTLeUw6f7c/0/*)"
+        const val ZPUB =
+            "zpub6rFR7y4Q2AijBEqTUquhVz398htDFrtymD9xYYfG1m4wAcvPhXNfE3EfH1r1ADqtfSdVCToUG868RvUUkgDKf31mGDtKsAYz2oz2AGutZYs"
     }
 
 }
