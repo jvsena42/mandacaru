@@ -18,6 +18,7 @@ import com.github.jvsena42.mandacaru.domain.model.florestaRPC.AddNodeCommand
 import com.github.jvsena42.mandacaru.domain.scan.DescriptorQrScanner
 import com.github.jvsena42.mandacaru.domain.scan.DescriptorScanState
 import com.github.jvsena42.mandacaru.domain.settings.isAdvancedFeaturesEnabled
+import com.github.jvsena42.mandacaru.common.CoroutineDispatchers
 import com.github.jvsena42.mandacaru.presentation.utils.DescriptorUtils
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlowImpl
@@ -27,7 +28,6 @@ import com.github.jvsena42.mandacaru.presentation.utils.getElectrumPort
 import com.github.jvsena42.mandacaru.presentation.utils.getNetwork
 import com.github.jvsena42.mandacaru.presentation.utils.getRpcPort
 import com.github.jvsena42.mandacaru.presentation.utils.removeSpaces
-import kotlinx.coroutines.Dispatchers
 import java.io.File
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import com.florestad.Network as FlorestaNetwork
@@ -49,6 +50,7 @@ class SettingsViewModel(
     private val descriptorScanner: DescriptorQrScanner,
     private val walletDescriptorRepository: WalletDescriptorRepository,
     @field:SuppressLint("StaticFieldLeak") private val context: Context,
+    private val dispatchers: CoroutineDispatchers = CoroutineDispatchers(),
 ) : ViewModel(), EventFlow<SettingsEvents> by EventFlowImpl() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -96,7 +98,7 @@ class SettingsViewModel(
      */
     private fun observeRescanState() {
         rescanPollJob?.cancel()
-        rescanPollJob = viewModelScope.launch(Dispatchers.IO) {
+        rescanPollJob = viewModelScope.launch(dispatchers.io) {
             while (true) {
                 val info = florestaRpc.getBlockchainInfo().firstOrNull()?.getOrNull()?.result
                 if (info != null) {
@@ -132,7 +134,7 @@ class SettingsViewModel(
         when (action) {
             is SettingsAction.OnDescriptorChanged -> {
                 _uiState.update {
-                    it.copy(descriptorText = action.descriptor.removeSpaces())
+                    it.copy(descriptorText = DescriptorUtils.sanitize(action.descriptor))
                 }
             }
 
@@ -240,7 +242,7 @@ class SettingsViewModel(
     }
 
     private fun handlePeerFlagsToggled(action: SettingsAction.OnTogglePeerFlags) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(dispatchers.io) {
             // Persist first: both branches below read the preference back.
             preferencesDataSource.setBoolean(
                 PreferenceKeys.GEOIP_FLAGS_ENABLED,
@@ -258,7 +260,7 @@ class SettingsViewModel(
     }
 
     private fun handleAdvancedFeaturesToggled(action: SettingsAction.OnToggleAdvancedFeatures) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(dispatchers.io) {
             preferencesDataSource.setBoolean(
                 PreferenceKeys.ENABLE_ADVANCED_FEATURES,
                 action.enabled
@@ -277,7 +279,7 @@ class SettingsViewModel(
     }
 
     private fun handleMobileDataToggled(action: SettingsAction.OnToggleMobileData) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(dispatchers.io) {
             preferencesDataSource.setBoolean(
                 PreferenceKeys.USE_ALSO_MOBILE_DATA,
                 action.enabled
@@ -307,7 +309,7 @@ class SettingsViewModel(
 
     private fun applyBirthdayYearAndRestart() {
         val year = _uiState.value.pendingBirthdayYear ?: return
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(dispatchers.io) {
             preferencesDataSource.setString(
                 PreferenceKeys.WALLET_BIRTHDAY_YEAR,
                 year.toString()
@@ -329,7 +331,7 @@ class SettingsViewModel(
     }
 
     fun handleNetworkSelected(action: SettingsAction.OnNetworkSelected) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(dispatchers.io) {
             //TODO MOVE TO A REPOSITORY
             preferencesDataSource.setString(PreferenceKeys.CURRENT_NETWORK, action.network)
             preferencesDataSource.setString(
@@ -407,7 +409,7 @@ class SettingsViewModel(
         val address = _uiState.value.nodeAddress
         if (address.isEmpty()) return
         _uiState.update { it.copy(isLoading = true) }
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(dispatchers.io) {
             val onetryResult = florestaRpc.addNode(address, AddNodeCommand.ONETRY).firstOrNull()
 
             onetryResult?.onSuccess { data ->
@@ -439,16 +441,18 @@ class SettingsViewModel(
     }
 
     private fun loadDescriptorString(input: String, onSuccess: () -> Unit = {}) {
-        if (DescriptorUtils.isPrivateKey(input)) {
-            _uiState.update {
-                it.copy(snackBarMessage = "Private keys are not supported. Please use a public key (xpub, zpub, etc.) or a full descriptor.")
+        viewModelScope.launch(dispatchers.io) {
+            val rejection = withContext(dispatchers.default) { descriptorRejection(input) }
+            if (rejection != null) {
+                _uiState.update { it.copy(snackBarMessage = rejection) }
+                return@launch
             }
-            return
-        }
 
-        _uiState.update { it.copy(isLoading = true) }
-        viewModelScope.launch(Dispatchers.IO) {
-            florestaRpc.loadDescriptor(DescriptorUtils.wrapDescriptorIfNeeded(input))
+            _uiState.update { it.copy(isLoading = true) }
+            val descriptor = withContext(dispatchers.default) {
+                DescriptorUtils.wrapDescriptorIfNeeded(input)
+            }
+            florestaRpc.loadDescriptor(descriptor)
                 .collect { result ->
                     result.onSuccess { data ->
                         onSuccess()
@@ -464,6 +468,12 @@ class SettingsViewModel(
                     _uiState.update { it.copy(isLoading = false) }
                 }
         }
+    }
+
+    private fun descriptorRejection(input: String): String? = when {
+        DescriptorUtils.isPrivateKey(input) ->
+            "Private keys are not supported. Please use a public key (xpub, zpub, etc.) or a full descriptor."
+        else -> DescriptorUtils.extendedKeyError(input)
     }
 
     private fun openDescriptorScanner() {
@@ -537,7 +547,7 @@ class SettingsViewModel(
 
     private fun rescan() {
         if (_uiState.value.descriptors.isEmpty() || _uiState.value.isRescanning) return
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(dispatchers.io) {
             florestaRpc.rescan().collect { result ->
                 result.onSuccess { data ->
                     // Optimistically reflect the running state; observeRescanState
@@ -556,7 +566,7 @@ class SettingsViewModel(
     }
 
     private fun exportLogs() {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(dispatchers.io) {
             val logFile = File(context.filesDir, "debug.log")
             if (!logFile.exists()) {
                 _uiState.update {
