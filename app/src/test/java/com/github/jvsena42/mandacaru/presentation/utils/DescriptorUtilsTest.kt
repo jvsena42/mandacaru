@@ -132,6 +132,41 @@ class DescriptorUtilsTest {
         assertEquals("", result)
     }
 
+    // --- sanitize / extendedKeyError ---
+
+    @Test
+    fun `sanitize drops whitespace a paste brings along`() {
+        assertEquals(realZpub, DescriptorUtils.sanitize("$realZpub\n"))
+        assertEquals(realZpub, DescriptorUtils.sanitize(" \t$realZpub \r\n"))
+    }
+
+    @Test
+    fun `zpub with a trailing newline is still converted and wrapped`() {
+        val result = DescriptorUtils.wrapDescriptorIfNeeded("$realZpub\n")
+        assertEquals(DescriptorUtils.wrapDescriptorIfNeeded(realZpub), result)
+        assertTrue(result.startsWith("wpkh(xpub"))
+        assertTrue(result.endsWith("/<0;1>/*)"))
+    }
+
+    @Test
+    fun `valid extended keys have no error`() {
+        assertEquals(null, DescriptorUtils.extendedKeyError(realZpub))
+        assertEquals(null, DescriptorUtils.extendedKeyError("$realZpub\n"))
+        assertEquals(null, DescriptorUtils.extendedKeyError("$realZpub/0/*"))
+    }
+
+    @Test
+    fun `full descriptors and unknown prefixes are left to the node`() {
+        assertEquals(null, DescriptorUtils.extendedKeyError("wpkh($realZpub/0/*)"))
+        assertEquals(null, DescriptorUtils.extendedKeyError("abcdef"))
+    }
+
+    @Test
+    fun `truncated or corrupted extended key is reported`() {
+        assertTrue(DescriptorUtils.extendedKeyError(realZpub.dropLast(1)) != null)
+        assertTrue(DescriptorUtils.extendedKeyError(realZpub.dropLast(1) + "X") != null)
+    }
+
     // --- isPrivateKey ---
 
     @Test
