@@ -64,6 +64,8 @@ data class Result(
     val rescanBlocksProcessed: Int? = null,
     @SerializedName("rescan_blocks_total")
     val rescanBlocksTotal: Int? = null,
+    @SerializedName("rescan_error")
+    val rescanError: String? = null,
 ) {
     /**
      * Fraction of known headers whose blocks are validated. Core's `verificationprogress` is
