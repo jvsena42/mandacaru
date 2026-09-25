@@ -20,6 +20,8 @@ import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.floresta.SyncPhase
 import com.github.jvsena42.mandacaru.domain.floresta.SyncSnapshot
 import com.github.jvsena42.mandacaru.domain.floresta.UtreexoBridgeAutoConnect
+import com.github.jvsena42.mandacaru.domain.floresta.RescanCompletionTracker
+import com.github.jvsena42.mandacaru.domain.floresta.RescanOutcome
 import com.github.jvsena42.mandacaru.domain.floresta.WalletRescanGate
 import com.github.jvsena42.mandacaru.domain.floresta.computeFilterSyncDecimal
 import com.github.jvsena42.mandacaru.domain.floresta.computeHeaderSyncProgress
@@ -56,6 +58,7 @@ class FlorestaService : Service() {
     @Volatile private var waitingForWifi = false
     private var startupSeedDone = false
     private val walletRescanGate = WalletRescanGate()
+    private val rescanCompletion = RescanCompletionTracker()
     private val rescanInFlight = AtomicBoolean(false)
 
     companion object {
@@ -236,6 +239,7 @@ class FlorestaService : Service() {
             ioScope.launch { utreexoBridgeAutoConnect.ensureUtreexoPeers() }
         }
 
+        settleTriggeredRescan(info)
         maybeTriggerWalletRescan(
             snapshot = snapshot,
             // Compact filters must be downloaded all the way to the tip before
@@ -278,8 +282,8 @@ class FlorestaService : Service() {
                 val result = florestaRpc.rescan().firstOrNull()
                 if (result?.isSuccess == true) {
                     walletRescanGate.onTriggered()
-                    preferencesDataSource.setBoolean(PreferenceKeys.WALLET_NEEDS_RESCAN, false)
-                    Log.i(TAG, "Wallet rescan triggered; flag cleared")
+                    rescanCompletion.onTriggered()
+                    Log.i(TAG, "Wallet rescan triggered; flag stays set until it completes")
                 } else {
                     Log.w(TAG, "rescan failed: ${result?.exceptionOrNull()?.message}")
                     giveUpOnRescanIfExhausted()
@@ -289,6 +293,25 @@ class FlorestaService : Service() {
                 giveUpOnRescanIfExhausted()
             } finally {
                 rescanInFlight.set(false)
+            }
+        }
+    }
+
+    /**
+     * Clears [PreferenceKeys.WALLET_NEEDS_RESCAN] only once the rescan we triggered
+     * is reported over without an error. One lost to a node restart is triggered
+     * again by the gate; one that failed counts against the gate's budget.
+     */
+    private suspend fun settleTriggeredRescan(info: BlockchainInfo) {
+        when (val outcome = rescanCompletion.onPoll(info.rescanInProgress, info.rescanError)) {
+            null -> Unit
+            RescanOutcome.Completed -> {
+                preferencesDataSource.setBoolean(PreferenceKeys.WALLET_NEEDS_RESCAN, false)
+                Log.i(TAG, "Wallet rescan completed; flag cleared")
+            }
+            is RescanOutcome.Failed -> {
+                Log.w(TAG, "Wallet rescan failed on the node: ${outcome.reason}")
+                giveUpOnRescanIfExhausted()
             }
         }
     }
