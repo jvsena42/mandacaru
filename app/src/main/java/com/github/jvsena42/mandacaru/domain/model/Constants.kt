@@ -19,9 +19,7 @@ object Constants {
 
     private val UTREEXO_BRIDGES: Map<String, List<String>> = mapOf(
         "BITCOIN" to listOf(
-            "45.77.242.77:8333",
-            "195.26.240.213:8433",
-            "1.228.21.110:8333",
+            "91.98.226.36:8335",
         ),
         "SIGNET" to listOf(
             "1.228.21.110:38333",
