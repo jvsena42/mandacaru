@@ -6,12 +6,21 @@ import kotlin.math.roundToInt
 private const val STALL_TOLERANCE_BLOCKS = 12
 private const val MIN_PEERS_AHEAD_FOR_STALL = 2
 
+/**
+ * The chain tip as the peers see it: the second-highest reported height when two or more
+ * peers report one, so a single peer announcing a bogus height can't move it.
+ */
+private fun peerTipEstimate(peers: List<PeerInfoResult>): Int? {
+    val heights = peers.map { it.initialHeight }.filter { it > 0 }.sortedDescending()
+    return heights.getOrNull(1) ?: heights.firstOrNull()
+}
+
 fun computeHeaderSyncProgress(
     ourHeight: Int,
     peers: List<PeerInfoResult>,
 ): Float? {
-    val tip = peers.maxOfOrNull { it.initialHeight } ?: return null
-    if (tip <= 0 || ourHeight <= 0) return null
+    val tip = peerTipEstimate(peers) ?: return null
+    if (ourHeight <= 0) return null
     val ratio = (ourHeight.toFloat() / tip.toFloat()).coerceIn(0f, 1f)
     return (ratio * 10000f).roundToInt() / 10000f
 }

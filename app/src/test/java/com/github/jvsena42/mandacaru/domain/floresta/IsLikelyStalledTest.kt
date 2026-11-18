@@ -35,7 +35,7 @@ class IsLikelyStalledTest {
                 progress = 1f,
                 ibd = true,
                 ourHeight = 17_904,
-                peers = listOf(peer(947_390)),
+                peers = listOf(peer(947_390), peer(947_391)),
             )
         )
     }
@@ -47,7 +47,7 @@ class IsLikelyStalledTest {
                 progress = 0.99f,
                 ibd = false,
                 ourHeight = 940_000,
-                peers = listOf(peer(947_000)),
+                peers = listOf(peer(947_000), peer(947_001)),
             )
         )
     }
@@ -60,7 +60,7 @@ class IsLikelyStalledTest {
                 progress = 1f,
                 ibd = false,
                 ourHeight = 946_995,
-                peers = listOf(peer(947_000)),
+                peers = listOf(peer(947_000), peer(947_001)),
             )
         )
     }
@@ -146,7 +146,7 @@ class IsLikelyStalledTest {
                 progress = 1f,
                 ibd = false,
                 ourHeight = 0,
-                peers = listOf(peer(947_000)),
+                peers = listOf(peer(947_000), peer(947_001)),
             )
         )
     }
