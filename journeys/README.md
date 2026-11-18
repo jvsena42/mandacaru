@@ -31,6 +31,12 @@ android layout --pretty
 Note: `android layout` reports the tag under the `resource-id` key (e.g.
 `"resource-id":"nav_settings"`).
 
+## Typing long text
+
+`adb shell input text` with a long payload can be corrupted when Gboard's stylus
+handwriting prompt pops up over the field. Disable it for the run with
+`adb shell settings put secure stylus_handwriting_enabled 0` (restore with `1`).
+
 ## Cold-start splash
 
 On a cold start the app shows a ~4-second splash before the Node screen appears. A
