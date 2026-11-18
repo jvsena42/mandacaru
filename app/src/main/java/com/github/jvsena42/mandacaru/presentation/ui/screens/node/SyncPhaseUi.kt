@@ -1,5 +1,6 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.node
 
+import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.domain.floresta.SyncPhase
@@ -22,6 +23,27 @@ fun SyncPhase.titleRes(): Int = when (this) {
     SyncPhase.FILTERS -> R.string.syncing_filters_title
     SyncPhase.WALLET_SCAN -> R.string.scanning_wallet_title
     SyncPhase.SYNCED -> R.string.sync
+}
+
+/** What is left of the current sync phase, as a count the user can relate to. */
+internal data class SyncRemaining(@param:PluralsRes val res: Int, val count: Int)
+
+/**
+ * The percentage counts from the genesis block, but the node starts from a recent snapshot, so it
+ * reads 99%+ for the whole catch-up. The remaining count says how much is actually left.
+ */
+internal fun syncRemaining(
+    phase: SyncPhase,
+    headerHeight: Int,
+    validatedBlocks: Int,
+    filterHeight: Int,
+): SyncRemaining? {
+    val (res, done) = when (phase) {
+        SyncPhase.BLOCKS -> R.plurals.sync_blocks_to_go to validatedBlocks
+        SyncPhase.FILTERS -> R.plurals.sync_filters_to_go to filterHeight
+        else -> return null
+    }
+    return (headerHeight - done).takeIf { it > 0 }?.let { SyncRemaining(res, it) }
 }
 
 internal data class SyncStepStates(
