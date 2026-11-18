@@ -80,8 +80,8 @@ tab, not just Node. It is **conditional**: it appears whenever notifications are
 user has not dismissed it, and it disappears by itself the moment the permission is granted — by
 the system dialog or from the settings page — with no timeout otherwise. Its **message changes
 after a denial**: it opens as the "Enable notifications to see when the node is running"
-invitation and escalates to a warning that Android may stop the node and cut wallets off from the
-Electrum server, so match on the resource-id rather than the text. The app never opens the
+invitation and escalates to the warning "Notifications are disabled, wallets can't access your
+Electrum server", so match on the resource-id rather than the text. The app never opens the
 permission dialog on its own; it opens only when the snackbar's action is tapped. That action
 reads "Enable" until a request is denied with no rationale left (Android's automatic "don't ask
 again", after two denials), at which point it becomes "Open settings" and launches the app's

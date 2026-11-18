@@ -9,14 +9,12 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.core.content.ContextCompat
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -62,6 +60,8 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -72,6 +72,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
 import com.github.jvsena42.mandacaru.R
@@ -86,8 +88,8 @@ import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
 import com.github.jvsena42.mandacaru.presentation.utils.rememberAdaptiveLayout
 import com.github.jvsena42.mandacaru.presentation.utils.rememberNotificationPermissionState
 import com.github.jvsena42.mandacaru.presentation.utils.restartApplication
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.KoinAndroidContext
 import org.koin.androidx.compose.koinViewModel
 
@@ -294,6 +296,9 @@ private fun MainScreen(
     val notificationPermission = rememberNotificationPermissionState()
     var notificationPromptDismissed by rememberSaveable { mutableStateOf(false) }
     val showNotificationPrompt = !notificationPermission.isGranted && !notificationPromptDismissed
+    // The root snackbars sit above the bottom bar, over the pages' last items.
+    var snackbarAreaHeight by remember { mutableStateOf(0.dp) }
+    val density = LocalDensity.current
 
     val useRail = rememberAdaptiveLayout().useRail
     val onSelectDestination: (Int) -> Unit = { index ->
@@ -314,7 +319,12 @@ private fun MainScreen(
     Scaffold(
         modifier = modifier,
         snackbarHost = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.onSizeChanged {
+                    snackbarAreaHeight = with(density) { it.height.toDp() }
+                },
+            ) {
                 AnimatedVisibility(
                     visible = showNotificationPrompt,
                     enter = fadeIn(),
@@ -341,7 +351,7 @@ private fun MainScreen(
             }
         }
     ) { innerPadding ->
-        val bottomBarPadding = innerPadding.calculateBottomPadding()
+        val bottomBarPadding = innerPadding.calculateBottomPadding() + snackbarAreaHeight
         Row(
             modifier = Modifier
                 .fillMaxSize()

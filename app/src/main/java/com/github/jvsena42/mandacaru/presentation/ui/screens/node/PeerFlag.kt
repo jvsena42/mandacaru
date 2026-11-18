@@ -1,7 +1,7 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.node
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,7 +25,7 @@ import com.github.jvsena42.mandacaru.presentation.utils.countryCodeToDisplayName
 @Composable
 internal fun PeerFlag(countryCode: String?, flag: String?) {
     Box(
-        modifier = Modifier.width(FLAG_SLOT_WIDTH),
+        modifier = Modifier.widthIn(min = FLAG_SLOT_WIDTH),
         contentAlignment = Alignment.CenterStart,
     ) {
         if (countryCode == null) return@Box
