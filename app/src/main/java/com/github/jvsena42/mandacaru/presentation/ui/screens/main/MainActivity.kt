@@ -74,9 +74,11 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
 import com.github.jvsena42.mandacaru.R
+import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.presentation.service.FlorestaService
 import com.github.jvsena42.mandacaru.presentation.ui.screens.blockchain.ScreenBlockchain
 import com.github.jvsena42.mandacaru.presentation.ui.screens.logs.ScreenDeveloperLogs
@@ -88,14 +90,20 @@ import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
 import com.github.jvsena42.mandacaru.presentation.utils.rememberAdaptiveLayout
 import com.github.jvsena42.mandacaru.presentation.utils.rememberNotificationPermissionState
 import com.github.jvsena42.mandacaru.presentation.utils.restartApplication
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.KoinAndroidContext
 import org.koin.androidx.compose.koinViewModel
 
 class MainActivity : ComponentActivity() {
 
     private var serviceStartRequested = false
+    private var restartRequested = false
+    private val daemon: FlorestaDaemon by inject()
 
     private val exitReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -132,7 +140,7 @@ class MainActivity : ComponentActivity() {
                 KoinAndroidContext {
                     MandacaruRoot(
                         showSplashOnStart = isColdStart,
-                        restartApplication = { restartApplication() },
+                        restartApplication = { stopNodeAndRestart() },
                     )
                 }
             }
@@ -160,8 +168,25 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Restarting kills the process, so the node is stopped first: killed mid-write, its chain
+     * database comes back corrupted and the next start has to reindex it.
+     */
+    private fun stopNodeAndRestart() {
+        if (restartRequested) return
+        restartRequested = true
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                withTimeoutOrNull(NODE_STOP_TIMEOUT_MS) { daemon.stop() }
+                    ?: Log.w(TAG, "Node did not stop in time; restarting anyway")
+            }
+            restartApplication()
+        }
+    }
+
     companion object {
         private const val TAG = "MainActivity"
+        private const val NODE_STOP_TIMEOUT_MS = 10_000L
     }
 }
 
