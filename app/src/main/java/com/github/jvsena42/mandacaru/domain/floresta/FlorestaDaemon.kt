@@ -3,6 +3,12 @@ package com.github.jvsena42.mandacaru.domain.floresta
 interface FlorestaDaemon {
     suspend fun start()
     suspend fun stop()
+
+    /**
+     * Stops the node before the process ends. Waits for a start in progress to finish rather
+     * than killing it mid-write, and no start runs after it: the process is going away.
+     */
+    suspend fun stopForExit() = stop()
     fun isRunning(): Boolean
 
     suspend fun dumpUtreexoState(): Result<String>
