@@ -14,6 +14,8 @@ import com.github.jvsena42.mandacaru.domain.model.Constants
 import com.github.jvsena42.mandacaru.presentation.utils.SnapshotCodec
 import com.github.jvsena42.mandacaru.presentation.utils.WalletBirthday
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
@@ -25,10 +27,18 @@ class FlorestaDaemonImpl(
     private val preferencesDataSource: PreferencesDataSource
 ) : FlorestaDaemon {
 
-    private var isRunning = false
+    @Volatile private var isRunning = false
     private var daemon: Florestad? = null
 
+    // The service can deliver two start commands back to back; without this both pass the
+    // isRunning check and the second start aborts the process inside the node.
+    private val lifecycle = Mutex()
+
     override suspend fun start() {
+        lifecycle.withLock { startLocked() }
+    }
+
+    private suspend fun startLocked() {
         if (isRunning) return
         runSuspendCatching {
             val pendingSnapshot = preferencesDataSource
@@ -87,6 +97,10 @@ class FlorestaDaemonImpl(
     }
 
     override suspend fun stop() {
+        lifecycle.withLock { stopLocked() }
+    }
+
+    private fun stopLocked() {
         if (!isRunning) return
         try {
             daemon?.stop()
