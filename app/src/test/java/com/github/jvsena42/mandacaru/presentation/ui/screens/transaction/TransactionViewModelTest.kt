@@ -68,7 +68,30 @@ class TransactionViewModelTest {
     }
 
     @Test
+    fun `pasted unsigned transaction is rejected without calling the node`() {
+        decoder.result = Result.failure(TransactionDecodeException("This transaction isn't fully signed"))
+
+        viewModel.onAction(TransactionAction.OnRawTxChanged("deadbeef"))
+        viewModel.onAction(TransactionAction.OnClickBroadcast)
+        dispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("This transaction isn't fully signed", viewModel.uiState.value.errorMessage)
+        assertTrue(rpc.sentRawTransactions.isEmpty())
+        assertFalse(viewModel.uiState.value.isBroadcasting)
+    }
+
+    @Test
+    fun `odd-length hex is rejected without calling the node`() {
+        viewModel.onAction(TransactionAction.OnRawTxChanged("abc"))
+        viewModel.onAction(TransactionAction.OnClickBroadcast)
+
+        assertEquals("Invalid hex format", viewModel.uiState.value.errorMessage)
+        assertTrue(rpc.sentRawTransactions.isEmpty())
+    }
+
+    @Test
     fun `valid hex is broadcast and the txid is surfaced`() {
+        decoder.result = Result.success(decodedTransaction())
         rpc.sendRawTransactionResult =
             Result.success(SendRawTransactionResponse(id = 1, jsonrpc = "2.0", result = "the-txid"))
 
@@ -85,6 +108,7 @@ class TransactionViewModelTest {
 
     @Test
     fun `broadcast failure surfaces the error`() {
+        decoder.result = Result.success(decodedTransaction())
         rpc.sendRawTransactionResult = Result.failure(RuntimeException("node rejected"))
 
         viewModel.onAction(TransactionAction.OnRawTxChanged("deadbeef"))
