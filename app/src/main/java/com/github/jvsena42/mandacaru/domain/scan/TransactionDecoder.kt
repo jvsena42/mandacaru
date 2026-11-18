@@ -11,7 +11,7 @@ interface TransactionDecoder {
 }
 
 /**
- * Turns a scanned payload into a broadcastable raw transaction. A PSBT (detected by its magic
+ * Turns a scanned or pasted payload into a broadcastable raw transaction. A PSBT (detected by its magic
  * bytes) is finalized and extracted, exposing its fee; a raw signed transaction is parsed directly
  * (its fee is unknown because the input amounts are not part of the serialization).
  *
@@ -31,7 +31,7 @@ class BdkTransactionDecoder : TransactionDecoder {
         val psbt = try {
             Psbt(Base64.getEncoder().encodeToString(payload))
         } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
-            throw TransactionDecodeException("Couldn't read the scanned PSBT.", e)
+            throw TransactionDecodeException("Couldn't read this PSBT.", e)
         }
         return psbt.use {
             val feeSats = runCatching { it.fee().toLong() }.getOrNull()
@@ -46,7 +46,7 @@ class BdkTransactionDecoder : TransactionDecoder {
         val finalized = psbt.finalize()
         if (!finalized.couldFinalize) {
             throw TransactionDecodeException(
-                "This PSBT isn't fully signed yet. Sign it on your signing device, then scan again.",
+                "This PSBT isn't fully signed yet. Sign it on your signing device first.",
             )
         }
         return finalized.psbt.use { finalPsbt ->
@@ -62,7 +62,7 @@ class BdkTransactionDecoder : TransactionDecoder {
         val tx = try {
             Transaction(payload)
         } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
-            throw TransactionDecodeException("Couldn't read the scanned transaction.", e)
+            throw TransactionDecodeException("Couldn't read this transaction.", e)
         }
         return tx.use {
             ensureFullySigned(it)
@@ -75,7 +75,7 @@ class BdkTransactionDecoder : TransactionDecoder {
         if (hasUnsignedInput) {
             throw TransactionDecodeException(
                 "This transaction isn't fully signed, so it can't be broadcast. " +
-                    "Sign it on your signing device, then scan again.",
+                    "Sign it on your signing device first.",
             )
         }
     }

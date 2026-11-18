@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.jvsena42.mandacaru.data.FlorestaRpc
 import com.github.jvsena42.mandacaru.domain.scan.QrTransactionScanner
 import com.github.jvsena42.mandacaru.domain.scan.ScanState
+import com.github.jvsena42.mandacaru.domain.scan.ScanTransport
 import com.github.jvsena42.mandacaru.domain.scan.TransactionDecoder
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -48,8 +49,7 @@ class TransactionViewModel(
             is TransactionAction.OnRawTxChanged -> {
                 _uiState.update { it.copy(rawTxHex = action.rawTx, broadcastResult = "") }
             }
-            TransactionAction.OnClickBroadcast ->
-                broadcastTransaction(_uiState.value.rawTxHex, clearInput = true)
+            TransactionAction.OnClickBroadcast -> broadcastPasted(_uiState.value.rawTxHex)
             TransactionAction.OnClickScan -> openScanner()
             TransactionAction.OnDismissScanner -> closeScanner()
             is TransactionAction.OnQrFrameScanned -> handleScannedFrame(action.payload)
@@ -186,6 +186,25 @@ class TransactionViewModel(
                 }
             }
         }
+    }
+
+    // The node accepts unsigned transactions (it has no UTXO set to check them against), so a
+    // pasted one goes through the same signed-ness check as a scanned one.
+    @OptIn(ExperimentalStdlibApi::class)
+    private fun broadcastPasted(rawHex: String) {
+        val hex = rawHex.trim()
+        if (hex.isEmpty()) return
+        if (!hex.matches(BROADCAST_REGEX) || hex.length % 2 != 0) {
+            _uiState.update { it.copy(errorMessage = "Invalid hex format") }
+            return
+        }
+        transactionDecoder.decode(hex.hexToByteArray(), ScanTransport.SINGLE)
+            .onSuccess { broadcastTransaction(it.rawHex, clearInput = true) }
+            .onFailure { error ->
+                _uiState.update {
+                    it.copy(errorMessage = error.message ?: "Couldn't read this transaction.")
+                }
+            }
     }
 
     private fun broadcastTransaction(rawHex: String, clearInput: Boolean) {
