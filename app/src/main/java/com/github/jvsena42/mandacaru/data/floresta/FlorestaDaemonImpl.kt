@@ -98,8 +98,10 @@ class FlorestaDaemonImpl(
             isRunning = true
         }.onFailure { e ->
             Log.e(TAG, "start error: ", e)
+            // runningDataDir stays: a start can fail after the node's RPC server is already
+            // up (Electrum setup comes later), and clearing it would turn every request into
+            // a 401 while that server still answers.
             isRunning = false
-            runningDataDir = null
         }
     }
 
