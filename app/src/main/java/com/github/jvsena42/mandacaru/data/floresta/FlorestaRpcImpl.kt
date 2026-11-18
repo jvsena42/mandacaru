@@ -176,6 +176,10 @@ class FlorestaRpcImpl(
             .build()
 
         client.newCall(request).execute().use { response ->
+            if (response.code == HTTP_UNAUTHORIZED) {
+                @Suppress("TooGenericExceptionThrown")
+                throw Exception("Node RPC rejected the credentials (is the node still starting?)")
+            }
             val body = response.body.string()
             Log.d(TAG, "Response ($method): $body")
             val json = JSONObject(body)
@@ -204,6 +208,7 @@ class FlorestaRpcImpl(
     private companion object {
         private const val TAG = "FlorestaRpcImpl"
         private const val VERBOSE = 1
+        private const val HTTP_UNAUTHORIZED = 401
     }
 
 }
