@@ -192,7 +192,8 @@ class TransactionViewModel(
     // pasted one goes through the same signed-ness check as a scanned one.
     @OptIn(ExperimentalStdlibApi::class)
     private fun broadcastPasted(rawHex: String) {
-        val hex = rawHex.trim()
+        // Hex copied from a terminal or a chat often arrives wrapped across lines
+        val hex = rawHex.filterNot { it.isWhitespace() }
         if (hex.isEmpty()) return
         if (!hex.matches(BROADCAST_REGEX) || hex.length % 2 != 0) {
             _uiState.update { it.copy(errorMessage = "Invalid hex format") }
