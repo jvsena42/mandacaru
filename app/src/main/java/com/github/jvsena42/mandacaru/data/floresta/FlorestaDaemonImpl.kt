@@ -29,7 +29,7 @@ class FlorestaDaemonImpl(
 
     @Volatile private var isRunning = false
     private var daemon: Florestad? = null
-    private var runningDataDir: String? = null
+    @Volatile private var runningDataDir: String? = null
 
     // The service can deliver two start commands back to back; without this both pass the
     // isRunning check and the second start aborts the process inside the node.
@@ -90,13 +90,16 @@ class FlorestaDaemonImpl(
                 userAgent = userAgent,
             )
             daemon = Florestad.fromConfig(config)
-            daemon?.start()
+            // Published before the blocking start so requests authenticate as soon as the
+            // node has written its cookie, not only once start() returns.
             runningDataDir = effectiveDataDir
+            daemon?.start()
             Log.i(TAG, "start: Floresta running (snapshotSource=$snapshotSource)")
             isRunning = true
         }.onFailure { e ->
             Log.e(TAG, "start error: ", e)
             isRunning = false
+            runningDataDir = null
         }
     }
 
