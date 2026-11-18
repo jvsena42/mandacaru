@@ -18,9 +18,10 @@ import com.github.jvsena42.mandacaru.presentation.utils.FlagGlyphSupport
 import com.github.jvsena42.mandacaru.presentation.utils.countryCodeToDisplayName
 
 /**
- * A peer's country flag. The slot keeps a fixed width so addresses stay column-aligned whether
- * or not a peer resolved, and renders nothing at all for private, onion, or unknown peers —
- * including before the GeoIP database has been downloaded.
+ * A peer's country flag. The slot has a minimum width so addresses stay column-aligned whether
+ * or not a peer resolved, and grows with the glyph at large font scales. It renders nothing at
+ * all for private, onion, or unknown peers — including before the GeoIP database has been
+ * downloaded.
  */
 @Composable
 internal fun PeerFlag(countryCode: String?, flag: String?) {
