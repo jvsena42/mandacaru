@@ -6,7 +6,10 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
+import android.os.Process
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.toColorInt
@@ -29,7 +32,9 @@ import com.github.jvsena42.mandacaru.domain.floresta.computeRescanProgressDecima
 import com.github.jvsena42.mandacaru.domain.floresta.isLikelyStalled
 import com.github.jvsena42.mandacaru.domain.floresta.phase
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.PeerInfoResult
+import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.Result as BlockchainInfo
 import com.github.jvsena42.mandacaru.presentation.ui.screens.main.MainActivity
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -42,8 +47,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.android.ext.android.inject
-import java.util.concurrent.atomic.AtomicBoolean
-import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.Result as BlockchainInfo
 
 class FlorestaService : Service() {
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -53,6 +56,7 @@ class FlorestaService : Service() {
     private val preferencesDataSource: PreferencesDataSource by inject()
     private val networkPolicyManager: NetworkPolicyManager by inject()
     private val isStopping = AtomicBoolean(false)
+    private val exitProcessOnDestroy = AtomicBoolean(false)
     private var notificationPollingJob: Job? = null
     private var wifiStateJob: Job? = null
     @Volatile private var waitingForWifi = false
@@ -68,6 +72,7 @@ class FlorestaService : Service() {
         private const val CHANNEL_NAME = "Mandacaru Service"
 
         const val ACTION_STOP_SERVICE = "com.github.jvsena42.mandacaru.ACTION_STOP_SERVICE"
+        private const val EXIT_GRACE_MS = 500L
         const val ACTION_EXIT_APP = "com.github.jvsena42.mandacaru.ACTION_EXIT_APP"
         private const val STOP_TIMEOUT_MS = 10_000L
         private const val NOTIFICATION_POLL_INTERVAL_MS = 10_000L
@@ -415,7 +420,8 @@ class FlorestaService : Service() {
             // Send broadcast to close activities
             sendBroadcast(Intent(ACTION_EXIT_APP).setPackage(packageName))
 
-            // Stop foreground service and remove notification
+            // Stop foreground service and remove notification; onDestroy ends the process.
+            exitProcessOnDestroy.set(true)
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
         }
@@ -497,6 +503,16 @@ class FlorestaService : Service() {
             }
         }
         ioScope.cancel()
+        if (exitProcessOnDestroy.get()) {
+            // The node's runtime, listeners and global logger live as long as the process and
+            // can't be torn down from Kotlin, so a relaunch into this process could not start a
+            // second node. "Stop" therefore ends the process once the activities have closed.
+            // Posted on the main looper: ioScope is cancelled above.
+            Handler(Looper.getMainLooper()).postDelayed(
+                { Process.killProcess(Process.myPid()) },
+                EXIT_GRACE_MS,
+            )
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
