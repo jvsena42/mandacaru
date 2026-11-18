@@ -4,6 +4,7 @@ import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.PeerInfoR
 import kotlin.math.roundToInt
 
 private const val STALL_TOLERANCE_BLOCKS = 12
+private const val MIN_PEERS_AHEAD_FOR_STALL = 2
 
 fun computeHeaderSyncProgress(
     ourHeight: Int,
@@ -24,6 +25,9 @@ fun computeHeaderSyncProgress(
  * Floresta computes `progress` as `validated / height`, so when both numbers
  * stall together (e.g. `flat_chain_store` `IndexIsFull` on flaky storage), the
  * daemon reports 100% even though headers never reached the tip.
+ *
+ * At least two peers must report a height past the tolerance: a single peer can
+ * announce any height, and one doing so must not tell the user to reinstall.
  */
 fun isLikelyStalled(
     progress: Float,
@@ -31,8 +35,7 @@ fun isLikelyStalled(
     ourHeight: Int,
     peers: List<PeerInfoResult>,
 ): Boolean {
-    if (ibd || progress < 1f) return false
-    val peerTip = peers.maxOfOrNull { it.initialHeight } ?: return false
-    if (peerTip <= 0 || ourHeight <= 0) return false
-    return ourHeight + STALL_TOLERANCE_BLOCKS < peerTip
+    if (ibd || progress < 1f || ourHeight <= 0) return false
+    val peersAhead = peers.count { it.initialHeight > ourHeight + STALL_TOLERANCE_BLOCKS }
+    return peersAhead >= MIN_PEERS_AHEAD_FOR_STALL
 }

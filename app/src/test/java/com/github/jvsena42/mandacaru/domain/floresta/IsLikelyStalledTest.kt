@@ -90,14 +90,38 @@ class IsLikelyStalledTest {
     }
 
     @Test
-    fun `uses the highest peer initial height as the tip estimate`() {
-        // One outlier peer is far ahead — that's what we want to compare against.
+    fun `one peer announcing a far higher height is not enough`() {
+        // Seen on mainnet: a synced node at 976_471 and one peer claiming 982_541.
+        assertFalse(
+            isLikelyStalled(
+                progress = 1f,
+                ibd = false,
+                ourHeight = 976_471,
+                peers = listOf(peer(976_471), peer(976_470), peer(982_541)),
+            )
+        )
+    }
+
+    @Test
+    fun `stalled when two peers are past the tolerance`() {
         assertTrue(
             isLikelyStalled(
                 progress = 1f,
                 ibd = false,
                 ourHeight = 100_000,
-                peers = listOf(peer(100_001), peer(100_005), peer(947_000)),
+                peers = listOf(peer(100_001), peer(947_000), peer(947_001)),
+            )
+        )
+    }
+
+    @Test
+    fun `not stalled with a single peer far ahead and no other peer`() {
+        assertFalse(
+            isLikelyStalled(
+                progress = 1f,
+                ibd = false,
+                ourHeight = 17_904,
+                peers = listOf(peer(947_000)),
             )
         )
     }
