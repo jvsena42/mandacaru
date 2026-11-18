@@ -88,6 +88,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -419,6 +420,12 @@ fun ScreenNode(
                         rescanProgressPercentage = uiState.rescanProgressPercentage,
                         rescanBlocksProcessed = uiState.rescanBlocksProcessed,
                         rescanBlocksTotal = uiState.rescanBlocksTotal,
+                        remaining = syncRemaining(
+                            phase = syncPhase,
+                            headerHeight = uiState.headerHeightRaw,
+                            validatedBlocks = uiState.validatedBLocks,
+                            filterHeight = uiState.filterHeightRaw,
+                        ),
                     )
                 }
                 item { NetworkInfoCard(uiState = uiState) }
@@ -883,6 +890,7 @@ private fun SyncProgressCard(
     rescanProgressPercentage: String,
     rescanBlocksProcessed: Int,
     rescanBlocksTotal: Int,
+    remaining: SyncRemaining?,
 ) {
     val inputs = SyncProgressInputs(
         isStalled = isStalled,
@@ -957,6 +965,19 @@ private fun SyncProgressCard(
                     ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                )
+            } else if (remaining != null && !isStalled) {
+                Spacer(modifier = Modifier.height(8.dp))
+                val numberFormat = remember { NumberFormat.getNumberInstance() }
+                Text(
+                    pluralStringResource(
+                        remaining.res,
+                        remaining.count,
+                        numberFormat.format(remaining.count),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                    modifier = Modifier.testTag("node_sync_remaining"),
                 )
             }
         }

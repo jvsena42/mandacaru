@@ -97,6 +97,7 @@ two prompts cannot overlap. Reset it for a journey with
 | resource-id              | element                         |
 |-------------------------|---------------------------------|
 | `node_sync_percentage`  | sync progress percentage        |
+| `node_sync_remaining`   | "N blocks/filters to go" under the progress bar, during block and filter sync only |
 | `node_network`          | network value                   |
 | `node_peer_count`       | number-of-peers value           |
 | `node_difficulty`       | difficulty value                |
