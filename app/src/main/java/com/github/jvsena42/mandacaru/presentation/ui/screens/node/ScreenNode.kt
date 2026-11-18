@@ -1243,7 +1243,7 @@ internal fun PeerItem(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             PeerFlag(countryCode = peer.countryCode, flag = peer.flag)

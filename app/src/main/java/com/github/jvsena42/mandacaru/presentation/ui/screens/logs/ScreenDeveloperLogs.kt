@@ -32,8 +32,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -108,16 +112,16 @@ private fun ScreenDeveloperLogs(
         }
     }
 
-    // Keep the newest line in view as logs stream in, but only while the user is
-    // already at the bottom — `layoutInfo` here still reflects the pre-update
-    // layout, so it tells us whether they were following the tail.
+    // Open on the newest line and keep it in view as logs stream in, until the user
+    // scrolls away from the bottom; scrolling back down resumes following.
+    var followTail by rememberSaveable { mutableStateOf(true) }
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.isScrollInProgress to !listState.canScrollForward }
+            .collect { (userScrolling, atBottom) -> if (userScrolling) followTail = atBottom }
+    }
     LaunchedEffect(uiState.lines) {
         val lines = uiState.lines
-        if (lines.isEmpty()) return@LaunchedEffect
-        val info = listState.layoutInfo
-        val lastVisible = info.visibleItemsInfo.lastOrNull()?.index ?: -1
-        val wasAtBottom = lastVisible == -1 || lastVisible >= info.totalItemsCount - 1
-        if (wasAtBottom) listState.scrollToItem(lines.lastIndex)
+        if (lines.isNotEmpty() && followTail) listState.scrollToItem(lines.lastIndex)
     }
 
     Scaffold(

@@ -19,7 +19,7 @@
         <action>Verify the node started despite the missing permission: `adb shell dumpsys activity services com.github.jvsena42.mandacaru` lists FlorestaService as running, and the Node tab shows real values rather than placeholders — node_network reads a network name (e.g. BITCOIN) and node_peer_count is above zero. Do not assert on node_sync_percentage here; it is absent during the header-sync phase. Poll for up to 30 seconds, since peers take a few seconds to connect.</action>
         <action>Verify the enable-notifications snackbar (snackbar_enable_notifications) is present</action>
         <action>Tap the "Enable" action on the snackbar (by text) and tap "Don't allow" on the system permission dialog (by text)</action>
-        <action>Verify snackbar_enable_notifications is still present, its action is still "Enable", and its message has escalated to the warning about Android stopping the node and wallets losing access to the Electrum server</action>
+        <action>Verify snackbar_enable_notifications is still present, its action is still "Enable", and its message has escalated to the warning "Notifications are disabled, wallets can't access your Electrum server" (target by text)</action>
         <action>Tap the "Enable" action again (by text) and tap "Don't allow" on the system permission dialog a second time — Android now auto-applies "don't ask again"</action>
         <action>Verify the snackbar action label has changed to "Open settings" (by text)</action>
         <action>Tap "Open settings" (by text) and verify the system app-details settings screen for Mandacaru opens</action>
