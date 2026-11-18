@@ -13,7 +13,7 @@
         <action>Type "wpkh([73c5da0a/84h/0h/0h]xpub6CFy3kRXorC3NMTt8qrsY9ucUfxVLXyFQ49JSLm3iEG5gfAmWewYFzjNYFgRiCjoB9WWEuJQiyYGCdZvUTwPEUPL9pPabT8bkbiD9Po47XG/0/*)" into the descriptor field (input_descriptor)</action>
         <action>Tap the Update descriptor button (button_update_descriptor)</action>
         <action>Verify the descriptors list shows the loaded descriptor and the app has not crashed</action>
-        <action>Tap the loaded descriptor row (button_share_descriptor; if more than one row is present, target the first) to open the share sheet</action>
+        <action>Tap the loaded descriptor row (button_share_descriptor; if more than one row is present, target the one whose descriptor ends in "/0/*)") to open the share sheet</action>
         <action>Verify the share sheet is open showing two tabs, "Descriptor" and "Extended key" (target by text), with the Descriptor tab selected by default and a QR code visible</action>
         <action>Verify the "Modern wallets like Sparrow, BlueWallet, Specter" description is shown under the Descriptor tab (target by text)</action>
         <action>Tap the "Extended key" tab (target by text)</action>

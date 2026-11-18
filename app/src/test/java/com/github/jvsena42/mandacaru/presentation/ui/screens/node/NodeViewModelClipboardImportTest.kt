@@ -137,6 +137,7 @@ class NodeViewModelClipboardImportTest {
         override suspend fun start() = Unit
         override suspend fun stop() { stopped = true }
         override fun isRunning(): Boolean = false
+        override fun rpcCookieFile(): java.io.File? = null
         override suspend fun dumpUtreexoState(): Result<String> = Result.success("")
         override suspend fun prepareForSnapshotImport(): Result<Unit> {
             prepared = true

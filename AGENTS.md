@@ -114,7 +114,7 @@ The app communicates with Rust code via UniFFI-generated bindings:
 1. `FlorestaService.onStartCommand()` triggers `FlorestaDaemon.start()`
 2. `FlorestaDaemonImpl.start()` reads network preference, creates `Config`, calls FFI
 3. Rust daemon initializes Bitcoin node with Utreexo, binds RPC server to `127.0.0.1:<port>`
-4. Android app communicates via JSON-RPC over HTTP
+4. Android app communicates via JSON-RPC over HTTP, authenticating with the `user:password` cookie the node writes to `<datadir>/.cookie` on every start (`FlorestaRpcImpl` re-reads it per request; without it the server answers 401)
 
 ### Configuration by Network
 

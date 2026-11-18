@@ -29,6 +29,7 @@ class FlorestaDaemonImpl(
 
     @Volatile private var isRunning = false
     private var daemon: Florestad? = null
+    private var runningDataDir: String? = null
 
     // The service can deliver two start commands back to back; without this both pass the
     // isRunning check and the second start aborts the process inside the node.
@@ -90,6 +91,7 @@ class FlorestaDaemonImpl(
             )
             daemon = Florestad.fromConfig(config)
             daemon?.start()
+            runningDataDir = effectiveDataDir
             Log.i(TAG, "start: Floresta running (snapshotSource=$snapshotSource)")
             isRunning = true
         }.onFailure { e ->
@@ -118,10 +120,13 @@ class FlorestaDaemonImpl(
         } finally {
             isRunning = false
             daemon = null
+            runningDataDir = null
         }
     }
 
     override fun isRunning(): Boolean = isRunning
+
+    override fun rpcCookieFile(): File? = runningDataDir?.let { File(it, RPC_COOKIE_FILE) }
 
     override suspend fun dumpUtreexoState(): Result<String> = withContext(Dispatchers.IO) {
         val d = daemon
@@ -208,5 +213,6 @@ class FlorestaDaemonImpl(
 
     companion object {
         private const val TAG = "FlorestaDaemonImpl"
+        private const val RPC_COOKIE_FILE = ".cookie"
     }
 }

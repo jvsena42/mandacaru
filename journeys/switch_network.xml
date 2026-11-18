@@ -1,15 +1,22 @@
 <journey name="Switch network">
     <description>
-        Changes the active network in Settings to Signet and verifies the app restarts
-        and comes back up on the Node screen.
+        Changes the active network in Settings to Signet and back, verifying each restart
+        brings the node up on the new network's data dir, RPC port and RPC cookie (the
+        cookie lives in the data dir: files/.cookie on mainnet, files/signet/.cookie on
+        signet), and that mainnet resumes where it left off.
     </description>
     <actions>
         <action>Launch the Mandacaru app and wait for the splash screen to dismiss (poll until nav_node is present)</action>
+        <action>Record the mainnet header height (getblockchaininfo "headers", with the README's RPC recipe on port 8332)</action>
         <action>Tap the Settings navigation item (nav_settings)</action>
         <action>Scroll to the Advanced features switch (toggle_advanced_features) and turn it on if it is off — the Network section only renders while it is on</action>
         <action>Expand the Network section if it is collapsed</action>
         <action>Tap the network selector field (input_network)</action>
         <action>Tap the SIGNET option in the dropdown (target it by its text)</action>
         <action>Verify the app restarts and the Node navigation item (nav_node) is selected once it is back up</action>
+        <action>Verify node_network reads SIGNET and, within 30 seconds, node_peer_count is above zero</action>
+        <action>Cross-check on signet: `adb forward tcp:38332 tcp:38332`, then call getblockchaininfo on port 38332 authenticated with files/signet/.cookie; verify "chain" is "signet"</action>
+        <action>Switch back: in Settings, tap input_network and choose BITCOIN (by text); wait for the restart and for nav_node</action>
+        <action>Verify node_network reads BITCOIN and getblockchaininfo on port 8332 (cookie re-read from files/.cookie — it is a new one) reports "headers" at or above the height recorded at the start</action>
     </actions>
 </journey>

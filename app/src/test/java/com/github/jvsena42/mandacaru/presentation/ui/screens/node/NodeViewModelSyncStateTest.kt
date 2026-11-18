@@ -138,6 +138,7 @@ class NodeViewModelSyncStateTest {
         override suspend fun start() = Unit
         override suspend fun stop() = Unit
         override fun isRunning(): Boolean = false
+        override fun rpcCookieFile(): java.io.File? = null
         override suspend fun dumpUtreexoState(): Result<String> = Result.success("")
         override suspend fun prepareForSnapshotImport(): Result<Unit> = Result.success(Unit)
     }

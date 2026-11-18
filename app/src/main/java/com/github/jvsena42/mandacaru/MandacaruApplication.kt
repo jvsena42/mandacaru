@@ -122,7 +122,14 @@ val dataModule = module {
             preferencesDataSource = get()
         )
     }
-    single<FlorestaRpc> { FlorestaRpcImpl(gson = Gson(), preferencesDataSource = get()) }
+    single<FlorestaRpc> {
+        val daemon: FlorestaDaemon = get()
+        FlorestaRpcImpl(
+            gson = Gson(),
+            preferencesDataSource = get(),
+            rpcCookieFile = daemon::rpcCookieFile,
+        )
+    }
     single<AppUpdateRepository> {
         AppUpdateRepositoryImpl(gson = Gson(), preferencesDataSource = get())
     }

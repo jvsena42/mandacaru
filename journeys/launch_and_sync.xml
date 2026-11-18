@@ -9,5 +9,7 @@
         <action>Verify a sync progress percentage (node_sync_percentage) is displayed</action>
         <action>Verify the number of peers (node_peer_count) is displayed</action>
         <action>Verify the network name (node_network) is displayed</action>
+        <action>Verify the RPC cookie exists (`adb shell run-as com.github.jvsena42.mandacaru ls files/.cookie`) and an authenticated getblockchaininfo succeeds (README recipe), while an unauthenticated one returns HTTP 401</action>
+        <action>Verify the app's own RPC calls succeed: within 30 seconds of launch `adb logcat -d -s FlorestaRpcImpl` shows "Response (getblockchaininfo)" lines, and no "RPC request error" lines appear after the first successful response (one or two before the node is up are expected)</action>
     </actions>
 </journey>
