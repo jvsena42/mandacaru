@@ -106,6 +106,18 @@ class TransactionViewModelTest {
         assertFalse(viewModel.uiState.value.isBroadcasting)
     }
 
+    @OptIn(ExperimentalStdlibApi::class)
+    @Test
+    fun `hex wrapped across lines is decoded without the line breaks`() {
+        decoder.result = Result.success(decodedTransaction())
+
+        viewModel.onAction(TransactionAction.OnRawTxChanged(" dead\nbe ef\r\n"))
+        viewModel.onAction(TransactionAction.OnClickBroadcast)
+
+        assertEquals("deadbeef", decoder.lastPayload?.toHexString())
+        assertTrue(viewModel.uiState.value.errorMessage.isNullOrEmpty())
+    }
+
     @Test
     fun `broadcast failure surfaces the error`() {
         decoder.result = Result.success(decodedTransaction())
@@ -224,6 +236,11 @@ class TransactionViewModelTest {
         var result: kotlin.Result<DecodedTransaction> =
             Result.failure(TransactionDecodeException("not set"))
 
-        override fun decode(payload: ByteArray, transport: ScanTransport) = result
+        var lastPayload: ByteArray? = null
+
+        override fun decode(payload: ByteArray, transport: ScanTransport): kotlin.Result<DecodedTransaction> {
+            lastPayload = payload
+            return result
+        }
     }
 }
