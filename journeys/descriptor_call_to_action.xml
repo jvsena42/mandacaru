@@ -4,9 +4,12 @@
         on the Node tab, an empty state on the Transactions tab, and a deep link that lands on
         Settings with the Descriptors section already expanded and scrolled into view. Requires a
         clean install — descriptors persist in the node's data directory, so uninstall the app
-        first if a descriptor has ever been loaded on this network.
+        first if a descriptor has ever been loaded on this network. The notification permission
+        must be granted: while the enable-notifications snackbar shows, snackbar_add_descriptor
+        is deliberately suppressed.
     </description>
     <actions>
+        <action>Grant the notification permission (`adb shell pm grant com.github.jvsena42.mandacaru android.permission.POST_NOTIFICATIONS`) so the enable-notifications snackbar cannot suppress the descriptor snackbar</action>
         <action>Launch the Mandacaru app and wait for the splash screen to dismiss (poll until nav_node is present)</action>
         <action>Poll for up to 30 seconds until snackbar_add_descriptor appears on the Node tab; it is absent until the node's RPC server answers listdescriptors twice, so do not fail on the first layout dump</action>
         <action>Dismiss the snackbar with its ✕ (target the "Dismiss" content-description) and verify snackbar_add_descriptor disappears without a descriptor being loaded</action>
@@ -15,7 +18,7 @@
         <action>Tap the Add descriptor button (button_add_descriptor)</action>
         <action>Verify nav_settings is now the selected navigation item and the descriptor field (input_descriptor) is visible without scrolling</action>
         <action>Tap the descriptor field (input_descriptor)</action>
-        <action>Type "wpkh([73c5da0a/84h/1h/0h]tpubDC8msFGeGuwnKG9Upg7DM2b4DaRqg3CUZa5g8v2SRQ6K4NSkxUgd7HsL2XVWbVm39yBA4LgAFKvDsdsBPzMw3RGYbjeMs9dGcTLeUw6f7c/0/*)" into the descriptor field (input_descriptor)</action>
+        <action>Type "wpkh([73c5da0a/84h/0h/0h]xpub6CFy3kRXorC3NMTt8qrsY9ucUfxVLXyFQ49JSLm3iEG5gfAmWewYFzjNYFgRiCjoB9WWEuJQiyYGCdZvUTwPEUPL9pPabT8bkbiD9Po47XG/1/*)" into the descriptor field (input_descriptor)</action>
         <action>Tap the Update descriptor button (button_update_descriptor)</action>
         <action>Verify a "Descriptor loaded successfully" snackbar appears (target by text)</action>
         <action>Tap the Node navigation item (nav_node)</action>

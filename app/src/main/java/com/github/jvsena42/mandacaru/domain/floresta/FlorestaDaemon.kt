@@ -1,5 +1,7 @@
 package com.github.jvsena42.mandacaru.domain.floresta
 
+import java.io.File
+
 interface FlorestaDaemon {
     suspend fun start()
     suspend fun stop()
@@ -10,6 +12,9 @@ interface FlorestaDaemon {
      */
     suspend fun stopForExit() = stop()
     fun isRunning(): Boolean
+
+    /** The JSON-RPC cookie the running node wrote, or null while it isn't running. */
+    fun rpcCookieFile(): File?
 
     suspend fun dumpUtreexoState(): Result<String>
 

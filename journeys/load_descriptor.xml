@@ -8,10 +8,13 @@
         <action>Launch the Mandacaru app and wait for the splash screen to dismiss (poll until nav_node is present)</action>
         <action>Tap the Settings navigation item (nav_settings)</action>
         <action>Expand the Descriptors section if it is collapsed</action>
+        <action>Read the network (node_network on the Node tab, or input_network in Settings) — the key must match it, since a testnet key is rejected on mainnet</action>
         <action>Tap the descriptor field (input_descriptor)</action>
-        <action>Type "wpkh([73c5da0a/84h/1h/0h]tpubDC8msFGeGuwnKG9Upg7DM2b4DaRqg3CUZa5g8v2SRQ6K4NSkxUgd7HsL2XVWbVm39yBA4LgAFKvDsdsBPzMw3RGYbjeMs9dGcTLeUw6f7c/0/*)" into the descriptor field (input_descriptor)</action>
+        <action>If the network is BITCOIN, type "wpkh([73c5da0a/84h/0h/0h]xpub6CatWdiZiodmUeTDp8LT5or8nmbKNcuyvz7WyksVFkKB4RHwCD3XyuvPEbvqAQY3rAPshWcMLoP2fMFMKHPJ4ZeZXYVUhLv1VMrjPC7PW6V/0/*)" (the BIP84 test-vector wallet, which has mainnet history). Otherwise type "wpkh([73c5da0a/84h/1h/0h]tpubDC8msFGeGuwnKG9Upg7DM2b4DaRqg3CUZa5g8v2SRQ6K4NSkxUgd7HsL2XVWbVm39yBA4LgAFKvDsdsBPzMw3RGYbjeMs9dGcTLeUw6f7c/0/*)"</action>
         <action>Tap the Update descriptor button (button_update_descriptor)</action>
-        <action>Verify the descriptors list shows the loaded descriptor or a confirmation, and the app has not crashed</action>
+        <action>Verify a "Descriptor loaded successfully" snackbar appears (target by text) and the descriptors list shows the loaded descriptor</action>
+        <action>Verify the Rescan button reads "Rescanning…" (target by text): loading a descriptor starts a wallet rescan, which waits for the filters while the node is still syncing</action>
+        <action>Cross-check with the README's cookie-authenticated RPC recipe: listdescriptors contains the descriptor, and getblockchaininfo has rescan_in_progress true and rescan_error null (or absent)</action>
         <action>Tap the loaded descriptor row (button_share_descriptor; if more than one row is present, target the first) to open the share sheet</action>
         <action>On the share sheet's default "Descriptor" tab, tap the Copy button (target by the "Copy" text; the sheet renders in a separate window so tab/button testTags do not surface)</action>
         <action>Verify a "Descriptor copied to clipboard" snackbar appears (target by text) and the app has not crashed</action>

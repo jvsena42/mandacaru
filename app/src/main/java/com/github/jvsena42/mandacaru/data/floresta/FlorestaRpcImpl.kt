@@ -24,16 +24,19 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import okhttp3.Credentials
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 import java.util.concurrent.TimeUnit
 
 class FlorestaRpcImpl(
     private val gson: Gson,
-    private val preferencesDataSource: PreferencesDataSource
+    private val preferencesDataSource: PreferencesDataSource,
+    private val rpcCookieFile: () -> File?,
 ) : FlorestaRpc {
 
     private val client by lazy {
@@ -169,6 +172,7 @@ class FlorestaRpcImpl(
         val request = okhttp3.Request.Builder()
             .url(endpoint)
             .post(requestBody)
+            .apply { rpcAuthorization()?.let { header("Authorization", it) } }
             .build()
 
         client.newCall(request).execute().use { response ->
@@ -187,6 +191,14 @@ class FlorestaRpcImpl(
         }
     }.onFailure { e ->
         Log.e(TAG, "RPC request error:", e)
+    }
+
+    // The node writes a fresh cookie on every start, so it is read per request.
+    private fun rpcAuthorization(): String? {
+        val cookie = rpcCookieFile()?.takeIf { it.isFile } ?: return null
+        val (user, password) = cookie.readText().trim().split(':', limit = 2)
+            .takeIf { it.size == 2 } ?: return null
+        return Credentials.basic(user, password)
     }
 
     private companion object {

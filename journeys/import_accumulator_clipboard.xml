@@ -24,6 +24,8 @@
         <action>Open the import card on the Node screen and tap its "Paste" entry to open the paste sheet</action>
         <action>Tap the "Paste from clipboard" button inside the sheet (by text)</action>
         <action>Verify the payload field becomes populated (valid clipboard) or an inline error "Clipboard does not contain a valid accumulator" is shown (empty/invalid clipboard), and the app has not crashed</action>
+        <action>If the clipboard could not be set, type the payload instead: tap the payload field and `adb shell input text` the BUILTIN_UTREEXO_SNAPSHOT_COMPACT value from app/src/main/java/com/github/jvsena42/mandacaru/domain/model/Constants.kt (it is long; wait for the input to finish)</action>
         <action>Tap the "Import" button (by text) and verify the import confirmation dialog appears showing the snapshot network and height</action>
+        <action>Confirm the import (by text); verify the app restarts, nav_node comes back, and an authenticated getblockchaininfo succeeds with the new files/.cookie (the node writes a fresh one on every start)</action>
     </actions>
 </journey>

@@ -10,8 +10,8 @@ all other steps are interactions.
 
 ## Prerequisites
 
-- One ARM64 (`arm64-v8a`) device or emulator connected — the bundled Rust `.so` is
-  ARM64-only.
+- One ARM64 (`arm64-v8a`) device or x86_64 emulator connected — the Rust `.so` is
+  built for both ABIs (32-bit ABIs are not).
 - A debug build installed: `./gradlew installDebug`.
 - The `android-cli` skill available to the agent (`android layout`, `android screen`,
   `adb shell input`).
@@ -168,7 +168,7 @@ action) on open. The snackbar is part of the Scaffold subtree, so its text and a
 | `button_scan_broadcast`  | "Scan to broadcast"           |
 | `button_add_descriptor`  | "Add descriptor" in the no-wallet empty state (see below) |
 
-`button_add_descriptor` follows the same conditionality as `banner_add_descriptor`: it replaces
+`button_add_descriptor` follows the same conditionality as `snackbar_add_descriptor`: it replaces
 the grey "Only transactions from your loaded wallet descriptors can be found" hint at the bottom
 of the lookup card while no descriptor is loaded, and reverts to that hint once one is. It
 navigates to Settings exactly like the Node banner.
@@ -249,8 +249,15 @@ forward the RPC port and query the daemon directly:
 
 ```bash
 adb forward tcp:8332 tcp:8332
-curl -s -X POST http://127.0.0.1:8332 \
+COOKIE=$(adb shell run-as com.github.jvsena42.mandacaru cat files/.cookie)
+curl -s -u "$COOKIE" -X POST http://127.0.0.1:8332 \
   -d '{"jsonrpc":"2.0","method":"getblockchaininfo","params":[],"id":1}'
 ```
 
-(Port is per-network: 8332 mainnet, 38332 signet, 18332 testnet, 18443 regtest.)
+The RPC server requires authentication: the node writes a fresh `user:password` cookie
+to `.cookie` in its data dir on every start and deletes it on shutdown, so re-read it
+after a restart. Without it every call returns HTTP 401.
+
+(Port and data dir are per-network: 8332 and `files/` on mainnet; 38332 and
+`files/signet/` on signet; 18332 and `files/testnet/` on testnet; 18443 and
+`files/regtest/` on regtest.)

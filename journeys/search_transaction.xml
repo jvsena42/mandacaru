@@ -1,7 +1,8 @@
 <journey name="Search transaction">
     <description>
         Looks up a transaction by id on the Transactions screen and verifies the app
-        handles the query without crashing (showing either a result or a not-found state).
+        handles the query without crashing. The genesis coinbase is never in a loaded wallet,
+        so the lookup must fail with one of exactly two messages, depending on the sync state.
     </description>
     <actions>
         <action>Launch the Mandacaru app and wait for the splash screen to dismiss (poll until nav_node is present)</action>
@@ -9,6 +10,8 @@
         <action>Verify the transaction id field (input_txid) is displayed</action>
         <action>Tap the transaction id field (input_txid)</action>
         <action>Type "4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b" into the transaction id field (input_txid)</action>
-        <action>Verify the app shows a transaction result or a not-found message and has not crashed</action>
+        <action>Verify the message matches the sync state (read initialblockdownload with the README's RPC recipe): while syncing it starts "Node is still syncing (" and ends "Transaction may appear once the relevant block is processed."; once synced it is exactly "Transaction not found". Any other text (e.g. "Failed to fetch transaction" or "Transaction not found: …") is a FAIL — it means the node's error format changed</action>
+        <action>Clear the field and type a 63-character hex string; verify "Invalid transaction ID format" is shown without an RPC call</action>
+        <action>Optional, only on a synced node with a loaded wallet: type a txid from that wallet's history (Electrum blockchain.scripthash.get_history) and verify a result card with txid, confirmations, inputs and outputs is shown and logcat has no "getrawtransaction parse error"</action>
     </actions>
 </journey>

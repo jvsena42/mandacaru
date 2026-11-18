@@ -13,7 +13,7 @@
         install time, so mark every snackbar step SKIPPED rather than FAILED.
     </description>
     <actions>
-        <action>Revoke the notification permission and force-stop the app (`adb shell pm revoke com.github.jvsena42.mandacaru android.permission.POST_NOTIFICATIONS` then `adb shell am force-stop com.github.jvsena42.mandacaru`); if the device is below API 33, SKIP the remaining steps</action>
+        <action>Reset the notification permission and force-stop the app (`adb shell pm revoke com.github.jvsena42.mandacaru android.permission.POST_NOTIFICATIONS`, then `adb shell pm clear-permission-flags com.github.jvsena42.mandacaru android.permission.POST_NOTIFICATIONS user-set user-fixed` so earlier denials don't leave "don't ask again" set, then `adb shell am force-stop com.github.jvsena42.mandacaru`); if the device is below API 33, SKIP the remaining steps</action>
         <action>Launch the Mandacaru app and wait for the splash screen to dismiss (poll until nav_node is present)</action>
         <action>Verify no system permission dialog is on screen — the layout shows the app's own UI, not a "Allow Mandacaru to send you notifications?" dialog</action>
         <action>Verify the enable-notifications snackbar (snackbar_enable_notifications) is present on the Node tab</action>
