@@ -415,7 +415,11 @@ class FlorestaService : Service() {
         notificationManager?.notify(FLORESTA_NOTIFICATION_ID, createStoppingNotification())
 
         ioScope.launch {
-            stopDaemonWithTimeout()
+            // No timeout: the process ends right after, so giving up on the stop (for
+            // example while a start is still loading the chain) would kill the node mid-write.
+            Log.d(TAG, "Stopping Floresta daemon before exit")
+            runSuspendCatching { florestaDaemon.stopForExit() }
+                .onFailure { e -> Log.e(TAG, "Error stopping Floresta daemon", e) }
 
             // Send broadcast to close activities
             sendBroadcast(Intent(ACTION_EXIT_APP).setPackage(packageName))

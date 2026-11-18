@@ -34,12 +34,14 @@ class FlorestaDaemonImpl(
     // isRunning check and the second start aborts the process inside the node.
     private val lifecycle = Mutex()
 
+    @Volatile private var exiting = false
+
     override suspend fun start() {
         lifecycle.withLock { startLocked() }
     }
 
     private suspend fun startLocked() {
-        if (isRunning) return
+        if (isRunning || exiting) return
         runSuspendCatching {
             val pendingSnapshot = preferencesDataSource
                 .getString(PreferenceKeys.PENDING_UTREEXO_SNAPSHOT, "")
@@ -98,6 +100,13 @@ class FlorestaDaemonImpl(
 
     override suspend fun stop() {
         lifecycle.withLock { stopLocked() }
+    }
+
+    override suspend fun stopForExit() {
+        lifecycle.withLock {
+            exiting = true
+            stopLocked()
+        }
     }
 
     private fun stopLocked() {
