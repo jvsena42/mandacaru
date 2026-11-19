@@ -8,7 +8,7 @@ val localProperties = Properties().apply {
 
 fun signingProperty(key: String): String? = localProperties.getProperty(key) ?: System.getenv(key)
 
-val appVersionName = "0.15.2"
+val appVersionName = "0.16.0"
 
 plugins {
     alias(libs.plugins.android.application)
@@ -24,7 +24,7 @@ android {
         applicationId = "com.github.jvsena42.mandacaru"
         minSdk = 29
         targetSdk = 36
-        versionCode = 38
+        versionCode = 39
         versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
