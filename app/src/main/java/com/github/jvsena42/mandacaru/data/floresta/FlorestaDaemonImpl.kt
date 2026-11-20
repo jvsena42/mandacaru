@@ -33,6 +33,7 @@ class FlorestaDaemonImpl(
     @Volatile private var isRunning = false
     private var daemon: Florestad? = null
     @Volatile private var runningDataDir: String? = null
+    @Volatile private var runningProxy: String? = null
 
     // The service can deliver two start commands back to back; without this both pass the
     // isRunning check and the second start aborts the process inside the node.
@@ -93,6 +94,7 @@ class FlorestaDaemonImpl(
             // Published before the blocking start so requests authenticate as soon as the
             // node has written its cookie, not only once start() returns.
             runningDataDir = effectiveDataDir
+            runningProxy = proxy
             daemon?.start()
             Log.i(TAG, "start: Floresta running (snapshotSource=$snapshotSource)")
             isRunning = true
@@ -135,10 +137,13 @@ class FlorestaDaemonImpl(
             isRunning = false
             daemon = null
             runningDataDir = null
+            runningProxy = null
         }
     }
 
     override fun isRunning(): Boolean = isRunning
+
+    override fun runningProxy(): String? = runningProxy
 
     override fun rpcCookieFile(): File? = runningDataDir?.let { File(it, RPC_COOKIE_FILE) }
 

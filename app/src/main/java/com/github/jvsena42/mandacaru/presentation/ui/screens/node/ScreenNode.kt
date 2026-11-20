@@ -273,6 +273,7 @@ fun ScreenNode(
                 onClickCopyExport = viewModel::onClickCopyExport,
                 onClickShareExport = viewModel::onClickShareExport,
                 onDismissExportQrSheet = viewModel::onDismissExportQrSheet,
+                onRestartApplication = currentRestartApplication,
             )
         }
     }
@@ -298,6 +299,7 @@ fun ScreenNode(
     onConfirmImport: () -> Unit = {},
     onToggleImportCard: () -> Unit = {},
     onToggleExportCard: () -> Unit = {},
+    onRestartApplication: () -> Unit = {},
     onClickShowExportQr: () -> Unit = {},
     onClickCopyExport: () -> Unit = {},
     onClickShareExport: () -> Unit = {},
@@ -371,6 +373,7 @@ fun ScreenNode(
                 onClickShowExportQr = onClickShowExportQr,
                 onClickCopyExport = onClickCopyExport,
                 onClickShareExport = onClickShareExport,
+                onRestartApplication = onRestartApplication,
                 modifier = Modifier
                     .fillMaxSize()
                     .widthIn(max = 1600.dp)
@@ -396,6 +399,9 @@ fun ScreenNode(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 item(span = heroSpan) { NodeTitle() }
+                if (uiState.torSettingPendingRestart) {
+                    item(span = heroSpan) { TorRestartRequiredCard(onRestartApplication) }
+                }
                 uiState.unreachableTorProxy?.let { proxy ->
                     item(span = heroSpan) { TorProxyUnreachableCard(proxy) }
                 }
@@ -1127,15 +1133,6 @@ private fun SyncStepConnector(filled: Boolean, modifier: Modifier = Modifier) {
 }
 
 @Composable
-internal fun TorProxyUnreachableCard(proxy: String) {
-    ErrorWarningCard(
-        title = stringResource(R.string.tor_proxy_unreachable_title),
-        message = stringResource(R.string.tor_proxy_unreachable_message, proxy),
-        titleModifier = Modifier.testTag("node_tor_unreachable"),
-    )
-}
-
-@Composable
 internal fun SyncStalledWarningCard() {
     ErrorWarningCard(
         title = stringResource(R.string.sync_stalled_title),
@@ -1144,7 +1141,12 @@ internal fun SyncStalledWarningCard() {
 }
 
 @Composable
-private fun ErrorWarningCard(title: String, message: String, titleModifier: Modifier = Modifier) {
+internal fun ErrorWarningCard(
+    title: String,
+    message: String,
+    titleModifier: Modifier = Modifier,
+    action: (@Composable () -> Unit)? = null,
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -1178,6 +1180,7 @@ private fun ErrorWarningCard(title: String, message: String, titleModifier: Modi
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )
+                action?.invoke()
             }
         }
     }

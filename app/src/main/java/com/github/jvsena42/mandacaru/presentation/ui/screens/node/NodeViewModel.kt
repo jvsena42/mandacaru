@@ -89,8 +89,17 @@ class NodeViewModel(
 
     private suspend fun refreshTorProxyStatus() {
         val proxy = preferencesDataSource.torProxyAddress()
+        // A restart that never happened (the app was closed right after applying) leaves the
+        // node on its previous setting while Settings shows the new one.
+        val pendingRestart = florestaDaemon.isRunning() &&
+            florestaDaemon.runningProxy() != proxy?.toString()
         val unreachable = proxy?.takeUnless { torProxyProbe.isReachable(it) }
-        _uiState.update { it.copy(unreachableTorProxy = unreachable?.toString()) }
+        _uiState.update {
+            it.copy(
+                unreachableTorProxy = unreachable?.toString(),
+                torSettingPendingRestart = pendingRestart,
+            )
+        }
     }
 
     private fun getInfo() {

@@ -14,12 +14,10 @@ import com.github.jvsena42.mandacaru.domain.settings.isTorEnabled
 import com.github.jvsena42.mandacaru.domain.settings.parseTorProxy
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlowImpl
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.seconds
 
 data class TorSettingsUiState(
     val isExpanded: Boolean = false,
@@ -92,15 +90,17 @@ class TorSettingsViewModel(
     private fun apply() {
         val state = _uiState.value
         if (!state.isLoaded || state.isApplying || !state.hasChanges) return
-        val proxyToSave = when (val parsed = parseTorProxy(state.proxyText)) {
-            TorProxyInput.Default -> ""
-            is TorProxyInput.Custom -> parsed.address.toString()
-            TorProxyInput.Invalid -> {
-                if (state.isTorEnabled) {
+        // Turning Tor off keeps the saved proxy: an edit made then is hidden and never probed.
+        val proxyToSave = if (!state.isTorEnabled) {
+            state.savedProxyText
+        } else {
+            when (val parsed = parseTorProxy(state.proxyText)) {
+                TorProxyInput.Default -> ""
+                is TorProxyInput.Custom -> parsed.address.toString()
+                TorProxyInput.Invalid -> {
                     _uiState.update { it.copy(proxyError = R.string.tor_proxy_error_invalid) }
                     return
                 }
-                state.savedProxyText
             }
         }
         if (state.isTorEnabled == state.savedTorEnabled && proxyToSave == state.savedProxyText) {
@@ -124,7 +124,6 @@ class TorSettingsViewModel(
                     savedProxyText = proxyToSave,
                 )
             }
-            delay(RESTART_DELAY)
             viewModelScope.sendEvent(TorSettingsEvent.RestartRequired)
         }
     }
@@ -138,7 +137,6 @@ class TorSettingsViewModel(
     }
 
     private companion object {
-        val RESTART_DELAY = 2.seconds
         const val MAX_PROXY_LENGTH = 64
     }
 }

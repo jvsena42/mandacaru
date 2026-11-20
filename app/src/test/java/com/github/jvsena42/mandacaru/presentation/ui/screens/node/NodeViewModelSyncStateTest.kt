@@ -97,6 +97,39 @@ class NodeViewModelSyncStateTest {
     }
 
     @Test
+    fun `a node still running without the saved Tor proxy asks for a restart`() {
+        rpc.blockchainInfoResults = listOf(Result.success(syncedResponse()))
+        preferences.setBooleanNow(PreferenceKeys.TOR_ENABLED, true)
+
+        val state = buildViewModelAndPoll(daemon = FakeFlorestaDaemon(running = true, proxy = null))
+
+        assertTrue(state.torSettingPendingRestart)
+    }
+
+    @Test
+    fun `a node still proxied after Tor was turned off asks for a restart`() {
+        rpc.blockchainInfoResults = listOf(Result.success(syncedResponse()))
+
+        val state = buildViewModelAndPoll(
+            daemon = FakeFlorestaDaemon(running = true, proxy = "127.0.0.1:9050"),
+        )
+
+        assertTrue(state.torSettingPendingRestart)
+    }
+
+    @Test
+    fun `a node running with the saved Tor proxy needs no restart`() {
+        rpc.blockchainInfoResults = listOf(Result.success(syncedResponse()))
+        preferences.setBooleanNow(PreferenceKeys.TOR_ENABLED, true)
+
+        val state = buildViewModelAndPoll(
+            daemon = FakeFlorestaDaemon(running = true, proxy = "127.0.0.1:9050"),
+        )
+
+        assertFalse(state.torSettingPendingRestart)
+    }
+
+    @Test
     fun `the Tor proxy is not probed while Tor is off`() {
         rpc.blockchainInfoResults = listOf(Result.success(syncedResponse()))
         var probed = false
@@ -109,11 +142,12 @@ class NodeViewModelSyncStateTest {
 
     private fun buildViewModelAndPoll(
         torProxyProbe: TorProxyProbe = TorProxyProbe { true },
+        daemon: FlorestaDaemon = FakeFlorestaDaemon(),
     ): NodeUiState {
         val vm = NodeViewModel(
             florestaRpc = rpc,
             snapshotService = FakeSnapshotService(FakeFlorestaDaemon()),
-            florestaDaemon = FakeFlorestaDaemon(),
+            florestaDaemon = daemon,
             preferencesDataSource = preferences,
             networkPolicyManager = FakeNetworkPolicy(),
             peerCountryLookup = { null },
@@ -160,10 +194,14 @@ class NodeViewModelSyncStateTest {
 
     private class FakeSnapshotService(daemon: FlorestaDaemon) : UtreexoSnapshotService(daemon)
 
-    private class FakeFlorestaDaemon : FlorestaDaemon {
+    private class FakeFlorestaDaemon(
+        private val running: Boolean = false,
+        private val proxy: String? = null,
+    ) : FlorestaDaemon {
         override suspend fun start() = Unit
         override suspend fun stop() = Unit
-        override fun isRunning(): Boolean = false
+        override fun isRunning(): Boolean = running
+        override fun runningProxy(): String? = proxy
         override fun rpcCookieFile(): java.io.File? = null
         override suspend fun dumpUtreexoState(): Result<String> = Result.success("")
         override suspend fun prepareForSnapshotImport(): Result<Unit> = Result.success(Unit)

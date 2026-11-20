@@ -105,6 +105,21 @@ class TorSettingsViewModelTest {
     }
 
     @Test
+    fun `disabling Tor keeps the saved proxy instead of an unprobed edit`() = runTest(dispatcher) {
+        preferences.booleans[PreferenceKeys.TOR_ENABLED] = true
+        preferences.strings[PreferenceKeys.CUSTOM_TOR_PROXY] = "10.0.0.2:9150"
+        val vm = buildViewModel()
+
+        vm.onAction(TorSettingsAction.OnProxyChanged("10.0.0.3:9150"))
+        vm.onAction(TorSettingsAction.OnToggleTor(false))
+        vm.onAction(TorSettingsAction.OnClickApply)
+        advanceUntilIdle()
+
+        assertEquals("10.0.0.2:9150", preferences.strings[PreferenceKeys.CUSTOM_TOR_PROXY])
+        assertEquals(false, preferences.booleans[PreferenceKeys.TOR_ENABLED])
+    }
+
+    @Test
     fun `retyping the saved proxy in another form is not a change`() = runTest(dispatcher) {
         preferences.booleans[PreferenceKeys.TOR_ENABLED] = true
         val vm = buildViewModel()

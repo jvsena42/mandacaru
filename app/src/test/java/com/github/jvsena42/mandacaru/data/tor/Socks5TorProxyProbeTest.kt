@@ -7,6 +7,7 @@ import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.OutputStream
 import java.net.InetAddress
 import java.net.ServerSocket
 import kotlin.concurrent.thread
@@ -24,21 +25,20 @@ class Socks5TorProxyProbeTest {
 
     @Test
     fun `a SOCKS5 server accepting no-auth is reachable`() = runTest {
-        var greeting = ByteArray(0)
-        val worker = serveOnce { input, output ->
-            greeting = input.readNBytes(3)
+        var received = ByteArray(0)
+        val worker = serveOnce { greeting, output ->
+            received = greeting
             output.write(byteArrayOf(0x05, 0x00))
         }
 
         assertTrue(probe.isReachable(proxy))
         worker.join()
-        assertArrayEquals(byteArrayOf(0x05, 0x01, 0x00), greeting)
+        assertArrayEquals(byteArrayOf(0x05, 0x01, 0x00), received)
     }
 
     @Test
     fun `a SOCKS5 server that wants authentication is not usable`() = runTest {
-        val worker = serveOnce { input, output ->
-            input.readNBytes(3)
+        val worker = serveOnce { _, output ->
             output.write(byteArrayOf(0x05, 0xFF.toByte()))
         }
 
@@ -69,12 +69,14 @@ class Socks5TorProxyProbeTest {
         assertFalse(probe.isReachable(proxy))
     }
 
-    private fun serveOnce(
-        handler: (java.io.InputStream, java.io.OutputStream) -> Unit,
-    ): Thread = thread {
-        // Drains the greeting before closing: unread input would turn the close into a reset.
+    /**
+     * Reads the client's 3-byte greeting before handing over, so every test ends with a clean
+     * close: unread input would turn the close into a reset instead of an EOF.
+     */
+    private fun serveOnce(handler: (ByteArray, OutputStream) -> Unit): Thread = thread {
         server.accept().use { client ->
-            handler(client.getInputStream(), client.getOutputStream())
+            val greeting = client.getInputStream().readNBytes(3)
+            handler(greeting, client.getOutputStream())
             client.getOutputStream().flush()
         }
     }
