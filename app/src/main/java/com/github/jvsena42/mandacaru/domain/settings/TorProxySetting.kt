@@ -22,9 +22,8 @@ sealed interface TorProxyInput {
 }
 
 /**
- * Only `IPv4:port` is accepted. A hostname would make both the app's reachability check and
- * the node resolve it through the system resolver, and the node's parser splits on the first
- * colon, which breaks IPv6 literals.
+ * Only `IPv4:port` is accepted, which covers Orbot's loopback listener. A hostname would make
+ * both the app's reachability check and the node resolve it through the system resolver.
  */
 fun parseTorProxy(input: String): TorProxyInput {
     val trimmed = input.trim()

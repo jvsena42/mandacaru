@@ -47,11 +47,12 @@ class TorSettingsViewModelTest {
     fun `enabling Tor with a reachable proxy saves it and restarts`() = runTest(dispatcher) {
         val vm = buildViewModel()
         var restarted = false
-        launch { vm.eventFlow.first(); restarted = true }
+        val collector = launch { vm.eventFlow.first(); restarted = true }
 
         vm.onAction(TorSettingsAction.OnToggleTor(true))
         vm.onAction(TorSettingsAction.OnClickApply)
         advanceUntilIdle()
+        collector.cancel()
 
         assertEquals(listOf(DEFAULT_TOR_PROXY), probed)
         assertTrue(preferences.booleans[PreferenceKeys.TOR_ENABLED] == true)

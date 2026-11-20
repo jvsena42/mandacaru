@@ -53,6 +53,7 @@ class NodeViewModel(
 ) : ViewModel(), EventFlow<NodeEvents> by EventFlowImpl() {
 
     private val _uiState = MutableStateFlow(NodeUiState())
+    @Volatile private var staleProxyPolls = 0
     val uiState = _uiState.asStateFlow()
 
     init {
@@ -90,10 +91,15 @@ class NodeViewModel(
     private suspend fun refreshTorProxyStatus() {
         val proxy = preferencesDataSource.torProxyAddress()
         // A restart that never happened (the app was closed right after applying) leaves the
-        // node on its previous setting while Settings shows the new one.
-        val pendingRestart = florestaDaemon.isRunning() &&
+        // node on its previous setting while Settings shows the new one. One poll can also land
+        // between saving and a restart already under way, so it takes two in a row.
+        val stale = florestaDaemon.isRunning() &&
             florestaDaemon.runningProxy() != proxy?.toString()
-        val unreachable = proxy?.takeUnless { torProxyProbe.isReachable(it) }
+        staleProxyPolls = if (stale) staleProxyPolls + 1 else 0
+        val pendingRestart = staleProxyPolls >= STALE_PROXY_POLLS
+        val unreachable = proxy
+            ?.takeUnless { pendingRestart }
+            ?.takeUnless { torProxyProbe.isReachable(it) }
         _uiState.update {
             it.copy(
                 unreachableTorProxy = unreachable?.toString(),
@@ -509,5 +515,6 @@ class NodeViewModel(
         const val COPIED_MESSAGE = "Copied to clipboard"
         const val CLIPBOARD_INVALID_MESSAGE = "Clipboard does not contain a valid accumulator."
         const val DIGEST_PREFIX_BYTES = 4
+        const val STALE_PROXY_POLLS = 2
     }
 }

@@ -101,9 +101,24 @@ class NodeViewModelSyncStateTest {
         rpc.blockchainInfoResults = listOf(Result.success(syncedResponse()))
         preferences.setBooleanNow(PreferenceKeys.TOR_ENABLED, true)
 
-        val state = buildViewModelAndPoll(daemon = FakeFlorestaDaemon(running = true, proxy = null))
+        val state = buildViewModelAndPoll(
+            daemon = FakeFlorestaDaemon(running = true, proxy = null),
+            torProxyProbe = { false },
+            polls = 2,
+        )
 
         assertTrue(state.torSettingPendingRestart)
+        assertNull(state.unreachableTorProxy)
+    }
+
+    @Test
+    fun `a single stale poll is a restart already under way, not a missed one`() {
+        rpc.blockchainInfoResults = listOf(Result.success(syncedResponse()))
+        preferences.setBooleanNow(PreferenceKeys.TOR_ENABLED, true)
+
+        val state = buildViewModelAndPoll(daemon = FakeFlorestaDaemon(running = true, proxy = null))
+
+        assertFalse(state.torSettingPendingRestart)
     }
 
     @Test
@@ -112,6 +127,7 @@ class NodeViewModelSyncStateTest {
 
         val state = buildViewModelAndPoll(
             daemon = FakeFlorestaDaemon(running = true, proxy = "127.0.0.1:9050"),
+            polls = 2,
         )
 
         assertTrue(state.torSettingPendingRestart)
@@ -124,6 +140,7 @@ class NodeViewModelSyncStateTest {
 
         val state = buildViewModelAndPoll(
             daemon = FakeFlorestaDaemon(running = true, proxy = "127.0.0.1:9050"),
+            polls = 2,
         )
 
         assertFalse(state.torSettingPendingRestart)
@@ -143,6 +160,7 @@ class NodeViewModelSyncStateTest {
     private fun buildViewModelAndPoll(
         torProxyProbe: TorProxyProbe = TorProxyProbe { true },
         daemon: FlorestaDaemon = FakeFlorestaDaemon(),
+        polls: Int = 1,
     ): NodeUiState {
         val vm = NodeViewModel(
             florestaRpc = rpc,
@@ -155,6 +173,10 @@ class NodeViewModelSyncStateTest {
             ioDispatcher = dispatcher,
         )
         dispatcher.scheduler.runCurrent()
+        repeat(polls - 1) {
+            dispatcher.scheduler.advanceTimeBy(POLL_INTERVAL_MS)
+            dispatcher.scheduler.runCurrent()
+        }
         return vm.uiState.value
     }
 
@@ -210,5 +232,9 @@ class NodeViewModelSyncStateTest {
     private class FakeNetworkPolicy : NetworkPolicy {
         override val isWaitingForWifi: StateFlow<Boolean> = MutableStateFlow(false)
         override fun apply() = Unit
+    }
+
+    private companion object {
+        const val POLL_INTERVAL_MS = 10_001L
     }
 }
