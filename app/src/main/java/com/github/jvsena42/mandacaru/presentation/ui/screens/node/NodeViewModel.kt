@@ -20,7 +20,7 @@ import com.github.jvsena42.mandacaru.domain.floresta.hasUtreexoServiceFlag
 import com.github.jvsena42.mandacaru.domain.floresta.isLikelyStalled
 import com.github.jvsena42.mandacaru.domain.geoip.PeerCountryLookup
 import com.github.jvsena42.mandacaru.domain.settings.isAdvancedFeaturesEnabled
-import com.github.jvsena42.mandacaru.domain.settings.torProxyAddress
+import com.github.jvsena42.mandacaru.domain.settings.torRoute
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlowImpl
 import com.github.jvsena42.mandacaru.presentation.utils.HexUtils
@@ -89,20 +89,20 @@ class NodeViewModel(
     }
 
     private suspend fun refreshTorProxyStatus() {
-        val proxy = preferencesDataSource.torProxyAddress()
+        val route = preferencesDataSource.torRoute()
         // A restart that never happened (the app was closed right after applying) leaves the
         // node on its previous setting while Settings shows the new one. One poll can also land
         // between saving and a restart already under way, so it takes two in a row.
         val stale = florestaDaemon.isRunning() &&
-            florestaDaemon.runningProxy() != proxy?.toString()
+            florestaDaemon.runningTorRoute() != route
         staleProxyPolls = if (stale) staleProxyPolls + 1 else 0
         val pendingRestart = staleProxyPolls >= STALE_PROXY_POLLS
-        val unreachable = proxy
+        val unreachable = route
             ?.takeUnless { pendingRestart }
-            ?.takeUnless { torProxyProbe.isReachable(it) }
+            ?.takeUnless { torProxyProbe.isReachable(it.proxy) }
         _uiState.update {
             it.copy(
-                unreachableTorProxy = unreachable?.toString(),
+                unreachableTorRoute = unreachable,
                 torSettingPendingRestart = pendingRestart,
             )
         }

@@ -55,33 +55,67 @@ class TorProxySettingTest {
     }
 
     @Test
-    fun `no proxy while Tor is off`() = runTest {
+    fun `no route while Tor is off`() = runTest {
         val prefs = MapPreferences(strings = mapOf(PreferenceKeys.CUSTOM_TOR_PROXY to "10.0.0.2:9050"))
-        assertNull(prefs.torProxyAddress())
+        assertEquals(TorMode.OFF, prefs.getTorMode())
+        assertNull(prefs.torRoute())
     }
 
     @Test
-    fun `default proxy when Tor is on without a custom one`() = runTest {
+    fun `Tor switched on before modes existed routes everything`() = runTest {
         val prefs = MapPreferences(booleans = mapOf(PreferenceKeys.TOR_ENABLED to true))
-        assertEquals(DEFAULT_TOR_PROXY, prefs.torProxyAddress())
+        assertEquals(TorRoute(TorMode.ALL, DEFAULT_TOR_PROXY), prefs.torRoute())
     }
 
     @Test
-    fun `custom proxy when Tor is on`() = runTest {
+    fun `a saved mode wins over the old switch`() = runTest {
         val prefs = MapPreferences(
-            strings = mapOf(PreferenceKeys.CUSTOM_TOR_PROXY to "10.0.0.2:9150"),
+            strings = mapOf(PreferenceKeys.TOR_MODE to TorMode.ONION_PEERS.name),
             booleans = mapOf(PreferenceKeys.TOR_ENABLED to true),
         )
-        assertEquals(TorProxyAddress("10.0.0.2", 9150), prefs.torProxyAddress())
+        assertEquals(TorMode.ONION_PEERS, prefs.getTorMode())
+    }
+
+    @Test
+    fun `an unknown saved mode fails closed to everything over Tor`() = runTest {
+        val prefs = MapPreferences(strings = mapOf(PreferenceKeys.TOR_MODE to "SOMETHING"))
+        assertEquals(TorMode.ALL, prefs.getTorMode())
+    }
+
+    @Test
+    fun `custom proxy is used by the route`() = runTest {
+        val prefs = MapPreferences(
+            strings = mapOf(
+                PreferenceKeys.CUSTOM_TOR_PROXY to "10.0.0.2:9150",
+                PreferenceKeys.TOR_MODE to TorMode.ONION_PEERS.name,
+            ),
+        )
+        assertEquals(
+            TorRoute(TorMode.ONION_PEERS, TorProxyAddress("10.0.0.2", 9150)),
+            prefs.torRoute(),
+        )
     }
 
     @Test
     fun `a corrupt saved proxy keeps Tor on through the default`() = runTest {
         val prefs = MapPreferences(
-            strings = mapOf(PreferenceKeys.CUSTOM_TOR_PROXY to "garbage"),
-            booleans = mapOf(PreferenceKeys.TOR_ENABLED to true),
+            strings = mapOf(
+                PreferenceKeys.CUSTOM_TOR_PROXY to "garbage",
+                PreferenceKeys.TOR_MODE to TorMode.ALL.name,
+            ),
         )
-        assertEquals(DEFAULT_TOR_PROXY, prefs.torProxyAddress())
+        assertEquals(TorRoute(TorMode.ALL, DEFAULT_TOR_PROXY), prefs.torRoute())
+    }
+
+    @Test
+    fun `each mode fills exactly one of the node's proxies`() {
+        val onionPeers = TorRoute(TorMode.ONION_PEERS, DEFAULT_TOR_PROXY)
+        assertNull(onionPeers.allPeersProxy)
+        assertEquals("127.0.0.1:9050", onionPeers.onionPeersProxy)
+
+        val all = TorRoute(TorMode.ALL, DEFAULT_TOR_PROXY)
+        assertEquals("127.0.0.1:9050", all.allPeersProxy)
+        assertNull(all.onionPeersProxy)
     }
 
     private class MapPreferences(

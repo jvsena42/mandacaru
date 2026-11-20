@@ -5,6 +5,7 @@ import com.github.jvsena42.mandacaru.common.CoroutineDispatchers
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.domain.settings.DEFAULT_TOR_PROXY
+import com.github.jvsena42.mandacaru.domain.settings.TorMode
 import com.github.jvsena42.mandacaru.domain.settings.TorProxyAddress
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -49,13 +50,13 @@ class TorSettingsViewModelTest {
         var restarted = false
         val collector = launch { vm.eventFlow.first(); restarted = true }
 
-        vm.onAction(TorSettingsAction.OnToggleTor(true))
+        vm.onAction(TorSettingsAction.OnModeSelected(TorMode.ALL))
         vm.onAction(TorSettingsAction.OnClickApply)
         advanceUntilIdle()
         collector.cancel()
 
         assertEquals(listOf(DEFAULT_TOR_PROXY), probed)
-        assertTrue(preferences.booleans[PreferenceKeys.TOR_ENABLED] == true)
+        assertEquals(TorMode.ALL.name, preferences.strings[PreferenceKeys.TOR_MODE])
         assertEquals("", preferences.strings[PreferenceKeys.CUSTOM_TOR_PROXY])
         assertTrue(restarted)
     }
@@ -65,7 +66,7 @@ class TorSettingsViewModelTest {
         proxyReachable = false
         val vm = buildViewModel()
 
-        vm.onAction(TorSettingsAction.OnToggleTor(true))
+        vm.onAction(TorSettingsAction.OnModeSelected(TorMode.ALL))
         vm.onAction(TorSettingsAction.OnProxyChanged("10.0.0.2:9150"))
         vm.onAction(TorSettingsAction.OnClickApply)
         advanceUntilIdle()
@@ -73,21 +74,43 @@ class TorSettingsViewModelTest {
         assertEquals(listOf(TorProxyAddress("10.0.0.2", 9150)), probed)
         assertEquals(R.string.tor_proxy_error_unreachable, vm.uiState.value.proxyError)
         assertFalse(vm.uiState.value.isApplying)
-        assertNull(preferences.booleans[PreferenceKeys.TOR_ENABLED])
+        assertNull(preferences.strings[PreferenceKeys.TOR_MODE])
     }
 
     @Test
     fun `an invalid proxy is rejected before probing`() = runTest(dispatcher) {
         val vm = buildViewModel()
 
-        vm.onAction(TorSettingsAction.OnToggleTor(true))
+        vm.onAction(TorSettingsAction.OnModeSelected(TorMode.ALL))
         vm.onAction(TorSettingsAction.OnProxyChanged("localhost:9050"))
         vm.onAction(TorSettingsAction.OnClickApply)
         advanceUntilIdle()
 
         assertEquals(R.string.tor_proxy_error_invalid, vm.uiState.value.proxyError)
         assertTrue(probed.isEmpty())
-        assertNull(preferences.booleans[PreferenceKeys.TOR_ENABLED])
+        assertNull(preferences.strings[PreferenceKeys.TOR_MODE])
+    }
+
+    @Test
+    fun `onion peers mode is probed and saved like everything over Tor`() = runTest(dispatcher) {
+        val vm = buildViewModel()
+
+        vm.onAction(TorSettingsAction.OnModeSelected(TorMode.ONION_PEERS))
+        vm.onAction(TorSettingsAction.OnClickApply)
+        advanceUntilIdle()
+
+        assertEquals(listOf(DEFAULT_TOR_PROXY), probed)
+        assertEquals(TorMode.ONION_PEERS.name, preferences.strings[PreferenceKeys.TOR_MODE])
+    }
+
+    @Test
+    fun `switching between Tor modes is a change`() = runTest(dispatcher) {
+        preferences.strings[PreferenceKeys.TOR_MODE] = TorMode.ALL.name
+        val vm = buildViewModel()
+
+        vm.onAction(TorSettingsAction.OnModeSelected(TorMode.ONION_PEERS))
+
+        assertTrue(vm.uiState.value.hasChanges)
     }
 
     @Test
@@ -95,14 +118,14 @@ class TorSettingsViewModelTest {
         proxyReachable = false
         preferences.booleans[PreferenceKeys.TOR_ENABLED] = true
         val vm = buildViewModel()
-        assertTrue(vm.uiState.value.savedTorEnabled)
+        assertEquals(TorMode.ALL, vm.uiState.value.savedMode)
 
-        vm.onAction(TorSettingsAction.OnToggleTor(false))
+        vm.onAction(TorSettingsAction.OnModeSelected(TorMode.OFF))
         vm.onAction(TorSettingsAction.OnClickApply)
         advanceUntilIdle()
 
         assertTrue(probed.isEmpty())
-        assertEquals(false, preferences.booleans[PreferenceKeys.TOR_ENABLED])
+        assertEquals(TorMode.OFF.name, preferences.strings[PreferenceKeys.TOR_MODE])
     }
 
     @Test
@@ -112,12 +135,12 @@ class TorSettingsViewModelTest {
         val vm = buildViewModel()
 
         vm.onAction(TorSettingsAction.OnProxyChanged("10.0.0.3:9150"))
-        vm.onAction(TorSettingsAction.OnToggleTor(false))
+        vm.onAction(TorSettingsAction.OnModeSelected(TorMode.OFF))
         vm.onAction(TorSettingsAction.OnClickApply)
         advanceUntilIdle()
 
         assertEquals("10.0.0.2:9150", preferences.strings[PreferenceKeys.CUSTOM_TOR_PROXY])
-        assertEquals(false, preferences.booleans[PreferenceKeys.TOR_ENABLED])
+        assertEquals(TorMode.OFF.name, preferences.strings[PreferenceKeys.TOR_MODE])
     }
 
     @Test

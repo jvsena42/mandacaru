@@ -13,7 +13,8 @@ import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.model.Constants
 import com.github.jvsena42.mandacaru.domain.settings.ELECTRUM_HOST
 import com.github.jvsena42.mandacaru.domain.settings.electrumPortFor
-import com.github.jvsena42.mandacaru.domain.settings.torProxyAddress
+import com.github.jvsena42.mandacaru.domain.settings.TorRoute
+import com.github.jvsena42.mandacaru.domain.settings.torRoute
 import com.github.jvsena42.mandacaru.presentation.utils.SnapshotCodec
 import com.github.jvsena42.mandacaru.presentation.utils.WalletBirthday
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +34,7 @@ class FlorestaDaemonImpl(
     @Volatile private var isRunning = false
     private var daemon: Florestad? = null
     @Volatile private var runningDataDir: String? = null
-    @Volatile private var runningProxy: String? = null
+    @Volatile private var runningTorRoute: TorRoute? = null
 
     // The service can deliver two start commands back to back; without this both pass the
     // isRunning check and the second start aborts the process inside the node.
@@ -68,19 +69,22 @@ class FlorestaDaemonImpl(
             val effectiveDataDir = dataDirFor(network)
             val rpcPort = rpcPortFor(network)
             val assumeUtreexoValue = startupSnapshotJson?.let { toAssumeUtreexoValue(it) }
-            val proxy = preferencesDataSource.torProxyAddress()?.toString()
+            val torRoute = preferencesDataSource.torRoute()
             Log.i(
                 TAG,
                 "start: snapshotSource=$snapshotSource, " +
                     "snapshotApplied=${assumeUtreexoValue != null}, " +
                     "network=$network, datadir=$effectiveDataDir, rpcPort=$rpcPort, " +
-                    "filtersStartHeight=$filtersStartHeight, proxy=$proxy, userAgent=$userAgent",
+                    "filtersStartHeight=$filtersStartHeight, " +
+                    "proxy=${torRoute?.allPeersProxy}, onionProxy=${torRoute?.onionPeersProxy}, " +
+                    "userAgent=$userAgent",
             )
             val config = Config(
                 datadir = effectiveDataDir,
                 network = network,
                 assumeValid = AssumeValidArg.Hardcoded,
-                proxy = proxy,
+                proxy = torRoute?.allPeersProxy,
+                onionProxy = torRoute?.onionPeersProxy,
                 cfilters = true,
                 filtersStartHeight = filtersStartHeight,
                 jsonRpcAddress = "127.0.0.1:$rpcPort",
@@ -94,7 +98,7 @@ class FlorestaDaemonImpl(
             // Published before the blocking start so requests authenticate as soon as the
             // node has written its cookie, not only once start() returns.
             runningDataDir = effectiveDataDir
-            runningProxy = proxy
+            runningTorRoute = torRoute
             daemon?.start()
             Log.i(TAG, "start: Floresta running (snapshotSource=$snapshotSource)")
             isRunning = true
@@ -137,13 +141,13 @@ class FlorestaDaemonImpl(
             isRunning = false
             daemon = null
             runningDataDir = null
-            runningProxy = null
+            runningTorRoute = null
         }
     }
 
     override fun isRunning(): Boolean = isRunning
 
-    override fun runningProxy(): String? = runningProxy
+    override fun runningTorRoute(): TorRoute? = runningTorRoute
 
     override fun rpcCookieFile(): File? = runningDataDir?.let { File(it, RPC_COOKIE_FILE) }
 

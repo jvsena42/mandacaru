@@ -3,6 +3,8 @@ package com.github.jvsena42.mandacaru.presentation.ui.screens.node
 import androidx.compose.runtime.Stable
 import com.github.jvsena42.mandacaru.domain.floresta.SnapshotPreview
 import com.github.jvsena42.mandacaru.domain.settings.ADVANCED_FEATURES_ENABLED_BY_DEFAULT
+import com.github.jvsena42.mandacaru.domain.settings.TorMode
+import com.github.jvsena42.mandacaru.domain.settings.TorRoute
 
 @Stable
 data class NodeUiState(
@@ -49,6 +51,10 @@ data class NodeUiState(
     val snapshotMessage: String? = null,
     val isApplyingSnapshot: Boolean = false,
     val isWaitingForWifi: Boolean = false,
-    val unreachableTorProxy: String? = null,
+    val unreachableTorRoute: TorRoute? = null,
     val torSettingPendingRestart: Boolean = false,
-)
+) {
+    /** An unreachable proxy that carries every peer leaves the node with no peers at all. */
+    val torCutsOffAllPeers: Boolean
+        get() = unreachableTorRoute?.mode == TorMode.ALL
+}
