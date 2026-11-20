@@ -94,6 +94,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -143,6 +144,7 @@ fun ScreenSettings(
                 is SettingsEvents.OnNetworkChanged -> currentRestartApplication()
                 is SettingsEvents.OnNetworkPolicyChanged -> currentRestartApplication()
                 is SettingsEvents.OnBirthdayChanged -> currentRestartApplication()
+                is SettingsEvents.OnElectrumPortChanged -> currentRestartApplication()
                 is SettingsEvents.OnExportLogs -> {
                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
@@ -573,6 +575,54 @@ private fun ScreenSettings(
                                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                                         modifier = Modifier.padding(12.dp)
                                     )
+                                }
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                OutlinedTextField(
+                                    value = uiState.electrumPortText,
+                                    enabled = !uiState.isLoading,
+                                    onValueChange = {
+                                        onAction(SettingsAction.OnElectrumPortChanged(it))
+                                    },
+                                    label = { Text(stringResource(R.string.electrum_server_port)) },
+                                    placeholder = { Text(uiState.defaultElectrumPort) },
+                                    singleLine = true,
+                                    shape = RoundedCornerShape(12.dp),
+                                    isError = uiState.electrumPortError != null,
+                                    supportingText = {
+                                        Text(
+                                            uiState.electrumPortError?.let { stringResource(it) }
+                                                ?: stringResource(
+                                                    R.string.electrum_port_supporting_text,
+                                                    uiState.defaultElectrumPort,
+                                                )
+                                        )
+                                    },
+                                    keyboardOptions = KeyboardOptions.Default.copy(
+                                        keyboardType = KeyboardType.Number,
+                                        imeAction = ImeAction.Done,
+                                    ),
+                                    keyboardActions = KeyboardActions(
+                                        onDone = { onAction(SettingsAction.OnClickApplyElectrumPort) }
+                                    ),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .testTag("input_electrum_port")
+                                )
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Button(
+                                    onClick = { onAction(SettingsAction.OnClickApplyElectrumPort) },
+                                    enabled = !uiState.isLoading &&
+                                        uiState.electrumPortText != uiState.savedElectrumPort,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .testTag("button_apply_electrum_port"),
+                                    shape = RoundedCornerShape(12.dp),
+                                ) {
+                                    Text(stringResource(R.string.apply_and_restart))
                                 }
                             }
                         }

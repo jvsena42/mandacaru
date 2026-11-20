@@ -17,7 +17,13 @@ import com.github.jvsena42.mandacaru.domain.geoip.isPeerFlagsEnabled
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.AddNodeCommand
 import com.github.jvsena42.mandacaru.domain.scan.DescriptorQrScanner
 import com.github.jvsena42.mandacaru.domain.scan.DescriptorScanState
+import com.github.jvsena42.mandacaru.domain.settings.ElectrumPortInput
+import com.github.jvsena42.mandacaru.domain.settings.electrumPortFor
+import com.github.jvsena42.mandacaru.domain.settings.electrumServerAddress
+import com.github.jvsena42.mandacaru.domain.settings.getCustomElectrumPort
+import com.github.jvsena42.mandacaru.domain.settings.getSelectedNetwork
 import com.github.jvsena42.mandacaru.domain.settings.isAdvancedFeaturesEnabled
+import com.github.jvsena42.mandacaru.domain.settings.parseElectrumPort
 import com.github.jvsena42.mandacaru.common.CoroutineDispatchers
 import com.github.jvsena42.mandacaru.presentation.utils.DescriptorUtils
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
@@ -222,7 +228,9 @@ class SettingsViewModel(
             }
 
             SettingsAction.OnConfirmBirthdayRestart -> applyBirthdayYearAndRestart()
-            SettingsAction.ToggleDataUsageExpanded -> toggleDataUsageExpanded()
+            SettingsAction.ToggleDataUsageExpanded -> _uiState.update {
+                it.copy(isDataUsageExpanded = !it.isDataUsageExpanded)
+            }
             is SettingsAction.OnToggleMobileData -> handleMobileDataToggled(action)
             SettingsAction.TogglePeerFlagsExpanded -> togglePeerFlagsExpanded()
             is SettingsAction.OnTogglePeerFlags -> handlePeerFlagsToggled(action)
@@ -234,6 +242,15 @@ class SettingsViewModel(
             SettingsAction.OnClickViewLogs -> viewModelScope.sendEvent(
                 SettingsEvents.OpenDeveloperLogs
             )
+
+            is SettingsAction.OnElectrumPortChanged -> _uiState.update {
+                it.copy(
+                    electrumPortText = action.port.filter(Char::isDigit).take(MAX_PORT_DIGITS),
+                    electrumPortError = null,
+                )
+            }
+
+            SettingsAction.OnClickApplyElectrumPort -> applyElectrumPortAndRestart()
         }
     }
 
@@ -272,10 +289,6 @@ class SettingsViewModel(
                 )
             }
         }
-    }
-
-    private fun toggleDataUsageExpanded() = _uiState.update {
-        it.copy(isDataUsageExpanded = !it.isDataUsageExpanded)
     }
 
     private fun handleMobileDataToggled(action: SettingsAction.OnToggleMobileData) {
@@ -346,12 +359,43 @@ class SettingsViewModel(
     }
 
     private suspend fun updateElectrumAddress() {
-        val network = preferencesDataSource.getString(
-            PreferenceKeys.CURRENT_NETWORK,
-            FlorestaNetwork.BITCOIN.name
-        ).getNetwork()
-        val port = network.getElectrumPort()
-        _uiState.update { it.copy(electrumAddress = "127.0.0.1:$port") }
+        val network = preferencesDataSource.getSelectedNetwork()
+        val port = preferencesDataSource.electrumPortFor(network)
+        val customPort = preferencesDataSource.getCustomElectrumPort()
+        _uiState.update {
+            it.copy(
+                electrumAddress = electrumServerAddress(port),
+                electrumPortText = customPort,
+                savedElectrumPort = customPort,
+                defaultElectrumPort = network.getElectrumPort(),
+                electrumPortError = parseElectrumPort(customPort, network).errorRes(),
+            )
+        }
+    }
+
+    private fun applyElectrumPortAndRestart() {
+        val state = _uiState.value
+        if (state.isLoading) return
+        val parsed = parseElectrumPort(state.electrumPortText, state.selectedNetwork.getNetwork())
+        val portToSave = when (parsed) {
+            ElectrumPortInput.Default -> ""
+            is ElectrumPortInput.Custom -> parsed.port.toString()
+            else -> {
+                _uiState.update { it.copy(electrumPortError = parsed.errorRes()) }
+                return
+            }
+        }
+        if (portToSave == state.savedElectrumPort) {
+            _uiState.update { it.copy(electrumPortText = portToSave, electrumPortError = null) }
+            return
+        }
+        _uiState.update { it.copy(isLoading = true) }
+        viewModelScope.launch(dispatchers.io) {
+            preferencesDataSource.setString(PreferenceKeys.CUSTOM_ELECTRUM_PORT, portToSave)
+            updateElectrumAddress()
+            delay(2.seconds)
+            viewModelScope.sendEvent(SettingsEvents.OnElectrumPortChanged)
+        }
     }
 
     private fun observeDescriptors() {
@@ -599,5 +643,12 @@ class SettingsViewModel(
         private const val VALIDATION_DEBOUNCE_MS = 500L
         private const val RESCAN_POLL_INTERVAL_MS = 3000L
         private const val SCAN_ERROR_COOLDOWN_MS = 10000L
+        private const val MAX_PORT_DIGITS = 5
     }
+}
+
+private fun ElectrumPortInput.errorRes(): Int? = when (this) {
+    ElectrumPortInput.OutOfRange -> R.string.electrum_port_error_range
+    ElectrumPortInput.ConflictsWithRpc -> R.string.electrum_port_error_rpc
+    ElectrumPortInput.Default, is ElectrumPortInput.Custom -> null
 }
