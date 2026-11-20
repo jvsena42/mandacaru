@@ -13,6 +13,9 @@ interface FlorestaDaemon {
     suspend fun stopForExit() = stop()
     fun isRunning(): Boolean
 
+    /** The SOCKS5 proxy the running node was started with, or null when it connects directly. */
+    fun runningProxy(): String? = null
+
     /** The JSON-RPC cookie the running node wrote, or null while it isn't running. */
     fun rpcCookieFile(): File?
 

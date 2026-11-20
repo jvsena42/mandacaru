@@ -19,6 +19,8 @@ import com.github.jvsena42.mandacaru.data.geoip.GeoIpDatabaseRepositoryImpl
 import com.github.jvsena42.mandacaru.data.geoip.MmdbPeerCountryLookup
 import com.github.jvsena42.mandacaru.data.network.NetworkPolicy
 import com.github.jvsena42.mandacaru.data.network.NetworkPolicyManager
+import com.github.jvsena42.mandacaru.data.tor.Socks5TorProxyProbe
+import com.github.jvsena42.mandacaru.data.tor.TorProxyProbe
 import com.github.jvsena42.mandacaru.data.update.AppUpdateRepositoryImpl
 import com.github.jvsena42.mandacaru.data.wallet.WalletDescriptorRepositoryImpl
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
@@ -37,6 +39,7 @@ import com.github.jvsena42.mandacaru.presentation.ui.screens.main.MainViewModel
 import com.github.jvsena42.mandacaru.presentation.ui.screens.node.NodeViewModel
 import com.github.jvsena42.mandacaru.presentation.ui.screens.transaction.TransactionViewModel
 import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.SettingsViewModel
+import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsViewModel
 import com.google.gson.Gson
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -84,6 +87,7 @@ val presentationModule = module {
             preferencesDataSource = get(),
             networkPolicyManager = get(),
             peerCountryLookup = get(),
+            torProxyProbe = get(),
         )
     }
     viewModel {
@@ -104,6 +108,7 @@ val presentationModule = module {
             walletDescriptorRepository = get(),
         )
     }
+    viewModel { TorSettingsViewModel(preferencesDataSource = get(), torProxyProbe = get()) }
     viewModel { DeveloperLogsViewModel(context = androidContext()) }
     viewModel {
         TransactionViewModel(
@@ -159,6 +164,7 @@ val dataModule = module {
     } bind NetworkPolicy::class
     single { UtreexoBridgeAutoConnect(florestaRpc = get(), preferencesDataSource = get()) }
     single { UtreexoSnapshotService(daemon = get()) }
+    single<TorProxyProbe> { Socks5TorProxyProbe() }
     factory<QrTransactionScanner> { DefaultQrTransactionScanner() }
     factory<DescriptorQrScanner> { DefaultDescriptorQrScanner() }
     single<TransactionDecoder> { BdkTransactionDecoder() }

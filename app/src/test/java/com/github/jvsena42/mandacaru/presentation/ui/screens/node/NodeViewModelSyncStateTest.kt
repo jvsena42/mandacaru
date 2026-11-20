@@ -2,6 +2,7 @@ package com.github.jvsena42.mandacaru.presentation.ui.screens.node
 
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
+import com.github.jvsena42.mandacaru.data.tor.TorProxyProbe
 import com.github.jvsena42.mandacaru.data.network.NetworkPolicy
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.floresta.SyncPhase
@@ -19,6 +20,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -84,17 +86,97 @@ class NodeViewModelSyncStateTest {
         )
     }
 
-    private fun buildViewModelAndPoll(): NodeUiState {
+    @Test
+    fun `an unreachable Tor proxy is surfaced with its address`() {
+        rpc.blockchainInfoResults = listOf(Result.success(syncedResponse()))
+        preferences.setBooleanNow(PreferenceKeys.TOR_ENABLED, true)
+
+        val state = buildViewModelAndPoll(torProxyProbe = { false })
+
+        assertEquals("127.0.0.1:9050", state.unreachableTorProxy)
+    }
+
+    @Test
+    fun `a node still running without the saved Tor proxy asks for a restart`() {
+        rpc.blockchainInfoResults = listOf(Result.success(syncedResponse()))
+        preferences.setBooleanNow(PreferenceKeys.TOR_ENABLED, true)
+
+        val state = buildViewModelAndPoll(
+            daemon = FakeFlorestaDaemon(running = true, proxy = null),
+            torProxyProbe = { false },
+            polls = 2,
+        )
+
+        assertTrue(state.torSettingPendingRestart)
+        assertNull(state.unreachableTorProxy)
+    }
+
+    @Test
+    fun `a single stale poll is a restart already under way, not a missed one`() {
+        rpc.blockchainInfoResults = listOf(Result.success(syncedResponse()))
+        preferences.setBooleanNow(PreferenceKeys.TOR_ENABLED, true)
+
+        val state = buildViewModelAndPoll(daemon = FakeFlorestaDaemon(running = true, proxy = null))
+
+        assertFalse(state.torSettingPendingRestart)
+    }
+
+    @Test
+    fun `a node still proxied after Tor was turned off asks for a restart`() {
+        rpc.blockchainInfoResults = listOf(Result.success(syncedResponse()))
+
+        val state = buildViewModelAndPoll(
+            daemon = FakeFlorestaDaemon(running = true, proxy = "127.0.0.1:9050"),
+            polls = 2,
+        )
+
+        assertTrue(state.torSettingPendingRestart)
+    }
+
+    @Test
+    fun `a node running with the saved Tor proxy needs no restart`() {
+        rpc.blockchainInfoResults = listOf(Result.success(syncedResponse()))
+        preferences.setBooleanNow(PreferenceKeys.TOR_ENABLED, true)
+
+        val state = buildViewModelAndPoll(
+            daemon = FakeFlorestaDaemon(running = true, proxy = "127.0.0.1:9050"),
+            polls = 2,
+        )
+
+        assertFalse(state.torSettingPendingRestart)
+    }
+
+    @Test
+    fun `the Tor proxy is not probed while Tor is off`() {
+        rpc.blockchainInfoResults = listOf(Result.success(syncedResponse()))
+        var probed = false
+
+        val state = buildViewModelAndPoll(torProxyProbe = { probed = true; false })
+
+        assertFalse(probed)
+        assertNull(state.unreachableTorProxy)
+    }
+
+    private fun buildViewModelAndPoll(
+        torProxyProbe: TorProxyProbe = TorProxyProbe { true },
+        daemon: FlorestaDaemon = FakeFlorestaDaemon(),
+        polls: Int = 1,
+    ): NodeUiState {
         val vm = NodeViewModel(
             florestaRpc = rpc,
             snapshotService = FakeSnapshotService(FakeFlorestaDaemon()),
-            florestaDaemon = FakeFlorestaDaemon(),
+            florestaDaemon = daemon,
             preferencesDataSource = preferences,
             networkPolicyManager = FakeNetworkPolicy(),
             peerCountryLookup = { null },
+            torProxyProbe = torProxyProbe,
             ioDispatcher = dispatcher,
         )
         dispatcher.scheduler.runCurrent()
+        repeat(polls - 1) {
+            dispatcher.scheduler.advanceTimeBy(POLL_INTERVAL_MS)
+            dispatcher.scheduler.runCurrent()
+        }
         return vm.uiState.value
     }
 
@@ -134,10 +216,14 @@ class NodeViewModelSyncStateTest {
 
     private class FakeSnapshotService(daemon: FlorestaDaemon) : UtreexoSnapshotService(daemon)
 
-    private class FakeFlorestaDaemon : FlorestaDaemon {
+    private class FakeFlorestaDaemon(
+        private val running: Boolean = false,
+        private val proxy: String? = null,
+    ) : FlorestaDaemon {
         override suspend fun start() = Unit
         override suspend fun stop() = Unit
-        override fun isRunning(): Boolean = false
+        override fun isRunning(): Boolean = running
+        override fun runningProxy(): String? = proxy
         override fun rpcCookieFile(): java.io.File? = null
         override suspend fun dumpUtreexoState(): Result<String> = Result.success("")
         override suspend fun prepareForSnapshotImport(): Result<Unit> = Result.success(Unit)
@@ -146,5 +232,9 @@ class NodeViewModelSyncStateTest {
     private class FakeNetworkPolicy : NetworkPolicy {
         override val isWaitingForWifi: StateFlow<Boolean> = MutableStateFlow(false)
         override fun apply() = Unit
+    }
+
+    private companion object {
+        const val POLL_INTERVAL_MS = 10_001L
     }
 }
