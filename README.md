@@ -105,6 +105,8 @@ Download the latest APK from [GitHub Releases](https://github.com/jvsena42/manda
 
 > ℹ️ The APK ships native libraries for **`arm64-v8a`** (physical devices) and **`x86_64`** (emulators/CI). 32-bit ABIs (`x86`, `armeabi-v7a`) are not supported.
 
+> ℹ️ **Why no iOS?** The node needs to keep running after you leave the app to stay connected to peers and keep syncing. Android allows this with a foreground service; iOS suspends apps seconds after they leave the screen and only grants short, system-scheduled background windows. An iOS node would only sync while the app is open, which doesn't justify rewriting the UI.
+
 ### Obtainium
 [Obtainium](https://github.com/ImranR98/Obtainium) installs and auto-updates apps directly from their GitHub releases — no Play Store or F-Droid required.
 
