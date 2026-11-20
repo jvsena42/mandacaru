@@ -74,7 +74,7 @@ Run a validating Bitcoin node directly on your phone with minimal storage requir
 
 ## What is Utreexo?
 
-Utreexo is a dynamic hash-based accumulator that allows Bitcoin nodes to validate the blockchain without storing the full UTXO set. This reduces storage requirements from tens of gigabytes to hundreds of megabytes, making it practical to run a validating node on mobile devices.
+Utreexo is a dynamic hash-based accumulator that allows Bitcoin nodes to validate the blockchain without storing the full UTXO set. This reduces storage requirements from tens of gigabytes to about 260 MB on mainnet, making it practical to run a validating node on mobile devices.
 
 ## A note on validation: `assumeutreexo` is enabled by default
 
