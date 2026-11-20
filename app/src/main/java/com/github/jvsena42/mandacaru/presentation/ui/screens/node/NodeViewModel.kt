@@ -10,6 +10,7 @@ import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.data.floresta.toFlorestaNetwork
 import com.github.jvsena42.mandacaru.data.network.NetworkPolicy
+import com.github.jvsena42.mandacaru.data.tor.TorProxyProbe
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.floresta.UtreexoSnapshotService
 import com.github.jvsena42.mandacaru.domain.floresta.computeFilterSyncDecimal
@@ -19,6 +20,7 @@ import com.github.jvsena42.mandacaru.domain.floresta.hasUtreexoServiceFlag
 import com.github.jvsena42.mandacaru.domain.floresta.isLikelyStalled
 import com.github.jvsena42.mandacaru.domain.geoip.PeerCountryLookup
 import com.github.jvsena42.mandacaru.domain.settings.isAdvancedFeaturesEnabled
+import com.github.jvsena42.mandacaru.domain.settings.torProxyAddress
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlowImpl
 import com.github.jvsena42.mandacaru.presentation.utils.HexUtils
@@ -46,6 +48,7 @@ class NodeViewModel(
     private val preferencesDataSource: PreferencesDataSource,
     private val networkPolicyManager: NetworkPolicy,
     private val peerCountryLookup: PeerCountryLookup,
+    private val torProxyProbe: TorProxyProbe,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel(), EventFlow<NodeEvents> by EventFlowImpl() {
 
@@ -64,6 +67,7 @@ class NodeViewModel(
     private fun getInLoop() {
         viewModelScope.launch(ioDispatcher) {
             refreshPreferences()
+            refreshTorProxyStatus()
             getInfo()
             delay(10.seconds)
             getInLoop()
@@ -81,6 +85,12 @@ class NodeViewModel(
         _uiState.update {
             it.copy(enableAdvancedFeatures = enabled, walletRescanPending = rescanPending)
         }
+    }
+
+    private suspend fun refreshTorProxyStatus() {
+        val proxy = preferencesDataSource.torProxyAddress()
+        val unreachable = proxy?.takeUnless { torProxyProbe.isReachable(it) }
+        _uiState.update { it.copy(unreachableTorProxy = unreachable?.toString()) }
     }
 
     private fun getInfo() {

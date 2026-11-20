@@ -61,6 +61,7 @@ class NodeViewModelClipboardImportTest {
             preferencesDataSource = preferences,
             networkPolicyManager = networkPolicy,
             peerCountryLookup = { null },
+            torProxyProbe = { true },
             ioDispatcher = dispatcher,
         )
         // Let the init poll settle to its first delay (RPC fakes emit nothing).

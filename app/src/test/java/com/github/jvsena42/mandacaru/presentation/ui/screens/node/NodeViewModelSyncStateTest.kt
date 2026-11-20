@@ -2,6 +2,7 @@ package com.github.jvsena42.mandacaru.presentation.ui.screens.node
 
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
+import com.github.jvsena42.mandacaru.data.tor.TorProxyProbe
 import com.github.jvsena42.mandacaru.data.network.NetworkPolicy
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.floresta.SyncPhase
@@ -19,6 +20,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -84,7 +86,30 @@ class NodeViewModelSyncStateTest {
         )
     }
 
-    private fun buildViewModelAndPoll(): NodeUiState {
+    @Test
+    fun `an unreachable Tor proxy is surfaced with its address`() {
+        rpc.blockchainInfoResults = listOf(Result.success(syncedResponse()))
+        preferences.setBooleanNow(PreferenceKeys.TOR_ENABLED, true)
+
+        val state = buildViewModelAndPoll(torProxyProbe = { false })
+
+        assertEquals("127.0.0.1:9050", state.unreachableTorProxy)
+    }
+
+    @Test
+    fun `the Tor proxy is not probed while Tor is off`() {
+        rpc.blockchainInfoResults = listOf(Result.success(syncedResponse()))
+        var probed = false
+
+        val state = buildViewModelAndPoll(torProxyProbe = { probed = true; false })
+
+        assertFalse(probed)
+        assertNull(state.unreachableTorProxy)
+    }
+
+    private fun buildViewModelAndPoll(
+        torProxyProbe: TorProxyProbe = TorProxyProbe { true },
+    ): NodeUiState {
         val vm = NodeViewModel(
             florestaRpc = rpc,
             snapshotService = FakeSnapshotService(FakeFlorestaDaemon()),
@@ -92,6 +117,7 @@ class NodeViewModelSyncStateTest {
             preferencesDataSource = preferences,
             networkPolicyManager = FakeNetworkPolicy(),
             peerCountryLookup = { null },
+            torProxyProbe = torProxyProbe,
             ioDispatcher = dispatcher,
         )
         dispatcher.scheduler.runCurrent()

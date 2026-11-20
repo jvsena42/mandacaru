@@ -109,6 +109,8 @@ two prompts cannot overlap. Reset it for a journey with
 | `node_difficulty`       | difficulty value                |
 | `node_disconnect_peer`  | per-peer disconnect button      |
 | `node_peer_flag`        | per-peer country flag (see below) |
+| `node_peer_onion`       | per-peer "Tor" badge, shown in place of the flag for `.onion` peers |
+| `node_tor_unreachable`  | title of the error card shown while Tor is on and no SOCKS5 proxy answers at the configured address |
 | `snackbar_add_descriptor` | message text of the "Add a wallet descriptor…" snackbar (see below) |
 
 `snackbar_add_descriptor` is **conditional**: it appears only once the daemon's RPC server has
@@ -195,6 +197,9 @@ navigates to Settings exactly like the Node banner.
 | `input_electrum_port`       | Electrum server port field (empty = network default) — inside the Network section, only when advanced features are on |
 | `button_apply_electrum_port`| saves the Electrum port and restarts the app; disabled until the field differs from the saved value |
 | `toggle_mobile_data`        | "Also use mobile data" switch          |
+| `toggle_tor`                | "Connect over Tor" switch — inside the Tor section, only when advanced features are on; takes effect on apply |
+| `input_tor_proxy`           | Tor SOCKS5 proxy field (`IPv4:port`, empty = `127.0.0.1:9050`) — visible while the Tor switch is on |
+| `button_apply_tor`          | probes the proxy when enabling, saves and restarts the app; disabled until the Tor settings differ from the saved ones |
 | `toggle_peer_flags`         | "Peer country flags" switch — inside its own expandable section, only when advanced features are on |
 | `toggle_advanced_features`  | "Advanced features" switch (gates the Network, Peer country flags and Developer Tools sections) |
 | `button_view_logs`          | "View logs" (opens the full-screen log viewer) |

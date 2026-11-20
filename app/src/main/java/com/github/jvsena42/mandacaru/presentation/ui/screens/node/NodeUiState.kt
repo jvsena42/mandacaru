@@ -49,4 +49,5 @@ data class NodeUiState(
     val snapshotMessage: String? = null,
     val isApplyingSnapshot: Boolean = false,
     val isWaitingForWifi: Boolean = false,
+    val unreachableTorProxy: String? = null,
 )

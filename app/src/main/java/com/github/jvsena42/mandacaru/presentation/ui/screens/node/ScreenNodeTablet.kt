@@ -72,7 +72,8 @@ internal fun TabletNodeDashboard(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        if (uiState.ibd && uiState.utreexoPeerCount == 0) {
+        uiState.unreachableTorProxy?.let { TorProxyUnreachableCard(it) }
+        if (uiState.ibd && uiState.utreexoPeerCount == 0 && uiState.unreachableTorProxy == null) {
             UtreexoWarningCard()
         }
         if (phase == SyncPhase.STALLED) {

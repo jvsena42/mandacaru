@@ -51,6 +51,17 @@
     <string name="electrum_port_error_range">Invalid port. Must be between 1024 and 65535.</string>
     <string name="electrum_port_error_rpc">This port is used by the node\'s RPC server.</string>
     <string name="apply_and_restart">Apply and restart</string>
+    <string name="tor">Tor</string>
+    <string name="connect_over_tor">Connect over Tor</string>
+    <string name="connect_over_tor_subtitle">Route every peer connection through a Tor SOCKS5 proxy, such as Orbot. The node also finds and connects to .onion peers. Syncing is much slower over Tor.</string>
+    <string name="tor_proxy_address">Tor SOCKS5 proxy</string>
+    <string name="tor_proxy_supporting_text">Leave empty to use Orbot\'s default (%1$s). Orbot must be running.</string>
+    <string name="tor_proxy_error_invalid">Use an IPv4 address and port, e.g. 127.0.0.1:9050.</string>
+    <string name="tor_proxy_error_unreachable">No Tor proxy answered at this address. Start Orbot and try again.</string>
+    <string name="tor_proxy_unreachable_title">Tor proxy unreachable</string>
+    <string name="tor_proxy_unreachable_message">No SOCKS5 proxy answers at %1$s, so the node cannot reach any peer. Start Orbot or turn off Tor in Settings.</string>
+    <string name="peer_onion_badge">Tor</string>
+    <string name="peer_onion_content_description">Onion peer, connected over Tor</string>
     <string name="the_application_will_be_restarted_to_update_the_network">The application will be restarted to update the network</string>
     <string name="data_usage">Data usage</string>
     <string name="also_use_mobile_data">Also use mobile data</string>

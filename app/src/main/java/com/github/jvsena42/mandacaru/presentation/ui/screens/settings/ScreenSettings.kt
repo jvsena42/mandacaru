@@ -106,6 +106,11 @@ import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.domain.model.Constants
 import com.github.jvsena42.mandacaru.domain.model.UpdateStatus
 import com.github.jvsena42.mandacaru.presentation.ui.components.ExpandableHeader
+import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsAction
+import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsEvent
+import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsSection
+import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsUiState
+import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsViewModel
 import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
 import com.github.jvsena42.mandacaru.presentation.utils.WalletBirthday
 import com.github.jvsena42.mandacaru.presentation.utils.rememberAdaptiveLayout
@@ -123,8 +128,10 @@ fun ScreenSettings(
     focusDescriptors: Boolean = false,
     onFocusHandled: () -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
+    torViewModel: TorSettingsViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val torState by torViewModel.uiState.collectAsState()
     val currentRestartApplication by rememberUpdatedState(restartApplication)
     val currentOnOpenLogs by rememberUpdatedState(onOpenLogs)
     val context = LocalContext.current
@@ -137,7 +144,16 @@ fun ScreenSettings(
         bottomContentPadding = bottomContentPadding,
         focusDescriptors = focusDescriptors,
         onFocusHandled = onFocusHandled,
+        torState = torState,
+        onTorAction = torViewModel::onAction,
     )
+    LaunchedEffect(torViewModel.eventFlow) {
+        torViewModel.eventFlow.collect { event ->
+            when (event) {
+                TorSettingsEvent.RestartRequired -> currentRestartApplication()
+            }
+        }
+    }
     LaunchedEffect(viewModel.eventFlow) {
         viewModel.eventFlow.collect { event ->
             when (event) {
@@ -171,6 +187,8 @@ private fun ScreenSettings(
     bottomContentPadding: Dp = 0.dp,
     focusDescriptors: Boolean = false,
     onFocusHandled: () -> Unit = {},
+    torState: TorSettingsUiState = TorSettingsUiState(),
+    onTorAction: (TorSettingsAction) -> Unit = {},
 ) {
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -626,6 +644,16 @@ private fun ScreenSettings(
                                 }
                             }
                         }
+                    }
+                }
+
+                if (uiState.enableAdvancedFeatures) {
+                    item {
+                        TorSettingsSection(
+                            state = torState,
+                            onAction = onTorAction,
+                            modifier = Modifier.animateItem(),
+                        )
                     }
                 }
 
@@ -1254,7 +1282,7 @@ private fun UpdateRow(
 }
 
 @Composable
-private fun SectionCard(
+internal fun SectionCard(
     title: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     isExpanded: Boolean,

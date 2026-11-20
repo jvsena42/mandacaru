@@ -396,7 +396,10 @@ fun ScreenNode(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 item(span = heroSpan) { NodeTitle() }
-                if (uiState.ibd && uiState.utreexoPeerCount == 0) {
+                uiState.unreachableTorProxy?.let { proxy ->
+                    item(span = heroSpan) { TorProxyUnreachableCard(proxy) }
+                }
+                if (uiState.ibd && uiState.utreexoPeerCount == 0 && uiState.unreachableTorProxy == null) {
                     item(span = heroSpan) { UtreexoWarningCard() }
                 }
                 if (isStalled) {
@@ -1124,7 +1127,24 @@ private fun SyncStepConnector(filled: Boolean, modifier: Modifier = Modifier) {
 }
 
 @Composable
+internal fun TorProxyUnreachableCard(proxy: String) {
+    ErrorWarningCard(
+        title = stringResource(R.string.tor_proxy_unreachable_title),
+        message = stringResource(R.string.tor_proxy_unreachable_message, proxy),
+        titleModifier = Modifier.testTag("node_tor_unreachable"),
+    )
+}
+
+@Composable
 internal fun SyncStalledWarningCard() {
+    ErrorWarningCard(
+        title = stringResource(R.string.sync_stalled_title),
+        message = stringResource(R.string.sync_stalled_message),
+    )
+}
+
+@Composable
+private fun ErrorWarningCard(title: String, message: String, titleModifier: Modifier = Modifier) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -1147,13 +1167,14 @@ internal fun SyncStalledWarningCard() {
             )
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    stringResource(R.string.sync_stalled_title),
+                    title,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onErrorContainer
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = titleModifier,
                 )
                 Text(
-                    stringResource(R.string.sync_stalled_message),
+                    message,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )
@@ -1267,7 +1288,11 @@ internal fun PeerItem(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            PeerFlag(countryCode = peer.countryCode, flag = peer.flag)
+            if (peer.isOnion) {
+                OnionPeerBadge()
+            } else {
+                PeerFlag(countryCode = peer.countryCode, flag = peer.flag)
+            }
 
             Text(
                 peer.peer.address,
@@ -1418,7 +1443,18 @@ private fun Preview() {
                             servicesNames = listOf("NETWORK", "WITNESS", "COMPACT_FILTERS", "NETWORK_LIMITED", "P2P_V2"),
                             state = "Ready",
                             userAgent = "/Satoshi:28.1.0/"
-                        ).withCountry("KR")
+                        ).withCountry("KR"),
+                        PeerUi(
+                            PeerInfoResult(
+                                address = "vfwnj3gidfsuc4kkerx4uzgoqyynz2n5evnbeuyxmmhvelplrhqvzhid.onion:8333",
+                                initialHeight = 943609,
+                                kind = "regular",
+                                services = "0000000000000c49",
+                                servicesNames = listOf("NETWORK", "WITNESS", "COMPACT_FILTERS"),
+                                state = "Ready",
+                                userAgent = "/Satoshi:29.0.0/"
+                            )
+                        ),
                     )
                 )
             )
