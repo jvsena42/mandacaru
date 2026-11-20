@@ -13,6 +13,10 @@ import java.net.InetAddress
  */
 object PeerAddressParser {
 
+    /** True for a Tor v3 onion peer, which the daemon prints as `<56 chars>.onion:<port>`. */
+    fun isOnion(raw: String): Boolean =
+        raw.trim().substringBeforeLast(':').endsWith(ONION_SUFFIX, ignoreCase = true)
+
     fun parse(raw: String): InetAddress? {
         val host = extractHost(raw.trim()) ?: return null
         val bytes = parseIpv4(host) ?: parseIpv6(host) ?: return null
@@ -150,6 +154,7 @@ object PeerAddressParser {
         }
     }
 
+    private const val ONION_SUFFIX = ".onion"
     private const val IPV4_OCTETS = 4
     private const val IPV6_BYTES = 16
     private const val MAX_OCTET_DIGITS = 3

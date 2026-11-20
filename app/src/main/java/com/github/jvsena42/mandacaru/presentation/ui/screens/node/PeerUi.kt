@@ -1,6 +1,7 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.node
 
 import androidx.compose.runtime.Immutable
+import com.github.jvsena42.mandacaru.domain.geoip.PeerAddressParser
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.PeerInfoResult
 import com.github.jvsena42.mandacaru.presentation.utils.countryCodeToFlagEmoji
 
@@ -16,7 +17,9 @@ data class PeerUi(
     val peer: PeerInfoResult,
     val countryCode: String? = null,
     val flag: String? = null,
-)
+) {
+    val isOnion: Boolean = PeerAddressParser.isOnion(peer.address)
+}
 
 /** Pairs a peer with a country, deriving the flag. Used by the node screen previews. */
 internal fun PeerInfoResult.withCountry(countryCode: String) =

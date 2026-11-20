@@ -113,6 +113,7 @@ class NodeViewModelExportTest {
             preferencesDataSource = FakePreferences(),
             networkPolicyManager = FakeNetworkPolicy(),
             peerCountryLookup = { null },
+            torProxyProbe = { true },
             ioDispatcher = dispatcher,
         )
         dispatcher.scheduler.runCurrent()

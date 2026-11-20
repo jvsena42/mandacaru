@@ -66,13 +66,18 @@ internal fun TabletNodeDashboard(
     onClickCopyExport: () -> Unit,
     onClickShareExport: () -> Unit,
     modifier: Modifier = Modifier,
+    onRestartApplication: () -> Unit = {},
 ) {
     val isHeaderSync = phase == SyncPhase.HEADERS
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        if (uiState.ibd && uiState.utreexoPeerCount == 0) {
+        if (uiState.torSettingPendingRestart) {
+            TorRestartRequiredCard(onRestartApplication)
+        }
+        uiState.unreachableTorProxy?.let { TorProxyUnreachableCard(it) }
+        if (uiState.ibd && uiState.utreexoPeerCount == 0 && uiState.unreachableTorProxy == null) {
             UtreexoWarningCard()
         }
         if (phase == SyncPhase.STALLED) {
