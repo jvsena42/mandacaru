@@ -3,6 +3,7 @@ package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 import android.content.Context
 import com.github.jvsena42.mandacaru.common.CoroutineDispatchers
 import com.github.jvsena42.mandacaru.data.PreferenceKeys
+import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.domain.model.WalletDescriptorStatus
 import com.github.jvsena42.mandacaru.domain.scan.DescriptorQrScanner
@@ -172,6 +173,53 @@ class SettingsViewModelTest {
         dispatcher.scheduler.runCurrent()
 
         assertTrue(vm.uiState.value.isDescriptorsExpanded)
+    }
+
+    @Test
+    fun `a valid electrum port is saved and shown with the tcp suffix`() {
+        val vm = buildViewModel()
+
+        vm.onAction(SettingsAction.OnElectrumPortChanged("50002"))
+        vm.onAction(SettingsAction.OnClickApplyElectrumPort)
+        dispatcher.scheduler.runCurrent()
+
+        assertEquals("127.0.0.1:50002:t", vm.uiState.value.electrumAddress)
+        assertEquals("50002", vm.uiState.value.savedElectrumPort)
+        assertTrue(vm.uiState.value.isLoading)
+    }
+
+    @Test
+    fun `an electrum port that collides with rpc is rejected without restarting`() {
+        val vm = buildViewModel()
+
+        vm.onAction(SettingsAction.OnElectrumPortChanged("8332"))
+        vm.onAction(SettingsAction.OnClickApplyElectrumPort)
+        dispatcher.scheduler.runCurrent()
+
+        assertEquals(R.string.electrum_port_error_rpc, vm.uiState.value.electrumPortError)
+        assertEquals("", vm.uiState.value.savedElectrumPort)
+        assertEquals(false, vm.uiState.value.isLoading)
+    }
+
+    @Test
+    fun `typing the default electrum port does not restart`() {
+        val vm = buildViewModel()
+
+        vm.onAction(SettingsAction.OnElectrumPortChanged("50001"))
+        vm.onAction(SettingsAction.OnClickApplyElectrumPort)
+        dispatcher.scheduler.runCurrent()
+
+        assertEquals(false, vm.uiState.value.isLoading)
+        assertEquals("", vm.uiState.value.electrumPortText)
+    }
+
+    @Test
+    fun `electrum port input keeps only up to five digits`() {
+        val vm = buildViewModel()
+
+        vm.onAction(SettingsAction.OnElectrumPortChanged("5a00021"))
+
+        assertEquals("50002", vm.uiState.value.electrumPortText)
     }
 
     private class FakePreferences : PreferencesDataSource {

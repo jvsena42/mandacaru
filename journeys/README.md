@@ -192,6 +192,8 @@ navigates to Settings exactly like the Node banner.
 | `button_copy_descriptor`    | Copy button on the share sheet's Descriptor tab |
 | `button_copy_extended_key`  | Copy button on the share sheet's Extended-key tab |
 | `input_network`             | network selector field — inside the Network section, only when advanced features are on |
+| `input_electrum_port`       | Electrum server port field (empty = network default) — inside the Network section, only when advanced features are on |
+| `button_apply_electrum_port`| saves the Electrum port and restarts the app; disabled until the field differs from the saved value |
 | `toggle_mobile_data`        | "Also use mobile data" switch          |
 | `toggle_peer_flags`         | "Peer country flags" switch — inside its own expandable section, only when advanced features are on |
 | `toggle_advanced_features`  | "Advanced features" switch (gates the Network, Peer country flags and Developer Tools sections) |
