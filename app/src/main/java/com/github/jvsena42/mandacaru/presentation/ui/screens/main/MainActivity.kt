@@ -49,12 +49,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -84,6 +84,8 @@ import com.github.jvsena42.mandacaru.presentation.ui.screens.blockchain.ScreenBl
 import com.github.jvsena42.mandacaru.presentation.ui.screens.logs.ScreenDeveloperLogs
 import com.github.jvsena42.mandacaru.presentation.ui.screens.node.ScreenNode
 import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.ScreenSettings
+import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsEvent
+import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsViewModel
 import com.github.jvsena42.mandacaru.presentation.ui.screens.splash.SplashScreen
 import com.github.jvsena42.mandacaru.presentation.ui.screens.transaction.ScreenTransaction
 import com.github.jvsena42.mandacaru.presentation.ui.theme.MandacaruTheme
@@ -98,8 +100,6 @@ import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.KoinAndroidContext
 import org.koin.androidx.compose.koinViewModel
-import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsEvent
-import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsViewModel
 
 class MainActivity : ComponentActivity() {
 
