@@ -1,5 +1,6 @@
 package com.github.jvsena42.mandacaru.data.tor
 
+import com.github.jvsena42.mandacaru.common.runSuspendCatching
 import com.github.jvsena42.mandacaru.domain.settings.TorProxyAddress
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -25,7 +26,7 @@ class Socks5TorProxyProbe(
 ) : TorProxyProbe {
 
     override suspend fun isReachable(proxy: TorProxyAddress): Boolean = withContext(ioDispatcher) {
-        runCatching { greet(proxy) }
+        runSuspendCatching { greet(proxy) }
             .onFailure { if (it !is IOException && it !is SecurityException) throw it }
             .getOrDefault(false)
     }

@@ -81,9 +81,7 @@ class TorSettingsViewModel(
             }
             is TorSettingsAction.OnProxyChanged -> _uiState.update {
                 it.copy(
-                    proxyText = action.text
-                        .filter { c -> c.isDigit() || c == '.' || c == ':' }
-                        .take(MAX_PROXY_LENGTH),
+                    proxyText = action.text.take(MAX_PROXY_LENGTH),
                     proxyError = null,
                 )
             }
@@ -141,6 +139,6 @@ class TorSettingsViewModel(
 
     private companion object {
         val RESTART_DELAY = 2.seconds
-        const val MAX_PROXY_LENGTH = 21
+        const val MAX_PROXY_LENGTH = 64
     }
 }

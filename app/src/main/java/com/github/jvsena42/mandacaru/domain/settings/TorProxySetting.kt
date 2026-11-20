@@ -67,8 +67,8 @@ suspend fun PreferencesDataSource.getCustomTorProxy(): String =
 
 /**
  * The SOCKS5 proxy the node routes every P2P connection through, or null when Tor is off.
- * A saved value that no longer parses falls back to the default rather than to no proxy, so
- * a corrupt preference can never silently turn Tor off.
+ * A saved proxy that no longer parses falls back to the default rather than to no proxy, so
+ * a corrupt address can never silently turn Tor off.
  */
 suspend fun PreferencesDataSource.torProxyAddress(): TorProxyAddress? {
     if (!isTorEnabled()) return null

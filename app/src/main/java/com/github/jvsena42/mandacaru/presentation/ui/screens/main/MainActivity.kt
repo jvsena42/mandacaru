@@ -49,6 +49,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -97,6 +98,8 @@ import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.KoinAndroidContext
 import org.koin.androidx.compose.koinViewModel
+import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsEvent
+import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -305,7 +308,18 @@ private fun MainScreen(
     isSettingsBadgeVisible: Boolean = false,
     needsDescriptor: Boolean = false,
     onOpenLogs: () -> Unit = {},
+    torViewModel: TorSettingsViewModel = koinViewModel(),
 ) {
+    val currentRestartApplication by rememberUpdatedState(restartApplication)
+    // Collected here, not on the Settings page: leaving that page before the event arrives
+    // would keep the node running without the Tor setting the user just saved.
+    LaunchedEffect(torViewModel.eventFlow) {
+        torViewModel.eventFlow.collect { event ->
+            when (event) {
+                TorSettingsEvent.RestartRequired -> currentRestartApplication()
+            }
+        }
+    }
     val pages = Destinations.entries
     val pagerState = rememberPagerState(
         initialPage = pages.indexOf(Destinations.NODE),
@@ -416,6 +430,7 @@ private fun MainScreen(
                         onOpenLogs = onOpenLogs,
                         focusDescriptors = focusDescriptors,
                         onFocusHandled = { focusDescriptors = false },
+                        torViewModel = torViewModel,
                     )
                 }
             }

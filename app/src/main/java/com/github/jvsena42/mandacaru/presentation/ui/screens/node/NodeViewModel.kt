@@ -67,7 +67,7 @@ class NodeViewModel(
     private fun getInLoop() {
         viewModelScope.launch(ioDispatcher) {
             refreshPreferences()
-            refreshTorProxyStatus()
+            launch { refreshTorProxyStatus() }
             getInfo()
             delay(10.seconds)
             getInLoop()

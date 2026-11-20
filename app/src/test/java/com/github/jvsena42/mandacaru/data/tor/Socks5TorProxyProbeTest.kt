@@ -13,7 +13,9 @@ import kotlin.concurrent.thread
 
 class Socks5TorProxyProbeTest {
 
-    private val server = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
+    private val server = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1")).apply {
+        soTimeout = 5_000
+    }
     private val proxy = TorProxyAddress("127.0.0.1", server.localPort)
     private val probe = Socks5TorProxyProbe(timeoutMs = 1_000)
 
@@ -24,7 +26,7 @@ class Socks5TorProxyProbeTest {
     fun `a SOCKS5 server accepting no-auth is reachable`() = runTest {
         var greeting = ByteArray(0)
         val worker = serveOnce { input, output ->
-            greeting = ByteArray(3).also { input.read(it) }
+            greeting = input.readNBytes(3)
             output.write(byteArrayOf(0x05, 0x00))
         }
 
@@ -36,7 +38,7 @@ class Socks5TorProxyProbeTest {
     @Test
     fun `a SOCKS5 server that wants authentication is not usable`() = runTest {
         val worker = serveOnce { input, output ->
-            input.read(ByteArray(3))
+            input.readNBytes(3)
             output.write(byteArrayOf(0x05, 0xFF.toByte()))
         }
 
@@ -70,6 +72,7 @@ class Socks5TorProxyProbeTest {
     private fun serveOnce(
         handler: (java.io.InputStream, java.io.OutputStream) -> Unit,
     ): Thread = thread {
+        // Drains the greeting before closing: unread input would turn the close into a reset.
         server.accept().use { client ->
             handler(client.getInputStream(), client.getOutputStream())
             client.getOutputStream().flush()

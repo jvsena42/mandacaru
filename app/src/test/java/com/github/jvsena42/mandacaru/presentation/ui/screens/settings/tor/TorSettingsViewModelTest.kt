@@ -84,7 +84,6 @@ class TorSettingsViewModelTest {
         vm.onAction(TorSettingsAction.OnClickApply)
         advanceUntilIdle()
 
-        assertEquals(":9050", vm.uiState.value.proxyText)
         assertEquals(R.string.tor_proxy_error_invalid, vm.uiState.value.proxyError)
         assertTrue(probed.isEmpty())
         assertNull(preferences.booleans[PreferenceKeys.TOR_ENABLED])

@@ -197,11 +197,11 @@ navigates to Settings exactly like the Node banner.
 | `input_electrum_port`       | Electrum server port field (empty = network default) — inside the Network section, only when advanced features are on |
 | `button_apply_electrum_port`| saves the Electrum port and restarts the app; disabled until the field differs from the saved value |
 | `toggle_mobile_data`        | "Also use mobile data" switch          |
-| `toggle_tor`                | "Connect over Tor" switch — inside the Tor section, only when advanced features are on; takes effect on apply |
+| `toggle_tor`                | "Connect over Tor" switch — inside the Tor section, shown when advanced features are on or Tor is saved as on; takes effect on apply |
 | `input_tor_proxy`           | Tor SOCKS5 proxy field (`IPv4:port`, empty = `127.0.0.1:9050`) — visible while the Tor switch is on |
 | `button_apply_tor`          | probes the proxy when enabling, saves and restarts the app; disabled until the Tor settings differ from the saved ones |
 | `toggle_peer_flags`         | "Peer country flags" switch — inside its own expandable section, only when advanced features are on |
-| `toggle_advanced_features`  | "Advanced features" switch (gates the Network, Peer country flags and Developer Tools sections) |
+| `toggle_advanced_features`  | "Advanced features" switch (gates the Network, Tor, Peer country flags and Developer Tools sections; Tor stays visible while it is on) |
 | `button_view_logs`          | "View logs" (opens the full-screen log viewer) |
 | `button_export_logs`        | "Export" (share the full debug.log) — inside Developer Tools |
 

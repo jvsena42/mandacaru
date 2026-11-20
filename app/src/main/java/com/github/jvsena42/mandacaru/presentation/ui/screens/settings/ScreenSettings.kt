@@ -107,7 +107,6 @@ import com.github.jvsena42.mandacaru.domain.model.Constants
 import com.github.jvsena42.mandacaru.domain.model.UpdateStatus
 import com.github.jvsena42.mandacaru.presentation.ui.components.ExpandableHeader
 import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsAction
-import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsEvent
 import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsSection
 import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsUiState
 import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsViewModel
@@ -147,13 +146,6 @@ fun ScreenSettings(
         torState = torState,
         onTorAction = torViewModel::onAction,
     )
-    LaunchedEffect(torViewModel.eventFlow) {
-        torViewModel.eventFlow.collect { event ->
-            when (event) {
-                TorSettingsEvent.RestartRequired -> currentRestartApplication()
-            }
-        }
-    }
     LaunchedEffect(viewModel.eventFlow) {
         viewModel.eventFlow.collect { event ->
             when (event) {
@@ -647,7 +639,8 @@ private fun ScreenSettings(
                     }
                 }
 
-                if (uiState.enableAdvancedFeatures) {
+                // Stays reachable while Tor is on so it can always be turned off again.
+                if (uiState.enableAdvancedFeatures || torState.savedTorEnabled) {
                     item {
                         TorSettingsSection(
                             state = torState,
