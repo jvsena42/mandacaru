@@ -63,7 +63,6 @@
     <string name="tor_restart_required_title">Tor setting not applied</string>
     <string name="tor_restart_required_message">The node is still running with its previous connection setting. Restart Mandacaru to apply your Tor setting.</string>
     <string name="restart_now">Restart now</string>
-    <string name="peer_onion_badge">Tor</string>
     <string name="peer_onion_content_description">Onion peer, connected over Tor</string>
     <string name="the_application_will_be_restarted_to_update_the_network">The application will be restarted to update the network</string>
     <string name="data_usage">Data usage</string>
