@@ -39,4 +39,6 @@ sealed interface SettingsAction {
     data class OnToggleAdvancedFeatures(val enabled: Boolean): SettingsAction
     object ToggleDeveloperToolsExpanded: SettingsAction
     object OnClickViewLogs: SettingsAction
+    data class OnElectrumPortChanged(val port: String): SettingsAction
+    object OnClickApplyElectrumPort: SettingsAction
 }

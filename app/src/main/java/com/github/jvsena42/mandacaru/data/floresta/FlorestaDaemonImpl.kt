@@ -11,6 +11,8 @@ import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.domain.floresta.FlorestaDaemon
 import com.github.jvsena42.mandacaru.domain.model.Constants
+import com.github.jvsena42.mandacaru.domain.settings.ELECTRUM_HOST
+import com.github.jvsena42.mandacaru.domain.settings.electrumPortFor
 import com.github.jvsena42.mandacaru.presentation.utils.SnapshotCodec
 import com.github.jvsena42.mandacaru.presentation.utils.WalletBirthday
 import kotlinx.coroutines.Dispatchers
@@ -84,6 +86,7 @@ class FlorestaDaemonImpl(
                 cfilters = true,
                 filtersStartHeight = filtersStartHeight,
                 jsonRpcAddress = "127.0.0.1:$rpcPort",
+                electrumAddress = "$ELECTRUM_HOST:${preferencesDataSource.electrumPortFor(network)}",
                 logToFile = true,
                 assumeUtreexo = true,
                 assumeutreexoValue = assumeUtreexoValue,

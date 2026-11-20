@@ -46,6 +46,11 @@
     <string name="node_address_error_invalid_ipv6">Invalid IPv6 address. Use brackets, e.g. [2001:db8::1]:8333.</string>
     <string name="node_address_error_invalid_port">Invalid port. Must be between 1 and 65535.</string>
     <string name="select_a_network">Select a network</string>
+    <string name="electrum_server_port">Electrum server port</string>
+    <string name="electrum_port_supporting_text">Leave empty to use the network default (%1$s). The app restarts to apply it.</string>
+    <string name="electrum_port_error_range">Invalid port. Must be between 1024 and 65535.</string>
+    <string name="electrum_port_error_rpc">This port is used by the node\'s RPC server.</string>
+    <string name="apply_and_restart">Apply and restart</string>
     <string name="the_application_will_be_restarted_to_update_the_network">The application will be restarted to update the network</string>
     <string name="data_usage">Data usage</string>
     <string name="also_use_mobile_data">Also use mobile data</string>
