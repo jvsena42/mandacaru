@@ -57,6 +57,7 @@ class TorSettingsViewModelTest {
 
         assertEquals(listOf(DEFAULT_TOR_PROXY), probed)
         assertEquals(TorMode.ALL.name, preferences.strings[PreferenceKeys.TOR_MODE])
+        assertEquals(true, preferences.booleans[PreferenceKeys.TOR_ENABLED])
         assertEquals("", preferences.strings[PreferenceKeys.CUSTOM_TOR_PROXY])
         assertTrue(restarted)
     }
@@ -101,6 +102,7 @@ class TorSettingsViewModelTest {
 
         assertEquals(listOf(DEFAULT_TOR_PROXY), probed)
         assertEquals(TorMode.ONION_PEERS.name, preferences.strings[PreferenceKeys.TOR_MODE])
+        assertEquals(false, preferences.booleans[PreferenceKeys.TOR_ENABLED])
     }
 
     @Test

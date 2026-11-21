@@ -57,7 +57,7 @@
     <string name="tor_mode_off_subtitle">Connect to peers directly. Onion peers are not used.</string>
     <string name="tor_mode_onion_peers">Onion peers over Tor</string>
     <string name="tor_mode_onion_peers_subtitle">Also connect to .onion peers through Tor. Other peers connect directly, so syncing stays fast, but they still see your IP address.</string>
-    <string name="tor_mode_all">Everything over Tor</string>
+    <string name="tor_mode_all">All peers over Tor</string>
     <string name="tor_mode_all_subtitle">Route every peer connection through Tor, including .onion peers. Peers do not see your IP address, but syncing is much slower.</string>
     <string name="tor_proxy_address">Tor SOCKS5 proxy</string>
     <string name="tor_proxy_supporting_text">Leave empty to use Orbot\'s default (%1$s). Orbot must be running.</string>

@@ -105,8 +105,8 @@ import com.github.jvsena42.mandacaru.BuildConfig
 import com.github.jvsena42.mandacaru.R
 import com.github.jvsena42.mandacaru.domain.model.Constants
 import com.github.jvsena42.mandacaru.domain.model.UpdateStatus
-import com.github.jvsena42.mandacaru.presentation.ui.components.ExpandableHeader
 import com.github.jvsena42.mandacaru.domain.settings.TorMode
+import com.github.jvsena42.mandacaru.presentation.ui.components.ExpandableHeader
 import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsAction
 import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsSection
 import com.github.jvsena42.mandacaru.presentation.ui.screens.settings.tor.TorSettingsUiState

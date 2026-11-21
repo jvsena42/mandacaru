@@ -201,7 +201,7 @@ navigates to Settings exactly like the Node banner.
 | `toggle_mobile_data`        | "Also use mobile data" switch          |
 | `radio_tor_off`             | Tor mode "Off" — inside the Tor section, shown when advanced features are on or a Tor mode is saved; takes effect on apply |
 | `radio_tor_onion_peers`     | Tor mode "Onion peers over Tor": only .onion peers go through the proxy, other peers connect directly |
-| `radio_tor_all`             | Tor mode "Everything over Tor": every peer connection goes through the proxy |
+| `radio_tor_all`             | Tor mode "All peers over Tor": every peer connection goes through the proxy |
 | `input_tor_proxy`           | Tor SOCKS5 proxy field (`IPv4:port`, empty = `127.0.0.1:9050`) — visible while a Tor mode other than Off is selected |
 | `button_apply_tor`          | probes the proxy when enabling, saves and restarts the app; disabled until the Tor settings differ from the saved ones |
 | `toggle_peer_flags`         | "Peer country flags" switch — inside its own expandable section, only when advanced features are on |
