@@ -128,6 +128,7 @@ class TorSettingsViewModelTest {
 
         assertTrue(probed.isEmpty())
         assertEquals(TorMode.OFF.name, preferences.strings[PreferenceKeys.TOR_MODE])
+        assertEquals(false, preferences.booleans[PreferenceKeys.TOR_ENABLED])
     }
 
     @Test
@@ -143,6 +144,7 @@ class TorSettingsViewModelTest {
 
         assertEquals("10.0.0.2:9150", preferences.strings[PreferenceKeys.CUSTOM_TOR_PROXY])
         assertEquals(TorMode.OFF.name, preferences.strings[PreferenceKeys.TOR_MODE])
+        assertEquals(false, preferences.booleans[PreferenceKeys.TOR_ENABLED])
     }
 
     @Test

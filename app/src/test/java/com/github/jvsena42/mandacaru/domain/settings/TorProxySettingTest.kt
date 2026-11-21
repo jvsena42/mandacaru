@@ -86,6 +86,15 @@ class TorProxySettingTest {
     }
 
     @Test
+    fun `a saved Tor mode stays on when the switch disagrees`() = runTest {
+        val prefs = MapPreferences(
+            strings = mapOf(PreferenceKeys.TOR_MODE to TorMode.ONION_PEERS.name),
+            booleans = mapOf(PreferenceKeys.TOR_ENABLED to false),
+        )
+        assertEquals(TorMode.ONION_PEERS, prefs.getTorMode())
+    }
+
+    @Test
     fun `an unknown saved mode fails closed to everything over Tor`() = runTest {
         val prefs = MapPreferences(strings = mapOf(PreferenceKeys.TOR_MODE to "SOMETHING"))
         assertEquals(TorMode.ALL, prefs.getTorMode())
