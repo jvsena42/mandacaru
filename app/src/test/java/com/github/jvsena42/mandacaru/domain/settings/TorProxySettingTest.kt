@@ -68,7 +68,7 @@ class TorProxySettingTest {
     }
 
     @Test
-    fun `a saved mode wins over the old switch`() = runTest {
+    fun `a saved Tor mode is kept when the switch is on`() = runTest {
         val prefs = MapPreferences(
             strings = mapOf(PreferenceKeys.TOR_MODE to TorMode.ONION_PEERS.name),
             booleans = mapOf(PreferenceKeys.TOR_ENABLED to true),
