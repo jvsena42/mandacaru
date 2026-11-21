@@ -86,14 +86,15 @@ data class TorRoute(val mode: TorMode, val proxy: TorProxyAddress) {
 /**
  * Before modes existed Tor was a switch, and on meant every connection over Tor. A saved mode
  * this build does not recognise is read as [TorMode.ALL], so a corrupt value can only make the
- * node more private, never silently drop Tor.
+ * node more private, never silently drop Tor. Saving a mode keeps the switch in step, so a
+ * saved Off with the switch on means an older build turned Tor on since: that wins.
  */
 suspend fun PreferencesDataSource.getTorMode(): TorMode {
+    val legacyEnabled = getBoolean(PreferenceKeys.TOR_ENABLED, false)
     val saved = getString(PreferenceKeys.TOR_MODE, "")
-    if (saved.isNotEmpty()) {
-        return TorMode.entries.firstOrNull { it.name == saved } ?: TorMode.ALL
-    }
-    return if (getBoolean(PreferenceKeys.TOR_ENABLED, false)) TorMode.ALL else TorMode.OFF
+    if (saved.isEmpty()) return if (legacyEnabled) TorMode.ALL else TorMode.OFF
+    val mode = TorMode.entries.firstOrNull { it.name == saved } ?: return TorMode.ALL
+    return if (mode == TorMode.OFF && legacyEnabled) TorMode.ALL else mode
 }
 
 suspend fun PreferencesDataSource.getCustomTorProxy(): String =

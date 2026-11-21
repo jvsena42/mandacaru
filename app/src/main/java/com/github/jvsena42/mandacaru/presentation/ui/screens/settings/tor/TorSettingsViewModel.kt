@@ -120,8 +120,9 @@ class TorSettingsViewModel(
             }
             preferencesDataSource.setString(PreferenceKeys.CUSTOM_TOR_PROXY, proxyToSave)
             preferencesDataSource.setString(PreferenceKeys.TOR_MODE, state.mode.name)
-            // Kept for older builds, which only read the switch: they get Tor for "all peers".
-            preferencesDataSource.setBoolean(PreferenceKeys.TOR_ENABLED, state.mode == TorMode.ALL)
+            // Older builds only read this switch, which meant all peers over Tor: any Tor mode
+            // turns it on, so they never run with less Tor than the user chose.
+            preferencesDataSource.setBoolean(PreferenceKeys.TOR_ENABLED, state.usesTor)
             _uiState.update {
                 it.copy(
                     savedMode = state.mode,

@@ -77,6 +77,15 @@ class TorProxySettingTest {
     }
 
     @Test
+    fun `Tor turned on by an older build after saving Off routes everything`() = runTest {
+        val prefs = MapPreferences(
+            strings = mapOf(PreferenceKeys.TOR_MODE to TorMode.OFF.name),
+            booleans = mapOf(PreferenceKeys.TOR_ENABLED to true),
+        )
+        assertEquals(TorMode.ALL, prefs.getTorMode())
+    }
+
+    @Test
     fun `an unknown saved mode fails closed to everything over Tor`() = runTest {
         val prefs = MapPreferences(strings = mapOf(PreferenceKeys.TOR_MODE to "SOMETHING"))
         assertEquals(TorMode.ALL, prefs.getTorMode())
