@@ -110,7 +110,7 @@ two prompts cannot overlap. Reset it for a journey with
 | `node_disconnect_peer`  | per-peer disconnect button      |
 | `node_peer_flag`        | per-peer country flag (see below) |
 | `node_peer_onion`       | per-peer 🧅 onion emoji, shown in place of the flag for `.onion` peers (content-description "Onion peer, connected over Tor") |
-| `node_tor_restart_required` | title of the card shown when the running node's proxy differs from the saved Tor setting (a restart was missed) |
+| `node_tor_restart_required` | title of the card shown when the running node's Tor route (mode or proxy) differs from the saved Tor setting, i.e. a restart was missed |
 | `button_restart_for_tor` | "Restart now" button on that card |
 | `node_tor_unreachable`  | title of the error card shown while Tor is on and no SOCKS5 proxy answers at the configured address |
 | `snackbar_add_descriptor` | message text of the "Add a wallet descriptor…" snackbar (see below) |

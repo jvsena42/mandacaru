@@ -109,6 +109,8 @@ class TorSettingsViewModelTest {
     fun `switching between Tor modes is a change`() = runTest(dispatcher) {
         preferences.strings[PreferenceKeys.TOR_MODE] = TorMode.ALL.name
         val vm = buildViewModel()
+        assertEquals(TorMode.ALL, vm.uiState.value.savedMode)
+        assertFalse(vm.uiState.value.hasChanges)
 
         vm.onAction(TorSettingsAction.OnModeSelected(TorMode.ONION_PEERS))
 
