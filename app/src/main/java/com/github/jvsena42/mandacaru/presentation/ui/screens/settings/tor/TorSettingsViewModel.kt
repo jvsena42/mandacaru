@@ -8,9 +8,10 @@ import com.github.jvsena42.mandacaru.data.PreferenceKeys
 import com.github.jvsena42.mandacaru.data.PreferencesDataSource
 import com.github.jvsena42.mandacaru.data.tor.TorProxyProbe
 import com.github.jvsena42.mandacaru.domain.settings.DEFAULT_TOR_PROXY
+import com.github.jvsena42.mandacaru.domain.settings.TorMode
 import com.github.jvsena42.mandacaru.domain.settings.TorProxyInput
 import com.github.jvsena42.mandacaru.domain.settings.getCustomTorProxy
-import com.github.jvsena42.mandacaru.domain.settings.isTorEnabled
+import com.github.jvsena42.mandacaru.domain.settings.getTorMode
 import com.github.jvsena42.mandacaru.domain.settings.parseTorProxy
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlow
 import com.github.jvsena42.mandacaru.presentation.utils.EventFlowImpl
@@ -22,22 +23,24 @@ import kotlinx.coroutines.launch
 data class TorSettingsUiState(
     val isExpanded: Boolean = false,
     val isLoaded: Boolean = false,
-    val isTorEnabled: Boolean = false,
-    val savedTorEnabled: Boolean = false,
+    val mode: TorMode = TorMode.OFF,
+    val savedMode: TorMode = TorMode.OFF,
     val proxyText: String = "",
     val savedProxyText: String = "",
     val defaultProxy: String = DEFAULT_TOR_PROXY.toString(),
     val proxyError: Int? = null,
     val isApplying: Boolean = false,
 ) {
+    val usesTor: Boolean
+        get() = mode != TorMode.OFF
+
     val hasChanges: Boolean
-        get() = isTorEnabled != savedTorEnabled ||
-            (isTorEnabled && proxyText.trim() != savedProxyText)
+        get() = mode != savedMode || (usesTor && proxyText.trim() != savedProxyText)
 }
 
 sealed interface TorSettingsAction {
     data object ToggleExpanded : TorSettingsAction
-    data class OnToggleTor(val enabled: Boolean) : TorSettingsAction
+    data class OnModeSelected(val mode: TorMode) : TorSettingsAction
     data class OnProxyChanged(val text: String) : TorSettingsAction
     data object OnClickApply : TorSettingsAction
 }
@@ -57,13 +60,13 @@ class TorSettingsViewModel(
 
     init {
         viewModelScope.launch(dispatchers.io) {
-            val enabled = preferencesDataSource.isTorEnabled()
+            val mode = preferencesDataSource.getTorMode()
             val customProxy = preferencesDataSource.getCustomTorProxy()
             _uiState.update {
                 it.copy(
                     isLoaded = true,
-                    isTorEnabled = enabled,
-                    savedTorEnabled = enabled,
+                    mode = mode,
+                    savedMode = mode,
                     proxyText = customProxy,
                     savedProxyText = customProxy,
                 )
@@ -74,8 +77,8 @@ class TorSettingsViewModel(
     fun onAction(action: TorSettingsAction) {
         when (action) {
             TorSettingsAction.ToggleExpanded -> _uiState.update { it.copy(isExpanded = !it.isExpanded) }
-            is TorSettingsAction.OnToggleTor -> _uiState.update {
-                it.copy(isTorEnabled = action.enabled, proxyError = null)
+            is TorSettingsAction.OnModeSelected -> _uiState.update {
+                it.copy(mode = action.mode, proxyError = null)
             }
             is TorSettingsAction.OnProxyChanged -> _uiState.update {
                 it.copy(
@@ -91,7 +94,7 @@ class TorSettingsViewModel(
         val state = _uiState.value
         if (!state.isLoaded || state.isApplying || !state.hasChanges) return
         // Turning Tor off keeps the saved proxy: an edit made then is hidden and never probed.
-        val proxyToSave = if (!state.isTorEnabled) {
+        val proxyToSave = if (!state.usesTor) {
             state.savedProxyText
         } else {
             when (val parsed = parseTorProxy(state.proxyText)) {
@@ -103,23 +106,26 @@ class TorSettingsViewModel(
                 }
             }
         }
-        if (state.isTorEnabled == state.savedTorEnabled && proxyToSave == state.savedProxyText) {
+        if (state.mode == state.savedMode && proxyToSave == state.savedProxyText) {
             _uiState.update { it.copy(proxyText = proxyToSave, proxyError = null) }
             return
         }
         _uiState.update { it.copy(isApplying = true, proxyError = null) }
         viewModelScope.launch(dispatchers.io) {
-            if (state.isTorEnabled && !isReachable(proxyToSave)) {
+            if (state.usesTor && !isReachable(proxyToSave)) {
                 _uiState.update {
                     it.copy(isApplying = false, proxyError = R.string.tor_proxy_error_unreachable)
                 }
                 return@launch
             }
             preferencesDataSource.setString(PreferenceKeys.CUSTOM_TOR_PROXY, proxyToSave)
-            preferencesDataSource.setBoolean(PreferenceKeys.TOR_ENABLED, state.isTorEnabled)
+            preferencesDataSource.setString(PreferenceKeys.TOR_MODE, state.mode.name)
+            // Older builds only read this switch, which meant all peers over Tor: any Tor mode
+            // turns it on, so they never run with less Tor than the user chose.
+            preferencesDataSource.setBoolean(PreferenceKeys.TOR_ENABLED, state.usesTor)
             _uiState.update {
                 it.copy(
-                    savedTorEnabled = state.isTorEnabled,
+                    savedMode = state.mode,
                     proxyText = proxyToSave,
                     savedProxyText = proxyToSave,
                 )

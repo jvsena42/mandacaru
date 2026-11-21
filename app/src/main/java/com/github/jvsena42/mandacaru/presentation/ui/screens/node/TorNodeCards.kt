@@ -9,12 +9,18 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.github.jvsena42.mandacaru.R
+import com.github.jvsena42.mandacaru.domain.settings.TorMode
+import com.github.jvsena42.mandacaru.domain.settings.TorRoute
 
 @Composable
-internal fun TorProxyUnreachableCard(proxy: String) {
+internal fun TorProxyUnreachableCard(route: TorRoute) {
+    val message = when (route.mode) {
+        TorMode.ONION_PEERS -> R.string.tor_proxy_unreachable_onion_peers_message
+        TorMode.ALL, TorMode.OFF -> R.string.tor_proxy_unreachable_message
+    }
     ErrorWarningCard(
         title = stringResource(R.string.tor_proxy_unreachable_title),
-        message = stringResource(R.string.tor_proxy_unreachable_message, proxy),
+        message = stringResource(message, route.proxy.toString()),
         titleModifier = Modifier.testTag("node_tor_unreachable"),
     )
 }

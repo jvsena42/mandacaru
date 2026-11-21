@@ -1561,9 +1561,16 @@ data class Config (
     var `configFile`: kotlin.String? = null 
     , 
     /**
-     * SOCKS5 proxy address for all outgoing connections except DNS seeds.
+     * SOCKS5 proxy for every outgoing peer connection; DNS seeds are queried over it too.
      */
     var `proxy`: kotlin.String? = null 
+    , 
+    /**
+     * SOCKS5 proxy used only for Tor onion peers. Other peers follow `proxy`, or connect
+     * directly when it is unset, so onion peers can be reached without routing clearnet
+     * traffic through Tor.
+     */
+    var `onionProxy`: kotlin.String? = null 
     , 
     /**
      * Whether to keep the compact block filter header chain for wallet rescanning.
@@ -1686,6 +1693,7 @@ public object FfiConverterTypeConfig: FfiConverterRustBuffer<Config> {
             FfiConverterOptionalSequenceString.read(buf),
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterOptionalInt.read(buf),
             FfiConverterOptionalString.read(buf),
@@ -1717,6 +1725,7 @@ public object FfiConverterTypeConfig: FfiConverterRustBuffer<Config> {
             FfiConverterOptionalSequenceString.allocationSize(value.`walletDescriptor`) +
             FfiConverterOptionalString.allocationSize(value.`configFile`) +
             FfiConverterOptionalString.allocationSize(value.`proxy`) +
+            FfiConverterOptionalString.allocationSize(value.`onionProxy`) +
             FfiConverterBoolean.allocationSize(value.`cfilters`) +
             FfiConverterOptionalInt.allocationSize(value.`filtersStartHeight`) +
             FfiConverterOptionalString.allocationSize(value.`zmqAddress`) +
@@ -1747,6 +1756,7 @@ public object FfiConverterTypeConfig: FfiConverterRustBuffer<Config> {
             FfiConverterOptionalSequenceString.write(value.`walletDescriptor`, buf)
             FfiConverterOptionalString.write(value.`configFile`, buf)
             FfiConverterOptionalString.write(value.`proxy`, buf)
+            FfiConverterOptionalString.write(value.`onionProxy`, buf)
             FfiConverterBoolean.write(value.`cfilters`, buf)
             FfiConverterOptionalInt.write(value.`filtersStartHeight`, buf)
             FfiConverterOptionalString.write(value.`zmqAddress`, buf)

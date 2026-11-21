@@ -76,8 +76,8 @@ internal fun TabletNodeDashboard(
         if (uiState.torSettingPendingRestart) {
             TorRestartRequiredCard(onRestartApplication)
         }
-        uiState.unreachableTorProxy?.let { TorProxyUnreachableCard(it) }
-        if (uiState.ibd && uiState.utreexoPeerCount == 0 && uiState.unreachableTorProxy == null) {
+        uiState.unreachableTorRoute?.let { TorProxyUnreachableCard(it) }
+        if (uiState.ibd && uiState.utreexoPeerCount == 0 && !uiState.torCutsOffAllPeers) {
             UtreexoWarningCard()
         }
         if (phase == SyncPhase.STALLED) {

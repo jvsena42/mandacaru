@@ -110,7 +110,7 @@ two prompts cannot overlap. Reset it for a journey with
 | `node_disconnect_peer`  | per-peer disconnect button      |
 | `node_peer_flag`        | per-peer country flag (see below) |
 | `node_peer_onion`       | per-peer 🧅 onion emoji, shown in place of the flag for `.onion` peers (content-description "Onion peer, connected over Tor") |
-| `node_tor_restart_required` | title of the card shown when the running node's proxy differs from the saved Tor setting (a restart was missed) |
+| `node_tor_restart_required` | title of the card shown when the running node's Tor route (mode or proxy) differs from the saved Tor setting, i.e. a restart was missed |
 | `button_restart_for_tor` | "Restart now" button on that card |
 | `node_tor_unreachable`  | title of the error card shown while Tor is on and no SOCKS5 proxy answers at the configured address |
 | `snackbar_add_descriptor` | message text of the "Add a wallet descriptor…" snackbar (see below) |
@@ -199,9 +199,11 @@ navigates to Settings exactly like the Node banner.
 | `input_electrum_port`       | Electrum server port field (empty = network default) — inside the Network section, only when advanced features are on |
 | `button_apply_electrum_port`| saves the Electrum port and restarts the app; disabled until the field differs from the saved value |
 | `toggle_mobile_data`        | "Also use mobile data" switch          |
-| `toggle_tor`                | "Connect over Tor" switch — inside the Tor section, shown when advanced features are on or Tor is saved as on; takes effect on apply |
-| `input_tor_proxy`           | Tor SOCKS5 proxy field (`IPv4:port`, empty = `127.0.0.1:9050`) — visible while the Tor switch is on |
-| `button_apply_tor`          | probes the proxy when enabling, saves and restarts the app; disabled until the Tor settings differ from the saved ones |
+| `radio_tor_off`             | Tor mode "Off" — inside the Tor section, shown when advanced features are on or a Tor mode is saved; takes effect on apply. For all three `radio_tor_*` rows, the selected one carries `"state":["checked"]` |
+| `radio_tor_onion_peers`     | Tor mode "Onion peers over Tor": only .onion peers go through the proxy, other peers connect directly |
+| `radio_tor_all`             | Tor mode "All peers over Tor": every peer connection goes through the proxy |
+| `input_tor_proxy`           | Tor SOCKS5 proxy field (`IPv4:port`, empty = `127.0.0.1:9050`) — visible while a Tor mode other than Off is selected |
+| `button_apply_tor`          | probes the proxy whenever a Tor mode is selected (mode switch or proxy edit), saves and restarts the app; disabled until the Tor settings differ from the saved ones |
 | `toggle_peer_flags`         | "Peer country flags" switch — inside its own expandable section, only when advanced features are on |
 | `toggle_advanced_features`  | "Advanced features" switch (gates the Network, Tor, Peer country flags and Developer Tools sections; Tor stays visible while it is on) |
 | `button_view_logs`          | "View logs" (opens the full-screen log viewer) |

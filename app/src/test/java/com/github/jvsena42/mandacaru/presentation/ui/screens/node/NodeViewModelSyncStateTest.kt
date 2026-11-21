@@ -9,6 +9,9 @@ import com.github.jvsena42.mandacaru.domain.floresta.SyncPhase
 import com.github.jvsena42.mandacaru.domain.floresta.UtreexoSnapshotService
 import com.github.jvsena42.mandacaru.domain.floresta.phase
 import com.github.jvsena42.mandacaru.domain.model.florestaRPC.response.GetBlockchainInfoResponse
+import com.github.jvsena42.mandacaru.domain.settings.DEFAULT_TOR_PROXY
+import com.github.jvsena42.mandacaru.domain.settings.TorMode
+import com.github.jvsena42.mandacaru.domain.settings.TorRoute
 import com.github.jvsena42.mandacaru.fakes.FakeFlorestaRpc
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -93,7 +96,7 @@ class NodeViewModelSyncStateTest {
 
         val state = buildViewModelAndPoll(torProxyProbe = { false })
 
-        assertEquals("127.0.0.1:9050", state.unreachableTorProxy)
+        assertEquals(TorRoute(TorMode.ALL, DEFAULT_TOR_PROXY), state.unreachableTorRoute)
     }
 
     @Test
@@ -102,13 +105,37 @@ class NodeViewModelSyncStateTest {
         preferences.setBooleanNow(PreferenceKeys.TOR_ENABLED, true)
 
         val state = buildViewModelAndPoll(
-            daemon = FakeFlorestaDaemon(running = true, proxy = null),
+            daemon = FakeFlorestaDaemon(running = true, route = null),
             torProxyProbe = { false },
             polls = 2,
         )
 
         assertTrue(state.torSettingPendingRestart)
-        assertNull(state.unreachableTorProxy)
+        assertNull(state.unreachableTorRoute)
+    }
+
+    @Test
+    fun `switching Tor modes without a restart is a stale setting`() {
+        rpc.blockchainInfoResults = listOf(Result.success(syncedResponse()))
+        preferences.setStringNow(PreferenceKeys.TOR_MODE, TorMode.ONION_PEERS.name)
+
+        val state = buildViewModelAndPoll(
+            daemon = FakeFlorestaDaemon(running = true, route = TorRoute(TorMode.ALL, DEFAULT_TOR_PROXY)),
+            polls = 2,
+        )
+
+        assertTrue(state.torSettingPendingRestart)
+    }
+
+    @Test
+    fun `an unreachable onion-only proxy does not claim the node lost every peer`() {
+        rpc.blockchainInfoResults = listOf(Result.success(syncedResponse()))
+        preferences.setStringNow(PreferenceKeys.TOR_MODE, TorMode.ONION_PEERS.name)
+
+        val state = buildViewModelAndPoll(torProxyProbe = { false })
+
+        assertEquals(TorMode.ONION_PEERS, state.unreachableTorRoute?.mode)
+        assertFalse(state.torCutsOffAllPeers)
     }
 
     @Test
@@ -116,7 +143,7 @@ class NodeViewModelSyncStateTest {
         rpc.blockchainInfoResults = listOf(Result.success(syncedResponse()))
         preferences.setBooleanNow(PreferenceKeys.TOR_ENABLED, true)
 
-        val state = buildViewModelAndPoll(daemon = FakeFlorestaDaemon(running = true, proxy = null))
+        val state = buildViewModelAndPoll(daemon = FakeFlorestaDaemon(running = true, route = null))
 
         assertFalse(state.torSettingPendingRestart)
     }
@@ -126,7 +153,7 @@ class NodeViewModelSyncStateTest {
         rpc.blockchainInfoResults = listOf(Result.success(syncedResponse()))
 
         val state = buildViewModelAndPoll(
-            daemon = FakeFlorestaDaemon(running = true, proxy = "127.0.0.1:9050"),
+            daemon = FakeFlorestaDaemon(running = true, route = TorRoute(TorMode.ALL, DEFAULT_TOR_PROXY)),
             polls = 2,
         )
 
@@ -139,7 +166,7 @@ class NodeViewModelSyncStateTest {
         preferences.setBooleanNow(PreferenceKeys.TOR_ENABLED, true)
 
         val state = buildViewModelAndPoll(
-            daemon = FakeFlorestaDaemon(running = true, proxy = "127.0.0.1:9050"),
+            daemon = FakeFlorestaDaemon(running = true, route = TorRoute(TorMode.ALL, DEFAULT_TOR_PROXY)),
             polls = 2,
         )
 
@@ -154,7 +181,7 @@ class NodeViewModelSyncStateTest {
         val state = buildViewModelAndPoll(torProxyProbe = { probed = true; false })
 
         assertFalse(probed)
-        assertNull(state.unreachableTorProxy)
+        assertNull(state.unreachableTorRoute)
     }
 
     private fun buildViewModelAndPoll(
@@ -206,6 +233,7 @@ class NodeViewModelSyncStateTest {
         private val strings = mutableMapOf<PreferenceKeys, String>()
         private val booleans = mutableMapOf<PreferenceKeys, Boolean>()
         fun setBooleanNow(key: PreferenceKeys, value: Boolean) { booleans[key] = value }
+        fun setStringNow(key: PreferenceKeys, value: String) { strings[key] = value }
         override suspend fun setString(key: PreferenceKeys, value: String) { strings[key] = value }
         override suspend fun getString(key: PreferenceKeys, defaultValue: String): String =
             strings[key] ?: defaultValue
@@ -218,12 +246,12 @@ class NodeViewModelSyncStateTest {
 
     private class FakeFlorestaDaemon(
         private val running: Boolean = false,
-        private val proxy: String? = null,
+        private val route: TorRoute? = null,
     ) : FlorestaDaemon {
         override suspend fun start() = Unit
         override suspend fun stop() = Unit
         override fun isRunning(): Boolean = running
-        override fun runningProxy(): String? = proxy
+        override fun runningTorRoute(): TorRoute? = route
         override fun rpcCookieFile(): java.io.File? = null
         override suspend fun dumpUtreexoState(): Result<String> = Result.success("")
         override suspend fun prepareForSnapshotImport(): Result<Unit> = Result.success(Unit)

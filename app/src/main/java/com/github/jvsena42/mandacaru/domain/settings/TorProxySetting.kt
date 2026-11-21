@@ -58,21 +58,60 @@ private fun canonicalIpv4(host: String): String? {
     return values.joinToString(".")
 }
 
-suspend fun PreferencesDataSource.isTorEnabled(): Boolean =
-    getBoolean(PreferenceKeys.TOR_ENABLED, false)
+enum class TorMode {
+    OFF,
+
+    /** Onion peers go through Tor; every other peer connects directly. */
+    ONION_PEERS,
+
+    /** Every peer connection goes through Tor. */
+    ALL,
+}
+
+/** How the node uses Tor: which peers go through [proxy]. */
+data class TorRoute(val mode: TorMode, val proxy: TorProxyAddress) {
+    init {
+        require(mode != TorMode.OFF) { "TorRoute needs a Tor mode" }
+    }
+
+    /** The node's general proxy, carrying every peer connection. */
+    val allPeersProxy: String?
+        get() = proxy.toString().takeIf { mode == TorMode.ALL }
+
+    /** The node's onion-only proxy, carrying only onion peers. */
+    val onionPeersProxy: String?
+        get() = proxy.toString().takeIf { mode == TorMode.ONION_PEERS }
+}
+
+/**
+ * Before modes existed Tor was a switch, and on meant every connection over Tor. A saved mode
+ * this build does not recognise is read as [TorMode.ALL], so a corrupt value can only make the
+ * node more private, never silently drop Tor. Saving a mode keeps the switch in step; when the
+ * two disagree (an older build changed the switch, or the app died between the two writes),
+ * the side with more Tor wins: a saved Off with the switch on reads as all peers over Tor, and
+ * a saved Tor mode with the switch off stays that Tor mode.
+ */
+suspend fun PreferencesDataSource.getTorMode(): TorMode {
+    val legacyEnabled = getBoolean(PreferenceKeys.TOR_ENABLED, false)
+    val saved = getString(PreferenceKeys.TOR_MODE, "")
+    if (saved.isEmpty()) return if (legacyEnabled) TorMode.ALL else TorMode.OFF
+    val mode = TorMode.entries.firstOrNull { it.name == saved } ?: return TorMode.ALL
+    return if (mode == TorMode.OFF && legacyEnabled) TorMode.ALL else mode
+}
 
 suspend fun PreferencesDataSource.getCustomTorProxy(): String =
     getString(PreferenceKeys.CUSTOM_TOR_PROXY, "")
 
 /**
- * The SOCKS5 proxy the node routes every P2P connection through, or null when Tor is off.
- * A saved proxy that no longer parses falls back to the default rather than to no proxy, so
- * a corrupt address can never silently turn Tor off.
+ * The node's Tor route, or null when Tor is off. A saved proxy that no longer parses falls back
+ * to the default rather than to no proxy, so a corrupt address can never silently turn Tor off.
  */
-suspend fun PreferencesDataSource.torProxyAddress(): TorProxyAddress? {
-    if (!isTorEnabled()) return null
-    return when (val parsed = parseTorProxy(getCustomTorProxy())) {
+suspend fun PreferencesDataSource.torRoute(): TorRoute? {
+    val mode = getTorMode()
+    if (mode == TorMode.OFF) return null
+    val proxy = when (val parsed = parseTorProxy(getCustomTorProxy())) {
         is TorProxyInput.Custom -> parsed.address
         TorProxyInput.Default, TorProxyInput.Invalid -> DEFAULT_TOR_PROXY
     }
+    return TorRoute(mode, proxy)
 }

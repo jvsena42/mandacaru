@@ -402,10 +402,10 @@ fun ScreenNode(
                 if (uiState.torSettingPendingRestart) {
                     item(span = heroSpan) { TorRestartRequiredCard(onRestartApplication) }
                 }
-                uiState.unreachableTorProxy?.let { proxy ->
-                    item(span = heroSpan) { TorProxyUnreachableCard(proxy) }
+                uiState.unreachableTorRoute?.let { route ->
+                    item(span = heroSpan) { TorProxyUnreachableCard(route) }
                 }
-                if (uiState.ibd && uiState.utreexoPeerCount == 0 && uiState.unreachableTorProxy == null) {
+                if (uiState.ibd && uiState.utreexoPeerCount == 0 && !uiState.torCutsOffAllPeers) {
                     item(span = heroSpan) { UtreexoWarningCard() }
                 }
                 if (isStalled) {
